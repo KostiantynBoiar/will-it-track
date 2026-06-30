@@ -115,7 +115,9 @@ M0 acquire+confirm ─► M1 LOCK label/eval contract ─► M2 MASKING PILOT (�
 ---
 
 ## Doc steps (done one-by-one, after the framing is settled)
-- **Write the MABe22 proposal** → `report/proposal/` (contact geometry primary; MammAlps secondary;
-  honest novelty framing from CLAUDE.md §3; pre-registered ablations + success threshold).
-- **Write the MABe22 presentation** → `report/presentation/` (the re-scoped story for Marwa).
-  Build both with `report/build.sh` (Tectonic + gs-normalize for GitHub).
+- **Write the MABe22 proposal** ✅ → `report/proposal/proposal.{tex,pdf}` (contact geometry
+  primary; MammAlps secondary; honest novelty framing; pre-registered ablations + success threshold;
+  precise keypoint source + geometry formulas).
+- **Write the MABe22 presentation** ✅ → `report/presentation/presentation.{tex,pdf}` (12-slide
+  Beamer deck; worked TikZ examples of hull-overlap vs mask-IoU + contact-boundary; the re-scoped
+  story for Marwa). Build both with `report/build.sh` (Tectonic + gs-normalize for GitHub).
