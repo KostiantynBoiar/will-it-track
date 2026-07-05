@@ -56,3 +56,5 @@ third_party/
 *.bbl
 *_cache/
 *.blg
+*.nav
+*.snm
