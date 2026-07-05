@@ -58,17 +58,23 @@ class DataConfig:
 
     Attributes:
         fps: Frame rate the annotations align to (6 fps downsampled).
+        annotations_subdir: Subdirectory of ``data_root`` holding the annotation JSONs.
         frames_subdir: Subdirectory of ``data_root`` holding the 6 fps frames.
         train_ann: Train-split ``_ext`` annotation JSON (the seen set / reference).
         test_ann: Test-split ``_ext`` annotation JSON (the transfer probes).
         keep_hard_negatives: Keep queries that return 0 (§9 DON'T filter them).
+        hf_repo: Gated Hugging Face dataset id for the annotations.
+        gcs_bucket: Public GCS bucket holding the 6 fps frames (anonymous access).
     """
 
     fps: int = 6
+    annotations_subdir: str = "annotations"
     frames_subdir: str = "frames"
     train_ann: str = "sa_fari_train_ext.json"
     test_ann: str = "sa_fari_test_ext.json"
     keep_hard_negatives: bool = True
+    hf_repo: str = "facebook/SA-FARI"
+    gcs_bucket: str = "cxl-public-camera-trap"
 
 
 @dataclass

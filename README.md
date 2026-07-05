@@ -53,6 +53,24 @@ PYTHONPATH=. .venv/bin/python -m src.inference.harness    # GPU box: also needs 
 report/build.sh                                          # dissertation LaTeX
 ```
 
+## Data access (T0.1)
+Annotations are **gated** on Hugging Face; frames are **public** on GCS; SAM 3 checkpoints are
+**gated** and take ~24–48 h to approve — so request them **now**.
+
+1. Accept the license at **huggingface.co/datasets/facebook/SA-FARI**.
+2. `.venv/bin/huggingface-cli login` (or `export HF_TOKEN=hf_…`) with a read token.
+3. **Request SAM 3 checkpoint access** at **huggingface.co/facebook/sam3** (starts the clock; needed
+   for inference at T1.1/T1.2, not for the data layer).
+4. Fetch the minimal slice + verify RLE decode:
+   ```bash
+   PYTHONPATH=. .venv/bin/python -m src.acquire --list             # public GCS layout probe (no auth)
+   PYTHONPATH=. .venv/bin/python -m src.acquire --annotations      # gated HF snapshot (~1.86 GB JSON)
+   PYTHONPATH=. .venv/bin/python -m src.acquire --frames --n-clips 3
+   PYTHONPATH=. .venv/bin/python -m pytest tests/test_dataset.py   # records parse + RLE masks decode
+   ```
+
+SAM 3 itself needs a **separate Python 3.12 + CUDA** env (`requirements-gpu.txt`), not this `.venv`.
+
 ## Constraints (see `.claude/CLAUDE.md §9`)
 Freeze the seen set **first**; compute every distance against the **train split only**; use the
 **official evaluator** (never re-implement `pHOTA`); model bounded scores with **beta/logit GLM
