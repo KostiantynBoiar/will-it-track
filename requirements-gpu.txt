@@ -1,14 +1,13 @@
-# ZoomTrack — Part A (caching box, GPU). Adds the frozen backbone + the official scorer on top of
-# requirements-local.txt. Not needed for Part B (select/fuse/track) or the mock-backbone tests.
+# SAM-3 zero-shot transfer study — GPU inference box.
+# Adds the frozen SAM 3 backbone + the OFFICIAL VEval scorer on top of the local analysis stack.
+# A single modern GPU (24-40 GB) suffices — inference only.
 #
-# SAM 2/3 and veval are NOT clean PyPI packages — vendor them under third_party/ (gitignored) as
-# pinned git clones with a VENDORED_COMMIT.txt each, then install editable, e.g.:
-#   git clone https://github.com/facebookresearch/sam3 third_party/sam3   # provides SAM 3 + veval
-#   git clone https://github.com/facebookresearch/sam2 third_party/sam2   # SAM 2 fallback
-#   zoomtrack-env/bin/pip install -e third_party/sam3 -e third_party/sam2
+# SAM 3 and VEval are NOT PyPI packages — vendor them under third_party/ (gitignored) as a pinned
+# git clone with a VENDORED_COMMIT.txt, then install editable, e.g.:
+#   git clone https://github.com/facebookresearch/sam3 third_party/sam3   # SAM 3 + the VEval scorer
+#   .venv/bin/pip install -e third_party/sam3
 
 -r requirements-local.txt
 
-# --- pinned via third_party/ (see above), listed here for documentation ---
-# sam3            @ third_party/sam3   # frozen backbone (primary) + veval scorer
-# sam2            @ third_party/sam2   # frozen backbone (fallback)
+# --- pinned via third_party/ (documented, not pip-resolved) ---
+# sam3  @ third_party/sam3   # frozen promptable backbone + official VEval scorer

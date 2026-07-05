@@ -1,7 +1,7 @@
-"""Put the repo root on ``sys.path`` so ``import zoomtrack`` resolves (pytest + scripts).
+"""Put the repo root on ``sys.path`` so ``import src`` resolves (pytest + scripts).
 
-ZoomTrack is a single root package; nothing is pip-installed. Tests live under ``tests/`` and import
-``from zoomtrack...``; scripts run as ``PYTHONPATH=. python -m zoomtrack.scripts.<name>``.
+Nothing is pip-installed. Tests live under ``tests/`` and import ``from src...``; scripts run as
+``PYTHONPATH=. python -m src.<subpackage>.<module>``.
 """
 
 import sys

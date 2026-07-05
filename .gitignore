@@ -1,6 +1,7 @@
-# --- Data & cache (never commit; huge). SA-FARI in /data/, the Part-A
-#     per-(video,frame,tile) segmenter cache in /cache/. ---
+# --- Data & derived artifacts (never commit; huge). SA-FARI in /data/;
+#     predictions, parquet, models, figures in /outputs/. ---
 /data/
+/outputs/
 /cache/
 *.zip
 *.npy

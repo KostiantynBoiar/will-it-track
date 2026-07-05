@@ -1,49 +1,63 @@
-# ZoomTrack
+# Predicting SAM 3's zero-shot transfer on SA-FARI
 
-**Coarse-to-fine, tile-refined promptable segmentation-and-tracking for small animals.**
+**An empirical-science ML dissertation — we predict a promptable video tracker's reliability, we do
+not try to make it score higher.**
 
-Run a cheap coarse pass on the downscaled frame → **zoom into the tiles that likely hide missed
-animals** → re-segment them at full resolution → **fuse across scales** into consistent masklets →
-track. The heavy segmentation backbone stays **frozen**; only a small **tile-selector** (and
-optionally a fusion head) is trained.
+Can we predict **SAM 3's** zero-shot tracking performance on an *unseen* species and place *before
+running it*, from properties measurable in advance — and which factors govern that transfer,
+separately for **finding** the animal (`pDetA`) and **following** it (`pAssA`)?
 
-## Why
-On **SA-FARI**, small animals are the biggest accuracy gap — and it's a *detection* failure caused
-by whole-frame downscaling (~+29.2 pHOTA large-over-small; pDetA ≈38.5 small vs 72.5 large). Zooming
-into the right tiles recovers them.
+- **H1 (detection):** `pDetA` falls with **species novelty** (taxonomic + visual distance).
+- **H2 (association):** `pAssA` falls with **environment difficulty** (scene distance, day/night/IR,
+  clutter, camera motion), largely regardless of species.
+- **H0 (null, still a result):** distance explains little → pivot to representational probing.
 
-## Approach
-Frozen **SAM 3** (SAM 2 fallback; a mock connected-components segmenter for tests) →
-per-`(video, frame, tile)` cache (**Part A**, GPU, run once) → cheap **select → fuse → track → eval**
-(**Part B**, iterate on a laptop). The two novel steps are the **cross-scale fusion** link-rule
-(`zoomtrack/fusion.py`) and the **learned tile-selector** (`zoomtrack/tile_selector.py` +
-`zoomtrack/selector/`).
+**Success = a *validated, out-of-sample* predictor of `pDetA`/`pAssA` from label-free distances,
+with honest confidence intervals.**
+
+## Dataset — SA-FARI
+The largest open multi-animal wild-animal tracking dataset (Meta × Conservation X Labs, 2025): 99
+species with a full 7-level taxonomy, 741 locations across 4 continents, 2014–2024. Train/test are
+**disjoint by species AND location**, so each test video is a controlled probe of transfer along a
+measurable distance. Hard negatives are kept. Details in `.claude/CLAUDE.md §4`.
+
+## Pipeline
+```
+data/  →  src/inference (frozen SAM 3)  →  src/eval (OFFICIAL VEval)  →  outputs/scores.parquet
+                                                                              │
+       src/features (taxonomic · visual · environment · temporal · familiarity)  →  outputs/features.parquet
+                                                                              │
+       src/analysis (beta regression · variance partition · grouped CV · bootstrap · reliability)
+                                                     →  outputs/{models,validation,figures}/
+```
 
 ## Layout
 ```
-zoomtrack/            # the package (import zoomtrack)
-  config.py types.py geometry.py masks.py fusion.py tile_selector.py tracking.py
-  pipeline.py writer.py eval.py train_selector.py
-  backbone/  (base · sam3 · sam2 · mock)      selector/ (features · head)
-  data/dataset.py   utils/ (device · seed · io)   configs/*.yaml   scripts/*.py
-tests/               # pure-logic unit tests (+ mock-backbone smoke)
-report/build.sh      # LaTeX (Tectonic + Ghostscript)
-data/ cache/ checkpoints/ third_party/   # gitignored
+src/            config.py types.py dataset.py reference.py io.py
+                inference/harness.py  eval/score.py
+                features/{taxonomic,visual,environment,temporal,familiarity,assemble}.py
+                analysis/{regression,variance,cross_val,uncertainty,ablations,reliability}.py
+configs/        default.yaml
+data/           annotations/ frames/ raw_videos/ reference/     (gitignored)
+outputs/        predictions/ scores.parquet features.parquet models/ validation/ ablations/ figures/  (gitignored)
+notebooks/      exploration + final figures
+tests/  report/build.sh
 ```
 
 ## Run
 ```bash
-python3.11 -m venv zoomtrack-env
-zoomtrack-env/bin/pip install -r requirements-local.txt          # Part B + mock backbone
-zoomtrack-env/bin/python -m pytest -q                            # pure-logic tests; data/backbone tests skip
-PYTHONPATH=. zoomtrack-env/bin/python -m zoomtrack.scripts.<name>  # fetch_data · run_baseline · run_pipeline · score
-report/build.sh                                                 # build LaTeX docs
+python3.11 -m venv .venv
+.venv/bin/pip install -r requirements-local.txt          # analysis + CPU (no GPU, no SAM 3)
+.venv/bin/python -m pytest -q                            # import/config pass; data/SAM3/VEval tests skip
+PYTHONPATH=. .venv/bin/python -m src.inference.harness    # GPU box: also needs requirements-gpu.txt
+report/build.sh                                          # dissertation LaTeX
 ```
-The Part-A caching box additionally needs `requirements-gpu.txt` (SAM 2/3 + veval).
 
-## Evaluation
-Predictions are written as SA-Co/VEval JSON and scored by the **official `veval`**
-(`github.com/facebookresearch/sam3`) — the metric is never re-implemented. Headline number:
-**small-masklet pHOTA** (with the pDetA/pAssA decomposition).
+## Constraints (see `.claude/CLAUDE.md §9`)
+Freeze the seen set **first**; compute every distance against the **train split only**; use the
+**official evaluator** (never re-implement `pHOTA`); model bounded scores with **beta/logit GLM
+weighted by support** with a `log(n_frames)` covariate; **group-aware CV** (hold out whole species +
+locations); **no test information leaks** into a feature; **keep hard negatives**.
 
-See `ROADMAP.md` (M0–M6, with the M2 kill-switch) and `.claude/CLAUDE.md` (the full job spec).
+Full spec: `.claude/CLAUDE.md`. Task breakdown: `.claude/IMPLEMENTATION_PLAN.md`. Phase summary +
+gates: `ROADMAP.md`.

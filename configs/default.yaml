@@ -1,0 +1,28 @@
+# SAM-3 transfer study — default config. Overlaid onto src/config.py dataclass defaults by
+# Config.load(). Only keys that differ from the defaults need to appear; shown here for reference,
+# and to surface the §9 hard-constraint toggles in one place.
+seed: 0
+
+data:
+  fps: 6
+  keep_hard_negatives: true      # §9: never filter hard negatives
+
+inference:
+  prompt_mode: species           # species (primary) | generic ("animal", robustness)
+
+eval:
+  metrics: [pHOTA, pDetA, pAssA]  # computed by the OFFICIAL VEval scorer; never re-implemented
+
+features:
+  visual_encoder: dinov2         # dinov2 | clip (robustness)
+  mask_crop: true                # §9: crop visual embeddings to the animal mask
+  distance_variant: nearest_prototype
+
+model:
+  family: beta                   # beta / logit-link GLM on bounded scores
+  support_weight: true           # weight by support
+  log_support_covariate: true    # log(n_frames) so rare != far
+
+cv:
+  group_schemes: [species, location]   # hold out WHOLE species / WHOLE locations
+  n_bootstrap: 1000

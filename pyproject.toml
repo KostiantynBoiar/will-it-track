@@ -13,8 +13,8 @@ select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501"]  # line length is enforced by the formatter, not the linter
 
 [tool.ruff.lint.isort]
-# The zoomtrack package lives at the repo root (on sys.path via conftest) — first-party.
-known-first-party = ["zoomtrack"]
+# The `src` package lives at the repo root (on sys.path via conftest) — first-party.
+known-first-party = ["src"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
