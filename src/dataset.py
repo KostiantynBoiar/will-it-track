@@ -11,13 +11,21 @@ differs. ``records()`` + ``mask_at()`` implemented at T0.1; ``cell_of()`` at T1.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import numpy as np
+from pycocotools import mask as coco_mask
 from pydantic import BaseModel
 
 from src.config import Config
 from src.types import Cell
+
+
+def _year(dt: str) -> str:
+    """Return the first 4-digit year in a datetime string, or ``""`` if none."""
+    match = re.search(r"\d{4}", dt or "")
+    return match.group(0) if match else ""
 
 
 class VideoRecord(BaseModel):
@@ -127,6 +135,10 @@ class SAFARI:
         data = self._load()
         return [a for a in data["annotations"] if str(a["video_id"]) == str(video_id)]
 
+    def categories(self) -> list[dict]:
+        """Return the raw ``categories`` list (species + their 7-level taxonomy)."""
+        return self._load().get("categories", [])
+
     def mask_at(self, annotation: dict, frame_index: int) -> np.ndarray:
         """Decode one annotation's per-frame RLE mask to a dense ``bool`` array.
 
@@ -137,8 +149,6 @@ class SAFARI:
         Returns:
             A ``(H, W)`` boolean mask (all-``False`` where the frame is unlabelled).
         """
-        from pycocotools import mask as coco_mask
-
         segs = annotation.get("segmentations") or []
         seg = segs[frame_index] if 0 <= frame_index < len(segs) else None
         if seg is None:
@@ -155,4 +165,8 @@ class SAFARI:
         Returns:
             The cell it belongs to.
         """
-        raise NotImplementedError("T1.2: bucket species/location_id/time into a Cell")
+        return Cell(
+            species=record.species or "",
+            location_id=record.location_id,
+            time=_year(record.creation_datetime),
+        )

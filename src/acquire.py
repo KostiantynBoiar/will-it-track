@@ -17,7 +17,11 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+import gcsfs
+from huggingface_hub import snapshot_download
+
 from src.config import Config
+from src.dataset import SAFARI
 
 
 class AnnotationFetcher:
@@ -40,8 +44,6 @@ class AnnotationFetcher:
         Raises:
             Exception: If the HF login/license gate is not satisfied (surfaced from the hub).
         """
-        from huggingface_hub import snapshot_download
-
         dest = self.config.paths.data_root / self.config.data.annotations_subdir
         dest.mkdir(parents=True, exist_ok=True)
         snapshot_download(
@@ -63,8 +65,6 @@ class FrameFetcher:
         Args:
             config: Project config (``data.gcs_bucket``, ``paths.data_root``, ``data.frames_subdir``).
         """
-        import gcsfs
-
         self.config = config or Config()
         self.bucket = self.config.data.gcs_bucket
         self.fs = gcsfs.GCSFileSystem(token="anon")
@@ -157,8 +157,6 @@ def main() -> None:
     if args.annotations:
         print("annotations ->", AnnotationFetcher(cfg).fetch())
     if args.frames:
-        from src.dataset import SAFARI
-
         records = SAFARI("test", cfg).records()[: args.n_clips]
         file_names = [name for r in records for name in r.file_names]
         pulled = FrameFetcher(cfg).fetch(file_names)
