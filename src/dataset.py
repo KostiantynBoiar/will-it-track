@@ -11,17 +11,16 @@ differs. ``records()`` + ``mask_at()`` implemented at T0.1; ``cell_of()`` at T1.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+from pydantic import BaseModel
 
 from src.config import Config
 from src.types import Cell
 
 
-@dataclass
-class VideoRecord:
+class VideoRecord(BaseModel):
     """One SA-FARI (video, query) probe.
 
     Attributes:

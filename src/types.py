@@ -2,17 +2,18 @@
 
 The **cell** — ``(species, location_id, time)`` — is the unit at which scores are recorded and the
 law is fit; **support** is how much data backs a cell (used for weighting, controlled for in the
-models). Both are pure data (no ``NotImplementedError``).
+models). Both are pure data.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from pydantic import BaseModel, ConfigDict
 
 
-@dataclass(frozen=True)
-class Cell:
+class Cell(BaseModel):
     """The analysis unit: a ``(species, location_id, time)`` group.
+
+    Frozen so it is hashable (used as a set/dict key when de-duplicating cells).
 
     Attributes:
         species: SA-FARI species label.
@@ -20,13 +21,14 @@ class Cell:
         time: Coarse time bucket (e.g. year) from ``video_creation_datetime``.
     """
 
+    model_config = ConfigDict(frozen=True)
+
     species: str
     location_id: str
     time: str
 
 
-@dataclass
-class Support:
+class Support(BaseModel):
     """How much data backs a cell's score.
 
     Attributes:

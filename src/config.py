@@ -5,55 +5,41 @@ model, cross-validation). Defaults are overridable via a YAML file (``configs/*.
 ``SAFARI_*`` environment variables. Every §9 hard constraint from ``.claude/CLAUDE.md`` is a config
 toggle here (``keep_hard_negatives``, ``mask_crop``, ``support_weight``, ``log_support_covariate``,
 ``group_schemes``) so ablations (T5) flip config, not code.
+
+Pydantic v2 + pydantic-settings: any field is overridable via a ``SAFARI_*`` env var, nested with
+``__`` (e.g. ``SAFARI_DATA__FPS``, ``SAFARI_PATHS__DATA_ROOT``, ``SAFARI_SEED``). ``Config.load(path)``
+reads a YAML file over the defaults; env vars fill anything the YAML omits.
 """
 
 from __future__ import annotations
 
-import os
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 import yaml
+from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # repo root (this file is src/config.py)
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def _env_path(env_var: str, default: Path) -> Path:
-    """Return ``$env_var`` as an expanded path if set, else ``default``."""
-    return Path(os.path.expanduser(os.environ.get(env_var, str(default))))
-
-
-@dataclass
-class PathsConfig:
+class PathsConfig(BaseModel):
     """Filesystem locations.
 
     Attributes:
-        data_root: SA-FARI media + annotations (``$SAFARI_DATA_ROOT``).
-        outputs_root: Derived artifacts — predictions, parquet, models, figures (``$SAFARI_OUTPUTS_ROOT``).
-        reference_root: The frozen seen-set (train) reference (``$SAFARI_REFERENCE_ROOT``).
-        third_party_root: Vendored SAM 3 + official VEval scorer (``$SAFARI_THIRD_PARTY_ROOT``).
+        data_root: SA-FARI media + annotations.
+        outputs_root: Derived artifacts — predictions, parquet, models, figures.
+        reference_root: The frozen seen-set (train) reference.
+        third_party_root: Vendored SAM 3 + official VEval scorer.
     """
 
-    data_root: Path = field(
-        default_factory=lambda: _env_path("SAFARI_DATA_ROOT", _REPO_ROOT / "data")
-    )
-    outputs_root: Path = field(
-        default_factory=lambda: _env_path("SAFARI_OUTPUTS_ROOT", _REPO_ROOT / "outputs")
-    )
-    reference_root: Path = field(
-        default_factory=lambda: _env_path(
-            "SAFARI_REFERENCE_ROOT", _REPO_ROOT / "data" / "reference"
-        )
-    )
-    third_party_root: Path = field(
-        default_factory=lambda: _env_path("SAFARI_THIRD_PARTY_ROOT", _REPO_ROOT / "third_party")
-    )
+    data_root: Path = _REPO_ROOT / "data"
+    outputs_root: Path = _REPO_ROOT / "outputs"
+    reference_root: Path = _REPO_ROOT / "data" / "reference"
+    third_party_root: Path = _REPO_ROOT / "third_party"
 
 
-@dataclass
-class DataConfig:
+class DataConfig(BaseModel):
     """SA-FARI dataset facts (see .claude/CLAUDE.md §4).
 
     Attributes:
@@ -77,8 +63,7 @@ class DataConfig:
     gcs_bucket: str = "cxl-public-camera-trap"
 
 
-@dataclass
-class ReferenceConfig:
+class ReferenceConfig(BaseModel):
     """The frozen seen/unseen reference (T0.2). Filenames resolved under ``paths.reference_root``.
 
     Attributes:
@@ -92,8 +77,7 @@ class ReferenceConfig:
     manifest_file: str = "cell_manifest.json"
 
 
-@dataclass
-class InferenceConfig:
+class InferenceConfig(BaseModel):
     """Frozen SAM 3 promptable inference (T1.1).
 
     Attributes:
@@ -109,8 +93,7 @@ class InferenceConfig:
     batch_frames: int = 16
 
 
-@dataclass
-class EvalConfig:
+class EvalConfig(BaseModel):
     """Scoring with the OFFICIAL VEval evaluator (T1.2).
 
     Attributes:
@@ -122,8 +105,7 @@ class EvalConfig:
     veval_module: str = "veval"
 
 
-@dataclass
-class FeaturesConfig:
+class FeaturesConfig(BaseModel):
     """Label-free distance features (T2.x).
 
     Attributes:
@@ -151,8 +133,7 @@ class FeaturesConfig:
     night_ir_from_color: bool = True
 
 
-@dataclass
-class ModelConfig:
+class ModelConfig(BaseModel):
     """Per-target regression on the distances (T3.1).
 
     Attributes:
@@ -168,8 +149,7 @@ class ModelConfig:
     log_support_covariate: bool = True
 
 
-@dataclass
-class CVConfig:
+class CVConfig(BaseModel):
     """Group-aware cross-validation + bootstrap (T4).
 
     Attributes:
@@ -181,9 +161,11 @@ class CVConfig:
     n_bootstrap: int = 1000
 
 
-@dataclass
-class Config:
+class Config(BaseSettings):
     """Top-level configuration aggregating every section.
+
+    Any field is overridable via a ``SAFARI_*`` env var (nested with ``__``), e.g.
+    ``SAFARI_DATA__FPS=8`` or ``SAFARI_PATHS__DATA_ROOT=/mnt/safari``.
 
     Attributes:
         paths: Filesystem locations.
@@ -195,64 +177,34 @@ class Config:
         model: Regression options.
         cv: Cross-validation + bootstrap options.
         seed: Random seed.
-        raw: Raw parsed YAML, for any extra keys.
     """
 
-    paths: PathsConfig = field(default_factory=PathsConfig)
-    data: DataConfig = field(default_factory=DataConfig)
-    reference: ReferenceConfig = field(default_factory=ReferenceConfig)
-    inference: InferenceConfig = field(default_factory=InferenceConfig)
-    eval: EvalConfig = field(default_factory=EvalConfig)
-    features: FeaturesConfig = field(default_factory=FeaturesConfig)
-    model: ModelConfig = field(default_factory=ModelConfig)
-    cv: CVConfig = field(default_factory=CVConfig)
+    model_config = SettingsConfigDict(
+        env_prefix="SAFARI_", env_nested_delimiter="__", extra="ignore"
+    )
+
+    paths: PathsConfig = Field(default_factory=PathsConfig)
+    data: DataConfig = Field(default_factory=DataConfig)
+    reference: ReferenceConfig = Field(default_factory=ReferenceConfig)
+    inference: InferenceConfig = Field(default_factory=InferenceConfig)
+    eval: EvalConfig = Field(default_factory=EvalConfig)
+    features: FeaturesConfig = Field(default_factory=FeaturesConfig)
+    model: ModelConfig = Field(default_factory=ModelConfig)
+    cv: CVConfig = Field(default_factory=CVConfig)
     seed: int = 0
-    raw: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def load(cls, path: str | os.PathLike | None = None) -> Config:
-        """Build a config from defaults, then overlay a YAML file if given.
+    def load(cls, path: str | Path | None = None) -> Config:
+        """Build a config from defaults + ``SAFARI_*`` env vars, overlaying a YAML file if given.
 
         Args:
-            path: Optional YAML config path; defaults-only when ``None``.
+            path: Optional YAML config path; defaults + env only when ``None``.
 
         Returns:
-            The resolved :class:`Config`.
+            The resolved :class:`Config` (YAML sections coerced into the sub-models; extras ignored).
         """
-        cfg = cls()
-        if path is not None:
-            with open(path) as f:
-                cfg.raw = yaml.safe_load(f) or {}
-            cfg._apply(cfg.raw)
-        return cfg
-
-    def _apply(self, raw: dict[str, Any]) -> None:
-        """Overlay parsed YAML onto the nested sections in place.
-
-        Args:
-            raw: Parsed YAML mapping; recognised sections mirror the dataclass field names, plus a
-                top-level ``seed``.
-        """
-        sections = (
-            "paths",
-            "data",
-            "reference",
-            "inference",
-            "eval",
-            "features",
-            "model",
-            "cv",
-        )
-        for section in sections:
-            values = raw.get(section)
-            if not values:
-                continue
-            sub = getattr(self, section)
-            for key, value in values.items():
-                if not hasattr(sub, key):
-                    continue
-                if section == "paths":
-                    value = Path(os.path.expanduser(str(value)))
-                setattr(sub, key, value)
-        if "seed" in raw:
-            self.seed = int(raw["seed"])
+        if path is None:
+            return cls()
+        with open(path) as f:
+            raw = yaml.safe_load(f) or {}
+        return cls(**raw)

@@ -18,6 +18,8 @@ open_clip_torch>=2.24 # CLIP semantic distance / robustness (import open_clip)
 torch>=2.2            # DINOv2 via torch.hub + SAM 3 tensors
 tqdm>=4.66
 pyyaml>=6             # config loading
+pydantic>=2          # data models (BaseModel)
+pydantic-settings>=2 # config with automatic SAFARI_* env-var overrides (BaseSettings)
 
 # --- dev ---
 pytest>=8
