@@ -58,3 +58,7 @@ third_party/
 *.blg
 *.nav
 *.snm
+*.lof
+*.lot
+*.bcf
+*.run.xml

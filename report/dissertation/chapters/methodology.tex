@@ -1,0 +1,33 @@
+\chapter{Data and Methodology}
+\label{ch:methodology}
+
+\section{Dataset and the analysis unit}
+% TODO: SA-FARI splits, the (species, location_id, time) cell, support counts, hard negatives kept.
+We aggregate scores to a \emph{cell} --- a (species, location, time) group --- carrying support counts.
+
+\section{Measuring transfer}
+% TODO: frozen SAM 3 inference over the test split (species + generic prompts); the OFFICIAL VEval scorer.
+SAM\,3~\cite{sam3} is run frozen over the test split and scored with the official evaluator (the metric
+is never re-implemented), giving per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA}~\cite{hota}.
+
+\section{The frozen reference (leakage firewall)}
+% TODO: freezing the seen species/locations + manifest; disjointness assertion.
+The seen set is frozen once; every distance is computed against the training split only, so no test
+information can leak into a feature.
+
+\section{Label-free distance features}
+% TODO: one subsection each; all label-free for the target.
+\subsection{Taxonomic distance}    % lowest-common-ancestor tree steps to the nearest training species.
+\subsection{Visual distance}        % DINOv2~\cite{dinov2} mask-cropped embeddings vs nearest training prototype (CLIP~\cite{clip} variant).
+\subsection{Environment distance}   % scene embedding of the masked-out background + a night/IR flag.
+\subsection{Temporal gap}           % years to the nearest relevant training footage.
+\subsection{SAM 3 familiarity proxy} % separability in SAM 3's own feature space.
+
+\section{Modelling the law}
+% TODO: beta / logit-link GLM, support-weighted, log(n_frames) covariate; variance partitioning; grouped CV; the reliability estimator.
+Each bounded target is modelled with a support-weighted beta regression (with a \(\log(n_\text{frames})\)
+covariate), variance is attributed by dominance analysis, and the predictor is validated out-of-sample
+by holding out whole species and whole locations.
+
+\section{Reproducibility and constraints}
+% TODO: frozen model, official evaluator, no leakage, keep hard negatives, single-GPU inference-only.

@@ -15,6 +15,8 @@ command -v gs >/dev/null       || { echo "error: ghostscript (gs) not found on P
 
 count=0
 while IFS= read -r -d '' tex; do
+    # only compile top-level documents; skip \input fragments (e.g. dissertation chapters/)
+    grep -q 'documentclass' "$tex" || { echo "-- skip fragment $tex"; continue; }
     echo "==> building $tex"
     dir="$(dirname "$tex")"
     tectonic --synctex --keep-logs --keep-intermediates -o "$dir" "$tex"

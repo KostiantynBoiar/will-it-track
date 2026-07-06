@@ -1,0 +1,39 @@
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Motivation}
+% TODO: expand into ~1 page.
+Promptable video trackers such as SAM\,3~\cite{sam3} segment and track any named animal in a video
+with no training on that species, and conservation teams now deploy them on new species and regions
+constantly. Yet no rule tells a practitioner, \emph{before running the model}, whether its output is
+trustworthy for a given animal in a given place.
+
+\section{Problem statement and research question}
+% TODO: state the RQ precisely and scope it to the SA-FARI train split.
+This dissertation asks whether SAM\,3's zero-shot tracking accuracy on an unseen (species, place) can
+be \emph{predicted in advance} from properties measurable without any label of the target, and which
+factors govern that transfer --- separately for \emph{finding} the animal and \emph{following} it.
+
+\section{Hypotheses}
+% TODO: motivate each hypothesis from the background.
+\begin{description}[leftmargin=2.6em,style=nextline]
+  \item[H0 (null)] the label-free distances carry no predictive information about
+    \texttt{pDetA}/\texttt{pAssA} --- transfer is not distance-driven.
+  \item[H1 (detection)] \texttt{pDetA} falls with species novelty (taxonomic + visual distance).
+  \item[H2 (association)] \texttt{pAssA} falls with environment difficulty (scene, day/night/IR,
+    clutter, camera motion).
+\end{description}
+Failing to reject H0 would itself be an informative result, motivating a pivot from distance-based
+prediction to representational probing (does SAM\,3 encode taxonomy?).
+
+\section{Contributions}
+% TODO: finalise once results exist.
+The contribution is, to our knowledge, the first predictable-transfer study for a promptable video
+tracker, decomposed into two predictors (detection vs association), on SA-FARI's
+species\,$\times$\,place\,$\times$\,time natural experiment --- yielding a deployment reliability estimator.
+
+\section{Dissertation outline}
+% TODO: update page/chapter cross-references as chapters are written.
+Chapter~\ref{ch:background} reviews the related work; Chapter~\ref{ch:methodology} describes the data,
+measurement, distance features, and modelling; Chapter~\ref{ch:results} reports the results and
+out-of-sample validation; Chapter~\ref{ch:discussion} discusses them; Chapter~\ref{ch:conclusion} concludes.

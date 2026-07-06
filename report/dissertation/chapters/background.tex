@@ -1,0 +1,30 @@
+\chapter{Background and Related Work}
+\label{ch:background}
+
+\section{Promptable segmentation and tracking}
+% TODO: SAM lineage; how SAM 3 does zero-shot promptable detect-segment-track from a text prompt.
+We introduce promptable trackers and SAM\,3~\cite{sam3}, the model whose transfer we study.
+
+\section{The tracking metric and its decomposition}
+% TODO: HOTA -> DetA/AssA; the promptable variant pHOTA -> pDetA/pAssA; why we analyse the two separately.
+The HOTA family~\cite{hota} decomposes tracking accuracy into detection and association components ---
+the split that is the intellectual core of this work.
+
+\section{Predictable out-of-distribution generalisation}
+% TODO: established for classifiers; not for trackers.
+``Accuracy on the Line''~\cite{aotl} and ``Agreement on the Line''~\cite{agl} show OOD accuracy is
+predictable (and label-free) for \emph{classifiers}; no analogue exists for promptable video trackers.
+
+\section{What should predict transfer}
+% TODO: motivate the four distances.
+Vision foundation models carry taxonomic structure~\cite{bioclip} (motivating taxonomic/visual
+distance), and camera-trap recognition degrades at new locations~\cite{terra} (motivating environment
+distance). We embed animals/scenes with DINOv2~\cite{dinov2}, with CLIP~\cite{clip} as a robustness variant.
+
+\section{The SA-FARI benchmark}
+% TODO: scale, taxonomy, locations, disjoint splits, hard negatives.
+SA-FARI~\cite{safari} spans 99 species (7-level taxonomy), 741 locations across four continents, with
+train/test disjoint by species \emph{and} location --- a controlled transfer probe.
+
+\section{Summary and gap}
+% TODO: state the gap this dissertation fills.
