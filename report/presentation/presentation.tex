@@ -10,6 +10,7 @@
 \setbeamertemplate{itemize items}[circle]
 
 \usepackage{amsmath}
+\usepackage{booktabs}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,calc}
 
@@ -88,7 +89,12 @@
 \end{frame}
 
 % ------------------------------------------------------------ hypotheses
-\begin{frame}{Two hypotheses}
+\begin{frame}{Hypotheses}
+  \begin{block}{}\centering\footnotesize
+    \textbf{H0 (null):} the label-free distances carry \emph{no} predictive signal --- transfer isn't
+    distance-driven.\; H1/H2 are the directional alternatives:
+  \end{block}
+  \vspace{0.3em}
   \centering
   \begin{tikzpicture}[>=Latex,
     src/.style={draw,rounded corners,fill=black!5,align=center,font=\footnotesize,text width=3.2cm,minimum height=0.95cm},
@@ -101,9 +107,8 @@
     \draw[->,plum,very thick] (env)--(ass) node[midway,above,font=\scriptsize]{H2};
   \end{tikzpicture}
 
-  \vspace{0.5em}
-  \footnotesize \textbf{H0 (still a result):} if distance explains little $\rightarrow$ transfer isn't
-  distance-driven; pivot to representational probing.
+  \vspace{0.4em}
+  \footnotesize Failing to reject H0 is itself a result --- it motivates a pivot to representational probing.
 \end{frame}
 
 % ------------------------------------------------------------ the data
@@ -203,23 +208,170 @@
   \end{columns}
 \end{frame}
 
-% ------------------------------------------------------------ plan
-\begin{frame}{Plan \& contribution}
-  \footnotesize
-  \begin{tabular}{@{}rl@{}}
-    \textbf{1} & Setup; freeze the seen/unseen reference (leakage firewall).\\
-    \textbf{2} & Frozen SAM\,3 inference $\to$ VEval $\to$ per-cell scores. \;\textcolor{navy}{[gate: scores sane?]}\\
-    \textbf{3} & Build the four distances $+$ proxy; assemble the feature table.\\
-    \textbf{4} & Fit per-target beta GLMs; variance partition; decomposition test.\\
-    \textbf{5} & Grouped CV; bootstrap; predictive-line figures. \;\textcolor{navy}{[gate: real signal? else H0]}\\
-    \textbf{6} & Ablations \& robustness; reliability estimator; write-up.\\
+% ============================================================ IMPLEMENTATION
+\section{Implementation}
+
+% ------------------------------------------------------------ roadmap
+\begin{frame}{Implementation roadmap --- seven steps, two gates}
+  \centering
+  \begin{tikzpicture}[>=Latex, x=1.7cm,
+    st/.style={draw,rounded corners,align=center,font=\scriptsize,inner sep=2pt,
+               text width=1.45cm,minimum height=1.0cm}]
+    \node[st,fill=black!5]  (s1) at (0,0) {\textbf{1}\\Setup \&\\reference};
+    \node[st,fill=navy!12]  (s2) at (1,0) {\textbf{2}\\Measure};
+    \node[st,fill=black!5]  (s3) at (2,0) {\textbf{3}\\Distances};
+    \node[st,fill=burnt!14] (s4) at (3,0) {\textbf{4}\\Fit law};
+    \node[st,fill=black!5]  (s5) at (4,0) {\textbf{5}\\Validate};
+    \node[st,fill=black!5]  (s6) at (5,0) {\textbf{6}\\Ablations};
+    \node[st,fill=forest!14](s7) at (6,0) {\textbf{7}\\Tool +\\write-up};
+    \foreach \a/\b in {s1/s2,s2/s3,s3/s4,s4/s5,s5/s6,s6/s7} \draw[->] (\a)--(\b);
+    \draw[burnt,thick] ($(s2)!0.5!(s3)+(0,0.55)$)--($(s2)!0.5!(s3)+(0,-0.55)$);
+    \draw[burnt,thick] ($(s5)!0.5!(s6)+(0,0.55)$)--($(s5)!0.5!(s6)+(0,-0.55)$);
+    \node[burnt,font=\scriptsize\bfseries] at ($(s2)!0.5!(s3)+(0,0.85)$) {Gate 1};
+    \node[burnt,font=\scriptsize\bfseries] at ($(s5)!0.5!(s6)+(0,0.85)$) {Gate 2};
+  \end{tikzpicture}
+  \vspace{0.7em}
+
+  \footnotesize \textcolor{burnt}{\textbf{Gate 1}} (after measurement): are the scores in SA-FARI's SAM\,3
+  ballpark?\quad \textcolor{burnt}{\textbf{Gate 2}} (after validation): real out-of-sample signal ---
+  else invoke H0 and pivot.
+\end{frame}
+
+% ------------------------------------------------------------ step 1
+\begin{frame}{Step 1 --- Setup \& the leakage firewall \small(Phase 0)}
+  \begin{itemize}
+    \item \textbf{Acquire SA-FARI} --- gated annotations (Hugging Face) + public 6\,fps frames (GCS);
+          smoke-test SAM\,3 + the official VEval on 1--2 clips.
+    \item \textbf{Freeze the seen/unseen reference} --- enumerate train species, locations, and taxonomy,
+          then \textbf{assert} the test split is disjoint by species \emph{and} location.
+  \end{itemize}
+  \vspace{0.3em}
+  \begin{block}{The leakage firewall}
+    \centering Every distance is later computed against the \frozen{frozen training set only}
+    (\texttt{data/reference/*}) --- no test information can enter a feature.
+  \end{block}
+\end{frame}
+
+% ------------------------------------------------------------ step 2
+\begin{frame}{Step 2 --- Measurement: frozen SAM\,3 $\to$ VEval \small(Phase 1)}
+  \centering
+  \begin{tikzpicture}[>=Latex,
+    box/.style={draw,rounded corners,align=center,font=\scriptsize,inner sep=3pt,text width=2.1cm,minimum height=0.9cm}]
+    \node[box,fill=black!5] (t) {test split\\(video, prompt)};
+    \node[box,fill=navy!12,right=0.5cm of t] (sam) {SAM\,3\\\frozen{frozen}};
+    \node[box,fill=navy!12,right=0.5cm of sam] (ve) {official\\VEval};
+    \node[box,fill=black!5,right=0.5cm of ve] (sc) {\texttt{scores.parquet}\\per-cell pDetA/pAssA};
+    \draw[->] (t)--(sam); \draw[->] (sam)--(ve) node[midway,above,font=\scriptsize]{masklets}; \draw[->] (ve)--(sc);
+  \end{tikzpicture}
+  \vspace{0.5em}
+  \begin{itemize}\footnotesize
+    \item Species-specific prompts (primary) $+$ a generic ``animal'' prompt (robustness); hard negatives kept.
+    \item Output $=$ the \textbf{dependent variables}: per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA} $+$ support.
+  \end{itemize}
+  \centering\footnotesize\textcolor{burnt}{\textbf{Gate 1:} are the scores in SA-FARI's SAM\,3 ballpark?}
+\end{frame}
+
+% ------------------------------------------------------------ step 3a
+\begin{frame}{Step 3 --- The four label-free distances \small(Phase 2)}
+  \centering\footnotesize
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Distance} & \textbf{computed from} & \textbf{column}\\
+    \midrule
+    Taxonomic   & LCA tree steps to nearest train species & \texttt{taxonomic\_distance}\\
+    Visual      & DINOv2 mask-crop vs nearest prototype    & \texttt{visual\_distance}\\
+    Environment & scene embed of masked-out background     & \texttt{environment\_distance}\\
+    Temporal    & years to nearest train footage           & \texttt{temporal\_gap}\\
+    Familiarity & separability in SAM\,3's own features    & \texttt{familiarity\_proxy}\\
+    \bottomrule
   \end{tabular}
-  \vfill
+  \vspace{0.6em}
+
+  All \textbf{label-free} for the target and computed against the \frozen{frozen train set}.
+\end{frame}
+
+% ------------------------------------------------------------ step 3b
+\begin{frame}{Step 3 --- Assemble the feature table \small(Phase 2)}
+  \centering
+  \begin{tikzpicture}[>=Latex,
+    box/.style={draw,rounded corners,align=center,font=\scriptsize,inner sep=3pt,text width=2.0cm,minimum height=0.8cm}]
+    \node[box,fill=black!5] (d) {4 distances\\+ proxy};
+    \node[box,fill=black!5,below=0.3cm of d] (s) {support\\counts};
+    \node[box,fill=burnt!14,right=1.1cm of d,yshift=-0.55cm] (f) {\texttt{features.parquet}\\one row / cell};
+    \draw[->] (d)-|(f); \draw[->] (s)-|(f);
+  \end{tikzpicture}
+  \vspace{0.5em}
+  \begin{block}{Leakage unit test}
+    \centering\footnotesize Swapping the frozen seen set changes the distances \emph{as expected} ---
+    no test label enters any column.
+  \end{block}
+\end{frame}
+
+% ------------------------------------------------------------ step 4
+\begin{frame}{Step 4 --- Fit the law \& decompose \small(Phase 3)}
+  \begin{itemize}
+    \item Model \texttt{pDetA} and \texttt{pAssA} \textbf{separately} with a \textbf{beta / logit-link GLM},
+          \emph{weighted by support}, with a \texttt{log(n\_frames)} covariate (so ``rare'' $\ne$ ``far'')
+          $\to$ \texttt{outputs/models/*}.
+    \item \textbf{Variance partitioning} (dominance/Shapley $+$ VIF) attributes each factor's contribution.
+  \end{itemize}
+  \vspace{0.3em}
+  \begin{block}{The decomposition test}
+    \centering\footnotesize Does detection load on \textcolor{forest}{\textbf{species novelty}} and
+    association on \textcolor{plum}{\textbf{environment}}? --- the headline contrast.
+  \end{block}
+\end{frame}
+
+% ------------------------------------------------------------ step 5
+\begin{frame}{Step 5 --- Out-of-sample validation \small(Phase 4)}
+  \begin{itemize}
+    \item \textbf{Grouped CV} --- hold out \emph{whole} species and \emph{whole} locations; predict
+          held-out cells from \textbf{distance alone} $\to$ \texttt{cv\_results.parquet} (MAE/RMSE, calibration).
+    \item \textbf{Bootstrap CIs} everywhere $+$ the \textbf{predictive-line} figure (predicted vs.\ actual).
+  \end{itemize}
+  \vspace{0.2em}
+  \centering\footnotesize\textcolor{burnt}{\textbf{Gate 2:} real out-of-sample signal? --- else invoke
+  \textbf{H0} and pivot to representational probing.}\\[3pt]
+  \footnotesize Success $=$ a \emph{validated} predictor, not a higher score.
+\end{frame}
+
+% ------------------------------------------------------------ step 6
+\begin{frame}{Step 6 --- Ablations \& robustness \small(Phase 5)}
+  \begin{itemize}
+    \item \textbf{Factor ablations} --- drop each distance and report the $R^2$ / OOS-error change:
+          what does each factor contribute?
+    \item \textbf{Design \& confound robustness} --- DINOv2 vs.\ CLIP; mask-cropped vs.\ whole-frame;
+          species vs.\ generic prompt; $\pm$ the support covariate.
+  \end{itemize}
+  \vspace{0.3em}
+  \centering\footnotesize The detection/association contrast \textbf{holds across variants} --- or its
+  limits are documented.
+\end{frame}
+
+% ------------------------------------------------------------ step 7
+\begin{frame}{Step 7 --- The reliability tool \& write-up \small(Phase 6)}
+  \centering
+  \begin{tikzpicture}[>=Latex,
+    box/.style={draw,rounded corners,align=center,font=\scriptsize,inner sep=3pt,text width=2.3cm,minimum height=0.9cm}]
+    \node[box,fill=black!5] (in) {4 distances\\(+ proxy)};
+    \node[box,fill=forest!14,right=0.7cm of in] (m) {\texttt{reliability.py}\\fitted models};
+    \node[box,fill=black!5,right=0.7cm of m] (out) {predicted\\pDetA/pAssA $+$ CI};
+    \draw[->] (in)--(m); \draw[->] (m)--(out);
+  \end{tikzpicture}
+  \vspace{0.5em}
+  \begin{itemize}\footnotesize
+    \item The deployment \textbf{``will it work here?''} tool: a new (species, place) $\to$ a prediction $+$ interval.
+    \item The \textbf{dissertation} --- every claim backed by a repo-generated figure/table.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------ closing
+\begin{frame}{Contribution}
   \begin{block}{}
     \centering The deliverable: a \textbf{validated, label-free reliability estimator} for a promptable
     tracker --- and \emph{why} detection and association transfer differently.
   \end{block}
-  \vspace{0.3em}
+  \vspace{0.6em}
   \centering\small\color{navy}\textbf{Thank you --- questions welcome.}
 \end{frame}
 
