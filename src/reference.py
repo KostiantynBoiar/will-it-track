@@ -20,11 +20,8 @@ import json
 from pydantic import BaseModel
 
 from src.config import Config
-from src.dataset import SAFARI
+from src.dataset import SAFARI, _taxonomy_of
 from src.types import Cell
-
-# Capitalized taxonomy fields as they appear on SA-FARI `categories` (HF dataset card).
-_TAXONOMY_FIELDS = ("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
 
 
 class ManifestCell(BaseModel):
@@ -78,11 +75,7 @@ class Reference:
         index: dict[str, dict[str, str]] = {}
         for safari in (self.train, self.test):
             for category in safari.categories():
-                taxonomy = {
-                    field.lower(): str(category[field])
-                    for field in _TAXONOMY_FIELDS
-                    if category.get(field)
-                }
+                taxonomy = _taxonomy_of(category)
                 for key in (category.get("name"), category.get("Species")):
                     if key:
                         index.setdefault(str(key).lower(), taxonomy)

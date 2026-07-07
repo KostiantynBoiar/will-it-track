@@ -21,11 +21,21 @@ from pydantic import BaseModel
 from src.config import Config
 from src.types import Cell
 
+# Capitalized taxonomy fields as they appear on SA-FARI `categories` (HF dataset card).
+_TAXONOMY_FIELDS = ("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+
 
 def _year(dt: str) -> str:
     """Return the first 4-digit year in a datetime string, or ``""`` if none."""
     match = re.search(r"\d{4}", dt or "")
     return match.group(0) if match else ""
+
+
+def _taxonomy_of(category: dict) -> dict[str, str]:
+    """Lowercased 7-level taxonomy from one raw ``categories`` entry (absent levels omitted)."""
+    return {
+        field.lower(): str(category[field]) for field in _TAXONOMY_FIELDS if category.get(field)
+    }
 
 
 class VideoRecord(BaseModel):
@@ -138,6 +148,20 @@ class SAFARI:
     def categories(self) -> list[dict]:
         """Return the raw ``categories`` list (species + their 7-level taxonomy)."""
         return self._load().get("categories", [])
+
+    def taxonomy(self) -> dict[str, dict[str, str]]:
+        """Map each species name in this split to its lowercased 7-level taxonomy.
+
+        Returns:
+            ``{species_name: {"kingdom": ..., ..., "species": ...}}`` keyed by the category
+            ``name`` (fallback ``Species``); one entry per category, absent levels omitted.
+        """
+        index: dict[str, dict[str, str]] = {}
+        for category in self.categories():
+            name = category.get("name") or category.get("Species")
+            if name:
+                index[str(name)] = _taxonomy_of(category)
+        return index
 
     def mask_at(self, annotation: dict, frame_index: int) -> np.ndarray:
         """Decode one annotation's per-frame RLE mask to a dense ``bool`` array.
