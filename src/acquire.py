@@ -15,13 +15,19 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import shutil
 from pathlib import Path
 
 import gcsfs
-from huggingface_hub import snapshot_download
+from huggingface_hub import constants as hf_constants
+from huggingface_hub import hf_hub_download
 
 from src.config import Config
 from src.dataset import SAFARI
+
+# Fine-grained HF tokens 403 on the Xet download backend; force plain HTTPS. `is_xet_available()`
+# reads this flag live, so overriding it here (after import) is enough.
+hf_constants.HF_HUB_DISABLE_XET = True
 
 
 class AnnotationFetcher:
@@ -36,7 +42,10 @@ class AnnotationFetcher:
         self.config = config or Config()
 
     def fetch(self) -> Path:
-        """Snapshot just the ``*.json`` annotations into ``data/annotations/``.
+        """Download the two ``_ext`` annotation JSONs into ``data/annotations/`` (flat).
+
+        The repo stores them under an ``annotation/`` prefix; we place them flat, where the loader
+        (:class:`src.dataset.SAFARI`) expects ``data_root/annotations_subdir/<name>``.
 
         Returns:
             The annotations directory.
@@ -46,13 +55,14 @@ class AnnotationFetcher:
         """
         dest = self.config.paths.data_root / self.config.data.annotations_subdir
         dest.mkdir(parents=True, exist_ok=True)
-        snapshot_download(
-            repo_id=self.config.data.hf_repo,
-            repo_type="dataset",
-            allow_patterns=["*.json"],
-            local_dir=str(dest),
-            token=True,  # reads ~/.cache/huggingface/token or $HF_TOKEN
-        )
+        for name in (self.config.data.train_ann, self.config.data.test_ann):
+            cached = hf_hub_download(
+                repo_id=self.config.data.hf_repo,
+                repo_type="dataset",
+                filename=f"annotation/{name}",
+                token=True,  # reads ~/.cache/huggingface/token or $HF_TOKEN
+            )
+            shutil.copyfile(cached, dest / name)
         return dest
 
 
