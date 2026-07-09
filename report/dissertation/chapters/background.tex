@@ -1,30 +1,108 @@
 \chapter{Background and Related Work}
 \label{ch:background}
 
+This chapter places the dissertation among four bodies of work: promptable segmentation and
+tracking (the model we study), the tracking metric and its detection/association decomposition (how
+we score it), label-free prediction of out-of-distribution performance (the statistical idea we
+extend), and distribution shift in camera-trap vision (the application and the closest empirical
+neighbours). It closes by stating precisely the gap this work fills.
+
 \section{Promptable segmentation and tracking}
-% TODO: SAM lineage; how SAM 3 does zero-shot promptable detect-segment-track from a text prompt.
-We introduce promptable trackers and SAM\,3~\cite{sam3}, the model whose transfer we study.
+\label{sec:bg-promptable}
+The \emph{Segment Anything} line moved segmentation from a fixed label set to an interactive, promptable
+formulation, and its successors extended prompting from points and boxes to \emph{concepts}. SAM\,3~\cite{sam3}
+is a promptable model that, given a short text prompt such as \texttt{"impala"}, detects, segments, and
+tracks every matching instance across a video with no training on that category --- a \emph{zero-shot},
+open-vocabulary detect--segment--track capability. It is exactly this capability that conservation teams
+now deploy on new species and regions, and it is the (frozen) model whose transfer we predict. SAM\,3 was
+released alongside SA-FARI~\cite{safari}, a large multi-animal camera-trap tracking dataset that we use as
+the substrate for our natural experiment (Section~\ref{sec:bg-safari}). We treat SAM\,3 strictly as a
+fixed black box: we never fine-tune it, and the only quantity we fit is a small regression \emph{about}
+its behaviour.
 
 \section{The tracking metric and its decomposition}
-% TODO: HOTA -> DetA/AssA; the promptable variant pHOTA -> pDetA/pAssA; why we analyse the two separately.
-The HOTA family~\cite{hota} decomposes tracking accuracy into detection and association components ---
-the split that is the intellectual core of this work.
+\label{sec:bg-hota}
+Higher Order Tracking Accuracy (HOTA)~\cite{hota} evaluates multi-object tracking by combining, over a
+range of localisation thresholds, a \emph{detection} term (\texttt{DetA}: were the right objects found?)
+and an \emph{association} term (\texttt{AssA}: were identities kept consistent over time?). SA-FARI scores
+promptable tracking with a promptable variant, \texttt{pHOTA}, that decomposes identically into
+\texttt{pDetA} and \texttt{pAssA}. This decomposition is the intellectual core of the dissertation: rather
+than predict a single scalar, we ask whether \emph{finding} and \emph{following} an animal transfer for
+\emph{different reasons} --- the former with how novel the animal is, the latter with how difficult the
+scene is --- and we therefore model the two components separately throughout.
 
 \section{Predictable out-of-distribution generalisation}
-% TODO: established for classifiers; not for trackers.
-``Accuracy on the Line''~\cite{aotl} and ``Agreement on the Line''~\cite{agl} show OOD accuracy is
-predictable (and label-free) for \emph{classifiers}; no analogue exists for promptable video trackers.
+\label{sec:bg-predictable}
+A now-mature literature shows that a model's performance under distribution shift can be anticipated
+\emph{without} target labels. \citet{aotl} observe that out-of-distribution (OOD) accuracy is strongly
+linearly correlated with in-distribution accuracy across many models and shifts, and \citet{agl} show that
+the \emph{agreement} between a pair of models tracks OOD accuracy closely enough to estimate it from
+unlabelled data alone. A parallel strand estimates accuracy from a model's own statistics on the unlabelled
+target: average thresholded confidence~\cite{atc} calibrates a confidence threshold on source data and
+reads off target accuracy as the mass above it, while \citet{autoeval} regress classifier accuracy directly
+on a \emph{distribution-shift feature} --- the Fr\'echet distance between train and test feature sets ---
+which is the closest methodological cousin to our own ``regress the score on a distance'' approach.
+
+Two properties characterise essentially all of this work, and both are limitations we depart from. First,
+it targets \textbf{image classifiers} with a single scalar accuracy. The idea has only recently reached
+structured outputs: \citet{pcr} estimate object-detection performance without ground truth from the spatial
+consistency and confidence reliability of pre-NMS boxes, and reverse classification accuracy~\cite{rca}
+predicts per-image segmentation quality by training a reverse model against a labelled reference. These are
+the closest structured-output predecessors, but both operate on \emph{static single images}, neither concerns
+identity over time, and none decomposes the estimate into detection versus association. Second, every one of
+these methods still \emph{runs the model on the target} and inspects its predictions, confidences, or
+agreement --- it estimates the score of an \emph{already-executed} model. We instead forecast from properties
+knowable \emph{before the model is ever run} on the target.
+
+\section{Distribution shift in camera-trap and wildlife vision}
+\label{sec:bg-cameratrap}
+That camera-trap models degrade at new locations is well established. \emph{Terra Incognita}~\cite{terra}
+showed that recognisers excellent at trained camera sites fail sharply at unseen ones; WILDS~\cite{wilds}
+consolidated this (via iWildCam) as a canonical real-world shift; and PanAf-FGBG~\cite{panaf} demonstrated
+that behaviour-correlated \emph{backgrounds} causally drive the drop, proposing a latent-space mitigation.
+These works are the empirical backdrop for our environment axis --- but they share two features that mark the
+gap. They \textbf{measure or mitigate} degradation after the fact rather than \emph{predicting} per-site or
+per-species reliability in advance, and they study \textbf{classifiers or behaviour recognisers}, not
+promptable trackers, scored by a single accuracy with no detection/association split. Most tellingly, a
+recent unified study of camera-trap recognition over time~\cite{jeon} explicitly names ``predicting when
+zero-shot models will succeed at a new site'' as an open question --- and stops at naming it. This
+dissertation builds the predictor that question asks for.
 
 \section{What should predict transfer}
-% TODO: motivate the four distances.
-Vision foundation models carry taxonomic structure~\cite{bioclip} (motivating taxonomic/visual
-distance), and camera-trap recognition degrades at new locations~\cite{terra} (motivating environment
-distance). We embed animals/scenes with DINOv2~\cite{dinov2}, with CLIP~\cite{clip} as a robustness variant.
+\label{sec:bg-predictors}
+Our candidate predictors are motivated by representation-learning results. Vision foundation models encode
+taxonomic structure across the tree of life~\cite{bioclip}, which motivates a \emph{taxonomic} distance and,
+because appearance and phylogeny are correlated, a \emph{visual} distance; we compute the latter from
+mask-cropped DINOv2~\cite{dinov2} embeddings, with CLIP~\cite{clip} as a robustness variant. The camera-trap
+location results above~\cite{terra,panaf} motivate an \emph{environment} distance from the scene background,
+and per-video timestamps motivate a \emph{temporal} gap. Crucially, all four are computable without any label
+of the target animal, and all are measured against a frozen reference set, so no target information can leak
+into a predictor.
 
 \section{The SA-FARI benchmark}
-% TODO: scale, taxonomy, locations, disjoint splits, hard negatives.
-SA-FARI~\cite{safari} spans 99 species (7-level taxonomy), 741 locations across four continents, with
-train/test disjoint by species \emph{and} location --- a controlled transfer probe.
+\label{sec:bg-safari}
+SA-FARI~\cite{safari} is a large open multi-animal camera-trap tracking dataset (thousands of densely
+annotated videos across roughly $80$ annotated species with a seven-level taxonomy, hundreds of locations on
+four continents, and per-video timestamps), released with SAM\,3 and scored by the official \texttt{VEval}
+evaluator. It ships with abundant \emph{hard negatives} --- prompts for absent species that must return
+nothing --- which we keep, as they drive the false-positive side of detection. Two properties of the shipped
+split shape our design and merit a precise statement. Inspection of the released annotations shows the
+train/test split is disjoint by \textbf{location} (test camera sites are unseen) but that its \emph{species
+are largely shared} across the split; a genuine ``unseen species'' axis is therefore not directly available
+from the official split. Because SAM\,3 is frozen and zero-shot on \emph{all} of SA-FARI, however, the split
+reflects nothing the model learned --- it is only our choice of a \emph{reference distribution} against which
+distances are measured. This licenses a species-disjoint \emph{reference/probe partition} of the same videos
+for the primary (species-novelty) experiment, complemented by the official location split for the environment
+experiment; the two are near-orthogonal probes of the same data, and their construction is detailed in
+Chapter~\ref{ch:methodology}.
 
 \section{Summary and gap}
-% TODO: state the gap this dissertation fills.
+\label{sec:bg-gap}
+Predictable OOD generalisation is established for classifiers scored by a scalar~\cite{aotl,agl,atc,autoeval}
+and, very recently, for static detectors and segmenters~\cite{pcr,rca}; camera-trap vision has thoroughly
+documented, but not forecast, location-driven degradation~\cite{terra,wilds,panaf,jeon}. No prior work
+predicts, \emph{before running the model} and from label-free distances, the zero-shot transfer of a
+\textbf{promptable video tracker}, and none separates that prediction into \textbf{detection} and
+\textbf{association}. Filling exactly that gap --- a validated, out-of-sample reliability estimator for
+SAM\,3 over SA-FARI's species-\allowbreak by-\allowbreak place-\allowbreak by-\allowbreak time structure, decomposed into
+\texttt{pDetA} and \texttt{pAssA} --- is the contribution of this dissertation.

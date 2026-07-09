@@ -1,33 +1,85 @@
 \chapter{Data and Methodology}
 \label{ch:methodology}
 
-\section{Dataset and the analysis unit}
-% TODO: SA-FARI splits, the (species, location_id, time) cell, support counts, hard negatives kept.
-We aggregate scores to a \emph{cell} --- a (species, location, time) group --- carrying support counts.
+\section{Dataset, splits, and the analysis unit}
+\label{sec:meth-data}
+We use SA-FARI~\cite{safari} throughout. In the released \texttt{\_ext} annotations, a probe is a
+(video, text-prompt) pair; the animal's species and its seven-level taxonomy are resolved through the
+prompt's \texttt{category\_id}, while per-video \texttt{location\_id} and creation timestamp give place and
+time. We aggregate scores to a \emph{cell} --- a (species, location, time) group --- and attach support
+counts ($n_\text{frames}$, $n_\text{masklets}$, $n_\text{videos}$) used for weighting and as covariates.
+Hard negatives (prompts for absent species) are kept, as they drive the false-positive side of detection.
+
+\paragraph{Two complementary splits.}
+Inspection of the annotations shows the shipped split is disjoint by \emph{location} but shares species
+across train and test (Section~\ref{sec:bg-safari}); on that split species-distance is $\approx 0$ for every
+cell, so it cannot test species novelty. Because SAM\,3 is frozen and zero-shot on all of SA-FARI, the split
+only defines our \emph{reference distribution}, so we are free to repartition the same videos. We therefore
+use two near-orthogonal experiments and run inference only once (scoring is per-video and split-agnostic):
+\begin{description}[leftmargin=1.6em,style=nextline]
+  \item[Split A --- species hold-out (primary).] The pooled species are partitioned into a reference set and
+    a held-out set, stratified by taxonomic group so held-out species span a range of novelty. Species-distance
+    varies while the environment stays largely familiar (held-out species recur at reference locations),
+    isolating H1. Distances use a \emph{leave-species-out} reference and it is validated by leave-species-out
+    cross-validation.
+  \item[Split B --- location hold-out (secondary).] The official train/test split, whose unseen locations
+    isolate H2 and whose benchmark comparability carries the Phase-1 score-sanity check.
+\end{description}
+Split A is a \emph{constructed} hold-out --- legitimate because the model is frozen, and reported as such;
+we cross-check aggregate scores against Split B, which is benchmark-comparable.
 
 \section{Measuring transfer}
-% TODO: frozen SAM 3 inference over the test split (species + generic prompts); the OFFICIAL VEval scorer.
-SAM\,3~\cite{sam3} is run frozen over the test split and scored with the official evaluator (the metric
-is never re-implemented), giving per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA}~\cite{hota}.
+\label{sec:meth-measure}
+SAM\,3~\cite{sam3} is run frozen over the probe videos (species-specific prompts as the primary condition,
+a generic ``animal'' prompt for robustness) and scored with the official \texttt{VEval} evaluator --- the
+metric is never re-implemented --- giving per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA}~\cite{hota}
+with their support. A single inference pass over the union of Split~A and Split~B probes serves both
+experiments.
 
 \section{The frozen reference (leakage firewall)}
-% TODO: freezing the seen species/locations + manifest; disjointness assertion.
-The seen set is frozen once; every distance is computed against the training split only, so no test
-information can leak into a feature.
+\label{sec:meth-reference}
+For each split the reference (``seen'') species, locations, and taxonomy are frozen once; every distance is
+then computed against that reference only, so no probe information can enter a feature --- verified by a unit
+test that swaps the reference and checks the distances move as expected. We assert the axis that is genuinely
+disjoint (location for Split~B; the held-out species for Split~A) and \emph{report} any residual species
+overlap honestly rather than asserting it away. On Split~A, distances use a leave-species-out view of the
+reference, so a held-out species' distance is to the nearest \emph{other} reference species.
 
 \section{Label-free distance features}
-% TODO: one subsection each; all label-free for the target.
-\subsection{Taxonomic distance}    % lowest-common-ancestor tree steps to the nearest training species.
-\subsection{Visual distance}        % DINOv2~\cite{dinov2} mask-cropped embeddings vs nearest training prototype (CLIP~\cite{clip} variant).
-\subsection{Environment distance}   % scene embedding of the masked-out background + a night/IR flag.
-\subsection{Temporal gap}           % years to the nearest relevant training footage.
-\subsection{SAM 3 familiarity proxy} % separability in SAM 3's own feature space.
+\label{sec:meth-features}
+All four distances (plus a proxy) are label-free for the target and computed against the frozen reference.
+\subsection{Taxonomic distance}
+Lowest-common-ancestor tree steps from the probe's species to the nearest reference species (shared genus
+$=1$, family $=2$, order $=3$, \dots); the leave-species-out reference keeps this non-trivial for shared
+species.
+\subsection{Visual distance}
+Cosine distance between DINOv2~\cite{dinov2} embeddings of the \emph{ground-truth-mask-cropped} animal and
+the nearest reference-species prototype, with a Fr\'echet/MMD variant and a CLIP~\cite{clip} encoder as
+robustness checks. Using the dataset's ground-truth masks means this feature needs no SAM\,3.
+\subsection{Environment distance}
+Embedding distance between the animal-masked-out background scene and the nearest reference location, plus an
+interpretable day/night--infrared flag derived from colour statistics.
+\subsection{Temporal gap}
+The minimum absolute year gap between a cell's footage and the nearest reference footage.
+\subsection{SAM\,3 familiarity proxy}
+Separability of the target species in SAM\,3's own feature space --- a hedge against the unknown true
+pretraining set, reported alongside the other distances rather than treated as ground truth.
 
 \section{Modelling the law}
-% TODO: beta / logit-link GLM, support-weighted, log(n_frames) covariate; variance partitioning; grouped CV; the reliability estimator.
-Each bounded target is modelled with a support-weighted beta regression (with a \(\log(n_\text{frames})\)
-covariate), variance is attributed by dominance analysis, and the predictor is validated out-of-sample
-by holding out whole species and whole locations.
+\label{sec:meth-model}
+Each bounded target (\texttt{pDetA}, \texttt{pAssA}) is modelled \emph{separately} with a support-weighted
+beta / logit-link regression that includes a $\log(n_\text{frames})$ covariate, so that ``rare'' is never
+mistaken for ``far''. Variance is attributed to each factor by dominance/commonality analysis with a VIF
+collinearity check --- not by four univariate fits --- and the headline contrast (does detection load on
+species novelty and association on environment?) is quantified across the two targets. The fitted models are
+validated \emph{out of sample} by holding out whole groups: leave-species-out on Split~A and
+leave-location-out on Split~B, with bootstrap confidence intervals reported wherever a point estimate
+appears. The validated models are wrapped into the reliability estimator: four distances in, predicted
+\texttt{pDetA}/\texttt{pAssA} with an interval out.
 
 \section{Reproducibility and constraints}
-% TODO: frozen model, official evaluator, no leakage, keep hard negatives, single-GPU inference-only.
+\label{sec:meth-repro}
+The model is frozen and scored by the official evaluator; the seen set is frozen before any distance is
+computed; hard negatives are retained; and all inference is single-GPU and inference-only. Every reported
+number is regenerated from the repository, and the split definitions, seeds, and reference sets are persisted
+so both experiments are reproducible end to end.
