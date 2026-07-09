@@ -37,12 +37,14 @@ def test_import_all_modules() -> None:
     import src.inference.harness  # noqa: F401
     import src.io  # noqa: F401
     import src.reference  # noqa: F401
+    import src.splits  # noqa: F401
 
 
 def test_types() -> None:
     """The core record types construct."""
-    cell = Cell(species="impala", location_id="loc0", time="2020")
+    cell = Cell(category_id="43570", species="impala", location_id="loc0", time="2020")
     assert cell.species == "impala"
+    assert cell.category_id == "43570"
     assert Support(n_frames=10, n_masklets=2, n_videos=1).n_frames == 10
 
 

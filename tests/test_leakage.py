@@ -1,17 +1,44 @@
-"""Feature-leakage test (T2.6) — no test information enters a distance. Needs the feature table."""
+"""Feature-leakage tests (T2.x) — the reference is frozen and a species never anchors on itself."""
 
 from __future__ import annotations
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="T2.6: implement src.features (needs assembled feature table)")
+from src.config import Config
+from src.dataset import SAFARI
+from src.features.taxonomic import TaxonomicDistance
+from src.splits import build_species_partition
+
+_CFG = Config()
+_ANN_PRESENT = SAFARI("train", _CFG).ann_path.exists() and SAFARI("test", _CFG).ann_path.exists()
+_needs_ann = pytest.mark.skipif(not _ANN_PRESENT, reason="SA-FARI annotations not fetched")
 
 
-def test_swapping_seen_set_changes_distances() -> None:
-    """Swapping the frozen seen set changes the distances as expected (label-free, no test leak)."""
-    ...
+@_needs_ann
+def test_loso_excludes_self() -> None:
+    """Leave-one-species-out never lets a species be its own reference (else every distance is 0)."""
+    part = build_species_partition(_CFG)
+    loso = TaxonomicDistance(_CFG).compute(part).dropna()
+    with_self = TaxonomicDistance(_CFG).compute(part.model_copy(update={"loso": False})).dropna()
+
+    assert (with_self == 0).all()  # self-inclusion collapses every distance to 0
+    assert (loso > 0).sum() > 0  # LOSO recovers the real (mostly non-zero) distances
+    assert not loso.equals(with_self)
 
 
+@_needs_ann
+def test_swapping_reference_changes_distances() -> None:
+    """Shrinking the reference set changes the distances (label-free, no probe leak)."""
+    part = build_species_partition(_CFG)
+    full = TaxonomicDistance(_CFG).compute(part).dropna()
+    shrunk_part = part.model_copy(update={"reference_species": part.reference_species[::2]})
+    shrunk = TaxonomicDistance(_CFG).compute(shrunk_part).dropna()
+
+    common = full.index.intersection(shrunk.index)
+    assert not full.loc[common].equals(shrunk.loc[common])
+
+
+@pytest.mark.skip(reason="T2.6: needs the assembled feature table")
 def test_feature_table_has_no_unexplained_nulls() -> None:
     """outputs/features.parquet has the four distances + proxy + support with no stray nulls."""
     ...

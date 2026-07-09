@@ -16,11 +16,22 @@ pytestmark = pytest.mark.skipif(not _ANN_PRESENT, reason="SA-FARI annotations no
 
 
 def test_records_parse() -> None:
-    """Every record has an id + frame paths; hard-negative flags are booleans."""
+    """Every record has an id, frame paths, a category id, and a consistent hard-negative flag."""
     records = SAFARI("test", _CFG).records()
     assert len(records) > 0
     assert all(r.file_names for r in records)
-    assert all(isinstance(r.is_hard_negative, bool) for r in records)
+    assert all(r.category_id for r in records)
+    assert all(isinstance(r.num_masklets, int) for r in records)
+    assert all(r.is_hard_negative == (r.num_masklets == 0) for r in records)
+
+
+def test_present_species_from_positive_pairs() -> None:
+    """The present set (positive probes) is resolved by category id and is non-trivial."""
+    ds = SAFARI("test", _CFG)
+    present = ds.present_category_ids()
+    assert len(present) >= 80  # ~83 present species in the test split
+    # every present category resolves to a canonical species name
+    assert all(ds._species_name(cid) for cid in present)
 
 
 def test_rle_decodes_to_2d_bool_mask() -> None:

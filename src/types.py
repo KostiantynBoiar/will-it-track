@@ -11,18 +11,21 @@ from pydantic import BaseModel, ConfigDict
 
 
 class Cell(BaseModel):
-    """The analysis unit: a ``(species, location_id, time)`` group.
+    """The analysis unit: a ``(category_id, species, location_id, time)`` group.
 
-    Frozen so it is hashable (used as a set/dict key when de-duplicating cells).
+    Frozen so it is hashable (used as a set/dict key when de-duplicating cells). ``category_id`` is
+    the stable identity / grouping key; ``species`` is a human-readable label derived from it.
 
     Attributes:
-        species: SA-FARI species label.
+        category_id: Stable SA-FARI species identity — the grouping / cross-validation key.
+        species: Human-readable species label (canonical category ``name``).
         location_id: Anonymised camera/location identifier.
         time: Coarse time bucket (e.g. year) from ``video_creation_datetime``.
     """
 
     model_config = ConfigDict(frozen=True)
 
+    category_id: str
     species: str
     location_id: str
     time: str

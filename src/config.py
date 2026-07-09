@@ -29,13 +29,15 @@ class PathsConfig(BaseModel):
     Attributes:
         data_root: SA-FARI media + annotations.
         outputs_root: Derived artifacts — predictions, parquet, models, figures.
-        reference_root: The frozen seen-set (train) reference.
+        reference_root: The frozen reference artifacts (per split).
+        splits_root: The persisted analysis splits (species / location partitions).
         third_party_root: Vendored SAM 3 + official VEval scorer.
     """
 
     data_root: Path = _REPO_ROOT / "data"
     outputs_root: Path = _REPO_ROOT / "outputs"
     reference_root: Path = _REPO_ROOT / "data" / "reference"
+    splits_root: Path = _REPO_ROOT / "data" / "splits"
     third_party_root: Path = _REPO_ROOT / "third_party"
 
 
@@ -64,17 +66,29 @@ class DataConfig(BaseModel):
 
 
 class ReferenceConfig(BaseModel):
-    """The frozen seen/unseen reference (T0.2). Filenames resolved under ``paths.reference_root``.
+    """The frozen reference (T0.2). Files resolved under ``paths.reference_root/<split-name>/``.
 
     Attributes:
-        seen_species_file: Frozen train-split species set.
-        seen_locations_file: Frozen train-split location set.
-        manifest_file: Per-test-cell manifest (taxonomy + location_id + timestamps).
+        reference_species_file: Frozen reference species set (``category_id``s) for the split.
+        reference_locations_file: Frozen reference location set for the split.
+        manifest_file: Per-probe-cell manifest (category_id + taxonomy + location_id + timestamps).
     """
 
-    seen_species_file: str = "seen_species.json"
-    seen_locations_file: str = "seen_locations.json"
+    reference_species_file: str = "reference_species.json"
+    reference_locations_file: str = "reference_locations.json"
     manifest_file: str = "cell_manifest.json"
+
+
+class SplitsConfig(BaseModel):
+    """Analysis-split construction (T0.3).
+
+    Attributes:
+        seed: Seed for any stochastic split choices (the LOSO protocol is deterministic).
+        min_present_videos: Minimum positive videos for a species to enter the present set.
+    """
+
+    seed: int = 0
+    min_present_videos: int = 1
 
 
 class InferenceConfig(BaseModel):
@@ -170,7 +184,8 @@ class Config(BaseSettings):
     Attributes:
         paths: Filesystem locations.
         data: SA-FARI dataset facts.
-        reference: Frozen seen/unseen reference.
+        reference: Frozen reference artifacts (per split).
+        splits: Analysis-split construction.
         inference: SAM 3 inference options.
         eval: VEval scoring options.
         features: Distance-feature options.
@@ -186,6 +201,7 @@ class Config(BaseSettings):
     paths: PathsConfig = Field(default_factory=PathsConfig)
     data: DataConfig = Field(default_factory=DataConfig)
     reference: ReferenceConfig = Field(default_factory=ReferenceConfig)
+    splits: SplitsConfig = Field(default_factory=SplitsConfig)
     inference: InferenceConfig = Field(default_factory=InferenceConfig)
     eval: EvalConfig = Field(default_factory=EvalConfig)
     features: FeaturesConfig = Field(default_factory=FeaturesConfig)

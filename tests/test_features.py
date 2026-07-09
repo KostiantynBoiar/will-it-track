@@ -1,7 +1,7 @@
 """Label-free distance feature tests (T2.1 taxonomic, T2.4 temporal).
 
-The pure LCA-distance logic is tested unconditionally; the end-to-end ``compute()`` tests skip until
-the annotations are fetched (`python -m src.acquire --annotations`).
+The pure LCA-distance logic is tested unconditionally; the end-to-end ``compute(partition)`` tests skip
+until the annotations are fetched (`python -m src.acquire --annotations`).
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from src.config import Config
 from src.dataset import SAFARI
 from src.features.taxonomic import TaxonomicDistance, tree_distance
 from src.features.temporal import TemporalGap
+from src.splits import build_species_partition
 
 _CFG = Config()
 _ANN_PRESENT = SAFARI("train", _CFG).ann_path.exists() and SAFARI("test", _CFG).ann_path.exists()
@@ -40,23 +41,27 @@ def test_tree_distance_stops_at_empty_level() -> None:
 
 
 @_needs_ann
-def test_taxonomic_distances() -> None:
-    """Every test species gets a finite LCA distance in ``[1, n_levels]``."""
+def test_taxonomic_distances_split_a() -> None:
+    """Leave-one-species-out distances: one row per present species, full-taxonomy ones in [0, n]."""
     n_levels = len(_CFG.features.taxonomic_levels)
-    series = TaxonomicDistance(_CFG).compute()
+    part = build_species_partition(_CFG)
+    series = TaxonomicDistance(_CFG).compute(part)
 
-    assert not series.empty
-    assert series.notna().all()
-    assert series.between(1, n_levels).all()
-    assert set(series.index) == set(SAFARI("test", _CFG).taxonomy())
+    assert set(series.index) == set(part.probe_species)  # one row per present species
+    valid = series.dropna()
+    assert valid.between(0, n_levels).all()
+    assert valid.size >= 70  # ~72 full-taxonomy species
+    assert (valid == 0).sum() >= 1  # the pig/wild-boar taxonomy twin(s)
+    assert (valid >= 3).sum() >= 10  # a real spread of clearly-novel species
 
 
 @_needs_ann
-def test_temporal_gaps() -> None:
-    """Every test cell gets a non-negative, non-null year gap, keyed by cell."""
-    series = TemporalGap(_CFG).compute()
+def test_temporal_gaps_split_a() -> None:
+    """Every probe cell gets a non-negative, non-null year gap, keyed by cell."""
+    part = build_species_partition(_CFG)
+    series = TemporalGap(_CFG).compute(part)
 
     assert not series.empty
     assert series.notna().all()
     assert (series >= 0).all()
-    assert list(series.index.names) == ["species", "location_id", "time"]
+    assert list(series.index.names) == ["category_id", "species", "location_id", "time"]

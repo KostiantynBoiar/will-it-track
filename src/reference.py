@@ -1,13 +1,10 @@
-"""Freeze the seen/unseen reference (T0.2).
+"""Freeze the reference for a split (T0.2 — the leakage firewall).
 
-Goal: fix the "distance from training" reference once, to prevent leakage — every distance is later
-computed against this frozen train-split set only.
-Input: ``sa_fari_train_ext.json``, ``sa_fari_test_ext.json``.
-Output: ``data/reference/{seen_species,seen_locations}.json`` + a per-test-cell manifest (taxonomy +
-``location_id`` + timestamps).
-Method: enumerate train-split species/locations; record taxonomy path + metadata; verify test
-species/locations are disjoint from train.
-Done when: disjointness is asserted in a test; the manifest lists every test cell with its metadata.
+For a given :class:`~src.splits.Partition`, freeze the reference species/locations and a probe-cell
+manifest once, so every distance is later computed against a fixed anchor. Disjointness is asserted on
+the split's *held axis* (location for Split B; leave-one-species-out for Split A) and the other-axis
+overlap is *reported* honestly — the SA-FARI split shares species, so species overlap is expected, not
+an error.
 
 Run: ``PYTHONPATH=. .venv/bin/python -m src.reference --freeze`` / ``--check``.
 """
@@ -20,21 +17,29 @@ import json
 from pydantic import BaseModel
 
 from src.config import Config
-from src.dataset import SAFARI, _taxonomy_of
-from src.types import Cell
+from src.dataset import SAFARI, _year
+from src.splits import (
+    Partition,
+    build_location_partition,
+    build_species_partition,
+    probe_records,
+    save,
+)
 
 
 class ManifestCell(BaseModel):
-    """One test cell in the frozen manifest.
+    """One probe cell in a frozen manifest.
 
     Attributes:
-        species: Queried species (noun phrase / category name).
+        category_id: Species identity.
+        species: Canonical species label.
         location_id: Camera/location identifier.
         time: Coarse time bucket (year).
-        taxonomy: Lowercased 7-level taxonomy (``{}`` if the species was unmatched).
-        n_videos: Number of test videos backing this cell.
+        taxonomy: Lowercased taxonomy (``{}`` if the category has none).
+        n_videos: Number of probe videos backing this cell.
     """
 
+    category_id: str
     species: str
     location_id: str
     time: str
@@ -43,123 +48,116 @@ class ManifestCell(BaseModel):
 
 
 class Reference:
-    """Build + load the frozen seen-set reference and the test-cell manifest."""
+    """Build, check, and load the frozen reference for one partition."""
 
-    def __init__(self, config: Config | None = None) -> None:
-        """Initialize (loaders are lazy — no file access until a method is called).
+    def __init__(self, config: Config | None = None, partition: Partition | None = None) -> None:
+        """Initialize.
 
         Args:
-            config: Project config (``paths.reference_root``, ``reference.*``, ``data.*``).
+            config: Project config (``paths.reference_root``, ``reference.*``).
+            partition: The split whose reference is frozen (required for freeze/load/check).
         """
         self.config = config or Config()
-        self.train = SAFARI("train", self.config)
-        self.test = SAFARI("test", self.config)
+        self.partition = partition
 
-    @staticmethod
-    def _species(safari: SAFARI) -> list[str]:
-        """Canonical species names for a split (category ``name``, fallback ``Species``)."""
-        names = []
-        for category in safari.categories():
-            name = category.get("name") or category.get("Species")
-            if name:
-                names.append(str(name))
-        return names
+    @property
+    def _root(self):
+        """Per-partition reference directory."""
+        assert self.partition is not None, "Reference needs a partition"
+        return self.config.paths.reference_root / self.partition.name
 
-    @staticmethod
-    def _locations(safari: SAFARI) -> set[str]:
-        """Distinct ``location_id``s appearing in a split."""
-        return {r.location_id for r in safari.records() if r.location_id}
+    def check_axis(self) -> dict:
+        """Assert the split's held axis is disjoint; report the other-axis overlap.
 
-    def _taxonomy_index(self) -> dict[str, dict[str, str]]:
-        """Map ``species_key.lower()`` -> lowercased taxonomy, from train + test categories."""
-        index: dict[str, dict[str, str]] = {}
-        for safari in (self.train, self.test):
-            for category in safari.categories():
-                taxonomy = _taxonomy_of(category)
-                for key in (category.get("name"), category.get("Species")):
-                    if key:
-                        index.setdefault(str(key).lower(), taxonomy)
-        return index
+        Returns:
+            ``{"held_axis", "location_overlap", "species_overlap"}``.
+
+        Raises:
+            AssertionError: If Split B's probe locations intersect the reference, or Split A is not LOSO.
+        """
+        p = self.partition
+        assert p is not None
+        location_overlap = sorted(set(p.reference_locations) & set(p.probe_locations))
+        species_overlap = sorted(set(p.reference_species) & set(p.probe_species))
+        if p.held_axis == "location":
+            assert not location_overlap, f"location overlap on Split B: {location_overlap[:10]}"
+        elif p.held_axis == "species":
+            assert p.loso, "the species split must use leave-one-species-out"
+        return {
+            "held_axis": p.held_axis,
+            "location_overlap": len(location_overlap),
+            "species_overlap": len(species_overlap),
+        }
 
     def freeze(self) -> None:
-        """Write the frozen seen species/locations + the test-cell manifest to ``reference_root``."""
-        root = self.config.paths.reference_root
+        """Write reference species/locations + the probe-cell manifest to ``reference_root/<split>/``."""
+        assert self.partition is not None
+        root = self._root
         root.mkdir(parents=True, exist_ok=True)
         ref = self.config.reference
+        (root / ref.reference_species_file).write_text(
+            json.dumps(self.partition.reference_species, indent=2)
+        )
+        (root / ref.reference_locations_file).write_text(
+            json.dumps(self.partition.reference_locations, indent=2)
+        )
 
-        seen_species = sorted(set(self._species(self.train)))
-        seen_locations = sorted(self._locations(self.train))
-        (root / ref.seen_species_file).write_text(json.dumps(seen_species, indent=2))
-        (root / ref.seen_locations_file).write_text(json.dumps(seen_locations, indent=2))
-
-        taxonomy_index = self._taxonomy_index()
-        cells: dict[Cell, ManifestCell] = {}
-        unmatched: set[str] = set()
-        for record in self.test.records():
-            cell = self.test.cell_of(record)
-            if cell in cells:
-                cells[cell].n_videos += 1
+        taxonomy = SAFARI("test", self.config).taxonomy()
+        cells: dict[tuple[str, str, str], ManifestCell] = {}
+        for record in probe_records(self.partition, self.config):
+            time = _year(record.creation_datetime)
+            key = (record.category_id, record.location_id, time)
+            if key in cells:
+                cells[key].n_videos += 1
                 continue
-            taxonomy = taxonomy_index.get(cell.species.lower(), {})
-            if cell.species and not taxonomy:
-                unmatched.add(cell.species)
-            cells[cell] = ManifestCell(
-                species=cell.species,
-                location_id=cell.location_id,
-                time=cell.time,
-                taxonomy=taxonomy,
+            cells[key] = ManifestCell(
+                category_id=record.category_id,
+                species=record.species,
+                location_id=record.location_id,
+                time=time,
+                taxonomy=taxonomy.get(record.category_id, {}),
                 n_videos=1,
             )
         manifest = [c.model_dump() for c in cells.values()]
         (root / ref.manifest_file).write_text(json.dumps(manifest, indent=2))
 
-        note = f" ({len(unmatched)} species without taxonomy)" if unmatched else ""
+        report = self.check_axis()
         print(
-            f"froze reference -> {root}: {len(seen_species)} seen species, "
-            f"{len(seen_locations)} seen locations, {len(manifest)} test cells{note}"
+            f"froze reference -> {root}: {len(self.partition.reference_species)} reference species, "
+            f"{len(self.partition.reference_locations)} reference locations, {len(manifest)} probe cells "
+            f"(species overlap {report['species_overlap']}, location overlap {report['location_overlap']})"
         )
 
-    def assert_disjoint(self) -> None:
-        """Assert the test split is disjoint from train by species AND location.
-
-        Raises:
-            AssertionError: If any test species or location also appears in train.
-        """
-        train_species = {s.lower() for s in self._species(self.train)}
-        test_species = {s.lower() for s in self._species(self.test)}
-        species_overlap = sorted(train_species & test_species)
-        location_overlap = sorted(self._locations(self.train) & self._locations(self.test))
-        assert not species_overlap, f"species overlap train∩test: {species_overlap[:10]}"
-        assert not location_overlap, f"location overlap train∩test: {location_overlap[:10]}"
-
     def load(self) -> dict:
-        """Read the three frozen files back (for downstream distance features, T2.x).
-
-        Returns:
-            ``{"seen_species": [...], "seen_locations": [...], "manifest": [...]}``.
-        """
-        root = self.config.paths.reference_root
+        """Read the three frozen files back for the partition."""
         ref = self.config.reference
         return {
-            "seen_species": json.loads((root / ref.seen_species_file).read_text()),
-            "seen_locations": json.loads((root / ref.seen_locations_file).read_text()),
-            "manifest": json.loads((root / ref.manifest_file).read_text()),
+            "reference_species": json.loads((self._root / ref.reference_species_file).read_text()),
+            "reference_locations": json.loads(
+                (self._root / ref.reference_locations_file).read_text()
+            ),
+            "manifest": json.loads((self._root / ref.manifest_file).read_text()),
         }
 
 
 def main() -> None:
-    """CLI: ``--check`` (assert disjointness) and/or ``--freeze`` (write the reference)."""
+    """CLI: build both splits, ``--check`` disjointness and/or ``--freeze`` their references."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default=None, help="optional YAML config")
-    ap.add_argument("--check", action="store_true", help="assert train/test disjointness")
-    ap.add_argument("--freeze", action="store_true", help="write the frozen reference + manifest")
+    ap.add_argument(
+        "--check", action="store_true", help="assert held-axis disjointness + report overlap"
+    )
+    ap.add_argument("--freeze", action="store_true", help="persist the splits + frozen references")
     args = ap.parse_args()
-    ref = Reference(Config.load(args.config))
+    cfg = Config.load(args.config)
+    partitions = [build_location_partition(cfg), build_species_partition(cfg)]
     if args.check:
-        ref.assert_disjoint()
-        print("disjointness OK: test species & locations are disjoint from train")
+        for partition in partitions:
+            print(partition.name, Reference(cfg, partition).check_axis())
     if args.freeze:
-        ref.freeze()
+        for partition in partitions:
+            save(partition, cfg)
+            Reference(cfg, partition).freeze()
 
 
 if __name__ == "__main__":
