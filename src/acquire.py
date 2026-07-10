@@ -105,37 +105,30 @@ class FrameFetcher:
         walk(self.bucket, depth, 0)
         return lines
 
-    def _base_prefix(self, sample: str) -> str:
-        """Return the bucket-relative prefix under which ``file_names`` resolve (``""`` or ``sa_fari/``).
+    def _frame_uri(self, split: str, file_name: str) -> str:
+        """Full bucket URI for one ``file_names`` entry under the split's frame root."""
+        base = self.config.data.frames_gcs_dir.format(split=split)
+        return f"{self.bucket}/{base}/{file_name}"
 
-        Args:
-            sample: One annotation ``file_names`` entry.
-
-        Returns:
-            The prefix to prepend to every ``file_names`` entry.
-
-        Raises:
-            FileNotFoundError: If the sample resolves under neither candidate prefix.
-        """
-        for base in ("", "sa_fari/"):
-            if self.fs.exists(f"{self.bucket}/{base}{sample}"):
-                return base
-        raise FileNotFoundError(
-            f"cannot locate {sample!r} under gs://{self.bucket} (tried '' and 'sa_fari/')"
-        )
-
-    def fetch(self, file_names: list[str]) -> int:
+    def fetch(self, file_names: list[str], split: str) -> int:
         """Download the given frame paths into ``data/frames/`` (skipping ones already present).
 
         Args:
-            file_names: Annotation ``file_names`` (bucket-relative frame paths).
+            file_names: Annotation ``file_names`` (``<video_name>/<frame>.jpg``).
+            split: The source split (``"train"`` / ``"test"``) — selects the bucket frame root.
 
         Returns:
             The number of files newly downloaded.
+
+        Raises:
+            FileNotFoundError: If the first frame does not resolve (wrong split/template).
         """
         if not file_names:
             return 0
-        base = self._base_prefix(file_names[0])
+        if not self.fs.exists(self._frame_uri(split, file_names[0])):
+            raise FileNotFoundError(
+                f"cannot locate {file_names[0]!r} at {self._frame_uri(split, file_names[0])}"
+            )
         dest_root = self.config.paths.data_root / self.config.data.frames_subdir
         pulled = 0
         for name in file_names:
@@ -143,7 +136,7 @@ class FrameFetcher:
             if dest.exists():
                 continue
             dest.parent.mkdir(parents=True, exist_ok=True)
-            self.fs.get_file(f"{self.bucket}/{base}{name}", str(dest))
+            self.fs.get_file(self._frame_uri(split, name), str(dest))
             pulled += 1
         return pulled
 
@@ -155,8 +148,9 @@ def main() -> None:
     ap.add_argument("--list", action="store_true", help="probe the public GCS layout")
     ap.add_argument("--annotations", action="store_true", help="download the gated HF annotations")
     ap.add_argument(
-        "--frames", action="store_true", help="pull frames for the first --n-clips test videos"
+        "--frames", action="store_true", help="pull frames for the first --n-clips videos"
     )
+    ap.add_argument("--split", default="test", choices=("train", "test"), help="split for --frames")
     ap.add_argument("--n-clips", type=int, default=3)
     args = ap.parse_args()
     cfg = Config.load(args.config)
@@ -167,10 +161,10 @@ def main() -> None:
     if args.annotations:
         print("annotations ->", AnnotationFetcher(cfg).fetch())
     if args.frames:
-        records = SAFARI("test", cfg).records()[: args.n_clips]
+        records = SAFARI(args.split, cfg).records()[: args.n_clips]
         file_names = [name for r in records for name in r.file_names]
-        pulled = FrameFetcher(cfg).fetch(file_names)
-        print(f"frames -> pulled {pulled} files for {len(records)} clips")
+        pulled = FrameFetcher(cfg).fetch(file_names, args.split)
+        print(f"frames -> pulled {pulled} files for {len(records)} {args.split} clips")
 
 
 if __name__ == "__main__":

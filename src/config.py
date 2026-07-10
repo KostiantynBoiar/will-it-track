@@ -53,6 +53,7 @@ class DataConfig(BaseModel):
         keep_hard_negatives: Keep queries that return 0 (§9 DON'T filter them).
         hf_repo: Gated Hugging Face dataset id for the annotations.
         gcs_bucket: Public GCS bucket holding the 6 fps frames (anonymous access).
+        frames_gcs_dir: Bucket-relative frame root (``{split}``-templated); ``file_names`` append to it.
     """
 
     fps: int = 6
@@ -63,6 +64,7 @@ class DataConfig(BaseModel):
     keep_hard_negatives: bool = True
     hf_repo: str = "facebook/SA-FARI"
     gcs_bucket: str = "cxl-public-camera-trap"
+    frames_gcs_dir: str = "sa_fari/sa_fari_{split}/JPEGImages_6fps"
 
 
 class ReferenceConfig(BaseModel):
