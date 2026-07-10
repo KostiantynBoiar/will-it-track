@@ -7,11 +7,25 @@ import pytest
 from src.config import Config
 from src.dataset import SAFARI
 from src.features.taxonomic import TaxonomicDistance
-from src.splits import build_species_partition
+from src.splits import build_location_partition, build_species_partition, reference_records
 
 _CFG = Config()
 _ANN_PRESENT = SAFARI("train", _CFG).ann_path.exists() and SAFARI("test", _CFG).ann_path.exists()
 _needs_ann = pytest.mark.skipif(not _ANN_PRESENT, reason="SA-FARI annotations not fetched")
+
+
+@_needs_ann
+def test_reference_records_by_split() -> None:
+    """Split A draws reference from both origins (all present); Split B from train only."""
+    a = build_species_partition(_CFG)
+    ref_a = reference_records(a, _CFG)
+    assert {r.origin for r in ref_a} == {"train", "test"}
+    assert {r.category_id for r in ref_a} == set(a.reference_species)
+
+    b = build_location_partition(_CFG)
+    ref_b = reference_records(b, _CFG)
+    assert {r.origin for r in ref_b} == {"train"}
+    assert {r.location_id for r in ref_b if r.location_id != "nan"}.isdisjoint(b.probe_locations)
 
 
 @_needs_ann

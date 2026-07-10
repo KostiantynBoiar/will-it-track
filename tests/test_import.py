@@ -29,8 +29,10 @@ def test_import_all_modules() -> None:
     import src.dataset  # noqa: F401
     import src.eval.score  # noqa: F401
     import src.features.assemble  # noqa: F401
+    import src.features.embed  # noqa: F401
     import src.features.environment  # noqa: F401
     import src.features.familiarity  # noqa: F401
+    import src.features.frames  # noqa: F401
     import src.features.taxonomic  # noqa: F401
     import src.features.temporal  # noqa: F401
     import src.features.visual  # noqa: F401
@@ -54,6 +56,8 @@ def test_default_config() -> None:
     assert cfg.data.fps == 6
     assert cfg.model.family == "beta"
     assert cfg.data.keep_hard_negatives is True
+    assert cfg.features.n_frames_per_masklet == 5
+    assert cfg.features.embed_device == "mps"
 
 
 def test_config_yaml_overlay() -> None:

@@ -131,6 +131,15 @@ class FeaturesConfig(BaseModel):
         taxonomic_levels: 7-level taxonomy (Kingdom -> Species) for LCA tree distance.
         distance_variant: ``"nearest_prototype"`` (primary), or ``"frechet"`` / ``"mmd"`` (robustness).
         night_ir_from_color: Derive the day/night-IR flag from colour statistics.
+        n_frames_per_masklet: Annotated frames sampled per masklet for embedding.
+        max_masklets_per_species: Cap on masklets embedded per species (bounds the prototype cost).
+        max_frames_per_location: Cap on masked-background frames embedded per location.
+        embed_batch: Images per forward pass.
+        embed_device: Torch device for embedding (``"mps"``/``"cuda"``/``"cpu"``; falls back to CPU).
+        min_mask_pixels: Smallest mask (in pixels) that yields a usable animal crop.
+        background_fill: How to neutralise the animal in the scene embedding (``"mean"``/``"zero"``).
+        night_ir_threshold: Mean channel-spread (0-255) below which a frame counts as night/IR.
+        embeddings_subdir: Cache dir for embeddings, under ``paths.outputs_root``.
     """
 
     visual_encoder: str = "dinov2"
@@ -147,6 +156,15 @@ class FeaturesConfig(BaseModel):
     )
     distance_variant: str = "nearest_prototype"
     night_ir_from_color: bool = True
+    n_frames_per_masklet: int = 5
+    max_masklets_per_species: int = 40
+    max_frames_per_location: int = 200
+    embed_batch: int = 32
+    embed_device: str = "mps"
+    min_mask_pixels: int = 64
+    background_fill: str = "mean"
+    night_ir_threshold: float = 12.0
+    embeddings_subdir: str = "embeddings"
 
 
 class ModelConfig(BaseModel):

@@ -100,6 +100,7 @@ class SAFARI:
         self.config = config or Config()
         self._data: dict | None = None
         self._cat_by_id: dict[str, dict] | None = None
+        self._anns_by_video: dict[str, list[dict]] | None = None
 
     @property
     def ann_path(self) -> Path:
@@ -195,8 +196,16 @@ class SAFARI:
 
     def annotations_for(self, video_id: str) -> list[dict]:
         """Return the raw annotation dicts for one video."""
-        data = self._load()
-        return [a for a in data["annotations"] if str(a["video_id"]) == str(video_id)]
+        return self.annotations_by_video().get(str(video_id), [])
+
+    def annotations_by_video(self) -> dict[str, list[dict]]:
+        """Map ``video_id`` (as ``str``) to its annotation dicts (cached; avoids O(N) rescans)."""
+        if self._anns_by_video is None:
+            index: dict[str, list[dict]] = {}
+            for a in self._load()["annotations"]:
+                index.setdefault(str(a["video_id"]), []).append(a)
+            self._anns_by_video = index
+        return self._anns_by_video
 
     def taxonomy(self) -> dict[str, dict[str, str]]:
         """Map ``category_id`` → lowercased real taxonomy, for taxonomy-bearing categories only.

@@ -147,6 +147,23 @@ def probe_records(partition: Partition, config: Config | None = None) -> list[Vi
     ]
 
 
+def reference_records(partition: Partition, config: Config | None = None) -> list[VideoRecord]:
+    """Pooled records on the partition's reference side (present species only).
+
+    Split A (``held_axis="species"``) draws from both origins — all present species (leave-one-species-out
+    is applied later at prototype selection, not here). Split B (``held_axis="location"``) draws only from
+    ``train`` (the seen locations).
+    """
+    cfg = config or Config()
+    ref_species = set(partition.reference_species)
+    origins = {"train", "test"} if partition.held_axis == "species" else {"train"}
+    return [
+        r
+        for r in _present(pooled_records(cfg))
+        if r.category_id in ref_species and r.origin in origins
+    ]
+
+
 def structural_report(config: Config | None = None) -> dict:
     """Sanity report for Split A: present counts, LOSO taxonomic spread, location decoupling."""
     cfg = config or Config()

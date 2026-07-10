@@ -15,8 +15,14 @@ eval:
 
 features:
   visual_encoder: dinov2         # dinov2 | clip (robustness)
+  scene_encoder: dinov2          # environment/background embedding
   mask_crop: true                # §9: crop visual embeddings to the animal mask
   distance_variant: nearest_prototype
+  night_ir_from_color: true      # derive the day/night-IR flag from colour stats
+  n_frames_per_masklet: 5        # sampled annotated frames per masklet
+  max_masklets_per_species: 40   # cap on masklets embedded per species (bounds prototype cost)
+  max_frames_per_location: 200   # cap on background frames embedded per location
+  embed_device: mps              # mps | cuda | cpu (falls back to cpu)
 
 model:
   family: beta                   # beta / logit-link GLM on bounded scores
