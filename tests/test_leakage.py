@@ -1,4 +1,4 @@
-"""Feature-leakage tests (T2.x) — the reference is frozen and a species never anchors on itself."""
+"""Feature-leakage tests — the reference is frozen and a species never anchors on itself."""
 
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ def test_swapping_reference_changes_distances() -> None:
     assert not full.loc[common].equals(shrunk.loc[common])
 
 
-@pytest.mark.skip(reason="T2.6: needs the assembled feature table")
+@pytest.mark.skip(reason="needs the assembled feature table")
 def test_feature_table_has_no_unexplained_nulls() -> None:
     """outputs/features.parquet has the four distances + proxy + support with no stray nulls."""
     ...

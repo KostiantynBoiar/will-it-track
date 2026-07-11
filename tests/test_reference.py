@@ -1,4 +1,4 @@
-"""Reference tests (T0.2/T0.3) — location-disjoint Split B + honest species-overlap report + manifest.
+"""Reference tests — location-disjoint Split B, honest species-overlap report, and manifest.
 
 Skips until the annotations are fetched (`python -m src.acquire --annotations`).
 """
@@ -16,7 +16,7 @@ from src.splits import build_location_partition, probe_records
 
 _CFG = Config()
 _ANN_PRESENT = SAFARI("train", _CFG).ann_path.exists() and SAFARI("test", _CFG).ann_path.exists()
-pytestmark = pytest.mark.skipif(not _ANN_PRESENT, reason="SA-FARI annotations not fetched (T0.2)")
+pytestmark = pytest.mark.skipif(not _ANN_PRESENT, reason="SA-FARI annotations not fetched")
 
 
 def test_location_holdout_disjoint_by_location_not_species() -> None:

@@ -1,15 +1,8 @@
-"""Variance partitioning & decomposition test (T3.2).
+"""Variance partitioning & decomposition test.
 
-Goal: attribute variance to each factor and test the headline (detection <- species novelty;
-    association <- environment).
-Input: fitted models + design matrix.
-Output: variance-partition table (unique + shared R^2 per factor, per target); VIF report;
-    standardised-coefficient contrast figure.
-Method: dominance / commonality (Shapley) analysis; VIF for collinearity; compare standardised
-    coefficients across the two targets and quantify the contrast.
-Done when: the decomposition claim is quantified (supported or not) with the collinearity caveat
-    addressed.
-Depends on: T3.1.
+Attributes variance to each factor and tests the headline claim (detection <- species novelty;
+association <- environment) via dominance / commonality (Shapley) analysis. Reports VIF for
+collinearity and contrasts standardised coefficients across the two targets.
 """
 
 from __future__ import annotations
@@ -39,4 +32,4 @@ class VariancePartition:
         Returns:
             The variance-partition table.
         """
-        raise NotImplementedError("T3.2: dominance/Shapley partition + VIF")
+        raise NotImplementedError("dominance/Shapley partition + VIF")

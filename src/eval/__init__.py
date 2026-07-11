@@ -1,1 +1,1 @@
-"""Scoring with the OFFICIAL VEval evaluator (T1.2) — the metric is never re-implemented."""
+"""Scoring with the OFFICIAL VEval evaluator — the metric is never re-implemented."""

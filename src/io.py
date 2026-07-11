@@ -1,7 +1,6 @@
 """Small IO helpers — parquet tables (scores/features/CV) and JSON (reference).
 
-Thin wrappers so every module reads/writes the shared artifacts the same way. Implemented alongside
-the first task that needs them (T1.2 for scores).
+Thin wrappers so every module reads/writes the shared artifacts the same way.
 """
 
 from __future__ import annotations
@@ -21,7 +20,7 @@ def write_parquet(df: pd.DataFrame, path: Path) -> Path:
     Returns:
         ``path``.
     """
-    raise NotImplementedError("T1.2: parquet write with parent mkdir")
+    raise NotImplementedError("parquet write with parent mkdir")
 
 
 def read_parquet(path: Path) -> pd.DataFrame:
@@ -33,4 +32,4 @@ def read_parquet(path: Path) -> pd.DataFrame:
     Returns:
         The table.
     """
-    raise NotImplementedError("T1.2: parquet read")
+    raise NotImplementedError("parquet read")

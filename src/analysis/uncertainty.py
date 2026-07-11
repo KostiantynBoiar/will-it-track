@@ -1,12 +1,8 @@
-"""Uncertainty & the predictive-line figure (T4.2).
+"""Uncertainty & the predictive-line figure.
 
-Goal: honest error bars and the headline visual.
-Input: ``cv_results.parquet``, per-cell scores.
-Output: bootstrap CIs (scores, coefficients, OOS error); ``outputs/figures/predictive_line_{det,assoc}.png``
-    (predicted vs actual with error bars).
-Method: bootstrap over cells/groups; plot held-out predictions.
-Done when: figures reproduce from script; CIs reported everywhere a point estimate appears.
-Depends on: T4.1.
+Produces bootstrap confidence intervals (for scores, coefficients, and out-of-sample error) by
+resampling over cells/groups, and plots the held-out predicted-vs-actual predictive-line figures
+to ``outputs/figures/predictive_line_{det,assoc}.png``.
 """
 
 from __future__ import annotations
@@ -36,4 +32,4 @@ class Uncertainty:
         Returns:
             Path to the written figure.
         """
-        raise NotImplementedError("T4.2: bootstrap CIs + predictive-line plot")
+        raise NotImplementedError("bootstrap CIs + predictive-line plot")

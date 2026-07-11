@@ -1,14 +1,10 @@
-"""Score and decompose with the OFFICIAL VEval evaluator (T1.2).
+"""Score and decompose with the OFFICIAL VEval evaluator.
 
-Goal: the dependent variables — per-cell ``pDetA``, ``pAssA``, ``pHOTA``.
-Input: ``outputs/predictions/``, test annotations.
-Output: ``outputs/scores.parquet`` — one row per ``(species, location_id, time)`` cell (and per
-    video) with ``pDetA``/``pAssA``/``pHOTA``, ``n_frames``/``n_masklets``/``n_videos``, taxonomy,
-    ``location_id``, ``creation_datetime``, prompt condition.
-Method: run the OFFICIAL evaluator (do NOT reimplement pHOTA); aggregate to cell level carrying
-    support counts.
-Done when: scores are non-degenerate, vary across species/places, and match the SA-FARI paper's
-    SAM 3 ballpark. (Phase-1 decision gate.)
+Produces the dependent variables — per-cell ``pDetA``, ``pAssA``, ``pHOTA``. Runs the official
+evaluator (pHOTA is never re-implemented) over ``outputs/predictions/`` and the test annotations,
+then aggregates to one row per ``(species, location_id, time)`` cell (and per video) in
+``outputs/scores.parquet``, carrying support counts, taxonomy, location, datetime, and prompt
+condition.
 
 Run: ``PYTHONPATH=. .venv/bin/python -m src.eval.score [--config configs/default.yaml]``
 """
@@ -42,7 +38,7 @@ class Scorer:
         Returns:
             Path to the written ``scores.parquet``.
         """
-        raise NotImplementedError("T1.2: dispatch to official VEval; aggregate to cells")
+        raise NotImplementedError("dispatch to official VEval; aggregate to cells")
 
 
 def main() -> None:

@@ -1,14 +1,9 @@
-"""Grouped cross-validation (T4.1).
+"""Grouped cross-validation.
 
-Goal: turn a fitted curve into a PREDICTOR — predict held-out species/places from distance alone.
-Input: modelling table, fitting code from T3.1.
-Output: ``outputs/validation/cv_results.parquet`` (predicted vs actual per held-out group; MAE/RMSE;
-    calibration).
-Method: leave-one-species-out and leave-one-location-out (WHOLE groups held out); predict
-    ``pDetA``/``pAssA`` from distances only.
-Done when: out-of-sample errors reported for both schemes; leakage-free grouping asserted.
-    (Phase-4 decision gate — if no signal, invoke H0 and pivot to representational probing.)
-Depends on: T3.1.
+Turns a fitted curve into a predictor: predicts held-out species/places from distance alone
+using leave-one-species-out and leave-one-location-out schemes (whole groups held out). Reports
+out-of-sample error and calibration to ``outputs/validation/cv_results.parquet`` and asserts
+leakage-free grouping.
 
 Run: ``PYTHONPATH=. .venv/bin/python -m src.analysis.cross_val [--config configs/default.yaml]``
 """
@@ -41,7 +36,7 @@ class GroupedCV:
         Returns:
             Path to the CV results parquet.
         """
-        raise NotImplementedError("T4.1: leave-species-out + leave-location-out; assert no leakage")
+        raise NotImplementedError("leave-species-out + leave-location-out; assert no leakage")
 
 
 def main() -> None:

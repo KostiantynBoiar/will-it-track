@@ -1,4 +1,4 @@
-"""Acquire SA-FARI (T0.1): gated annotations from Hugging Face + public 6 fps frames from GCS.
+"""Acquire SA-FARI: gated annotations from Hugging Face + public 6 fps frames from GCS.
 
 Annotations (``facebook/SA-FARI``) are **gated** — accept the license and ``huggingface-cli login``
 first (see the README "Data access" section). Frames (``gs://cxl-public-camera-trap``) are **public**

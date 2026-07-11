@@ -1,4 +1,4 @@
-"""SA-FARI loader tests (T0.1) — records parse + RLE masks decode via pycocotools.
+"""SA-FARI loader tests — records parse and RLE masks decode via pycocotools.
 
 Skips until the minimal slice is fetched (`python -m src.acquire --annotations`).
 """
@@ -12,7 +12,7 @@ from src.dataset import SAFARI
 
 _CFG = Config()
 _ANN_PRESENT = SAFARI("test", _CFG).ann_path.exists()
-pytestmark = pytest.mark.skipif(not _ANN_PRESENT, reason="SA-FARI annotations not fetched (T0.1)")
+pytestmark = pytest.mark.skipif(not _ANN_PRESENT, reason="SA-FARI annotations not fetched")
 
 
 def test_records_parse() -> None:

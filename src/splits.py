@@ -1,4 +1,4 @@
-"""Analysis splits (T0.3) — the two experiments over the pooled SA-FARI probes.
+"""Analysis splits — the two experiments over the pooled SA-FARI probes.
 
 A :class:`Partition` is a frozen reference/probe assignment on one *held axis*. Species identity is the
 ``category_id`` throughout.
@@ -10,7 +10,7 @@ A :class:`Partition` is a frozen reference/probe assignment on one *held axis*. 
   the official train split, probe = test; species distance ≈ 0, environment/temporal vary.
 
 Because SAM 3 is frozen and zero-shot on all of SA-FARI, a partition is only our reference anchor for
-distances, so re-partitioning is sound (see ``CLAUDE.md`` §4).
+distances, so re-partitioning is sound.
 """
 
 from __future__ import annotations
@@ -51,7 +51,6 @@ class Partition(BaseModel):
         probe_locations: Probe ``location_id``s.
         reference_years: Distinct reference footage years (for the temporal gap).
         probe_origins: Which source files the probe records come from (``["test"]`` / both).
-        seed: Seed used to build the split.
     """
 
     name: str
@@ -63,7 +62,6 @@ class Partition(BaseModel):
     probe_locations: list[str]
     reference_years: list[str]
     probe_origins: list[str]
-    seed: int = 0
 
 
 def _present(records: list[VideoRecord]) -> list[VideoRecord]:
@@ -97,7 +95,6 @@ def build_species_partition(config: Config | None = None) -> Partition:
         probe_locations=locations,
         reference_years=_years(records),
         probe_origins=["train", "test"],
-        seed=cfg.splits.seed,
     )
 
 
@@ -116,7 +113,6 @@ def build_location_partition(config: Config | None = None) -> Partition:
         probe_locations=_locations(probe),
         reference_years=_years(ref),
         probe_origins=["test"],
-        seed=cfg.splits.seed,
     )
 
 

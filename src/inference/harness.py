@@ -1,15 +1,9 @@
-"""Frozen SAM 3 inference harness (T1.1).
+"""Frozen SAM 3 inference harness.
 
-Goal: produce SAM 3's zero-shot predictions on every test probe.
-Input: test annotations (video-noun-phrase pairs, incl. hard negatives), ``data/frames/``, SAM 3
-    checkpoints.
-Output: ``outputs/predictions/`` — predicted masklets per ``(video, prompt)`` in the evaluator's
-    expected format.
-Method: for each test video + query, run SAM 3 promptable tracking. Primary condition =
-    species-specific prompt; also run generic ("animal"). Batch frames; checkpoint partial results;
-    keep hard-negative queries. SAM 3 is FROZEN (inference-only, no gradients).
-Done when: predictions exist for all test (video, prompt) pairs in both conditions; hard negatives
-    are represented.
+Runs frozen (inference-only) SAM 3 promptable tracking over every test probe and writes predicted
+masklets per ``(video, prompt)`` to ``outputs/predictions/`` in the evaluator's expected format.
+Runs both a species-specific prompt (primary) and a generic ("animal") prompt, keeping
+hard-negative queries.
 
 Run: ``PYTHONPATH=. .venv/bin/python -m src.inference.harness [--config configs/default.yaml]``
 """
@@ -40,7 +34,7 @@ class InferenceHarness:
             The predictions directory.
         """
         raise NotImplementedError(
-            "T1.1: frozen SAM 3 promptable tracking (species + generic prompts)"
+            "frozen SAM 3 promptable tracking (species + generic prompts)"
         )
 
 

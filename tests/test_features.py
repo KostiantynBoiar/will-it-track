@@ -1,4 +1,4 @@
-"""Label-free distance feature tests (T2.1 taxonomic, T2.4 temporal).
+"""Label-free distance feature tests: taxonomic and temporal distances.
 
 The pure LCA-distance logic is tested unconditionally; the end-to-end ``compute(partition)`` tests skip
 until the annotations are fetched (`python -m src.acquire --annotations`).
@@ -16,7 +16,7 @@ from src.splits import build_species_partition
 
 _CFG = Config()
 _ANN_PRESENT = SAFARI("train", _CFG).ann_path.exists() and SAFARI("test", _CFG).ann_path.exists()
-_needs_ann = pytest.mark.skipif(not _ANN_PRESENT, reason="SA-FARI annotations not fetched (T0.2)")
+_needs_ann = pytest.mark.skipif(not _ANN_PRESENT, reason="SA-FARI annotations not fetched")
 
 _LEO = ["animalia", "chordata", "mammalia", "carnivora", "felidae", "panthera", "leo"]
 

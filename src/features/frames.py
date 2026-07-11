@@ -1,4 +1,4 @@
-"""Frame + crop utilities for the visual/environment features (T2.2/T2.3).
+"""Frame + crop utilities for the visual/environment features.
 
 Pure PIL/numpy — no torch. Resolves the annotated frames of a masklet, pulls them on demand
 (fetch-or-skip via :class:`~src.acquire.FrameFetcher`, never crashing a feature), and produces the two
@@ -23,13 +23,17 @@ def annotated_frame_indices(annotation: dict) -> list[int]:
     return [i for i, seg in enumerate(segs) if seg is not None]
 
 
-def sample_frame_indices(annotation: dict, n: int, seed: int = 0) -> list[int]:
-    """Up to ``n`` evenly-spaced annotated frame indices (deterministic)."""
-    idx = annotated_frame_indices(annotation)
-    if n <= 0 or len(idx) <= n:
-        return idx
-    positions = np.linspace(0, len(idx) - 1, n).round().astype(int)
-    return sorted({idx[p] for p in positions})
+def sample_evenly(indices: list[int], n: int) -> list[int]:
+    """Up to ``n`` evenly-spaced values from ``indices`` (deterministic, sorted, de-duplicated)."""
+    if n <= 0 or len(indices) <= n:
+        return sorted(indices)
+    positions = np.linspace(0, len(indices) - 1, n).round().astype(int)
+    return sorted({indices[p] for p in positions})
+
+
+def sample_frame_indices(annotation: dict, n: int) -> list[int]:
+    """Up to ``n`` evenly-spaced annotated frame indices of a masklet."""
+    return sample_evenly(annotated_frame_indices(annotation), n)
 
 
 def ensure_frames(file_names: Sequence[str], split: str, config: Config | None = None) -> int:
@@ -75,7 +79,7 @@ def animal_crop(
     """Crop the animal to its mask bounding box; ``None`` if the mask is empty/too small.
 
     The crop box is derived from ``np.where(mask)`` (not the stored COCO bbox) so it always matches the
-    decoded pixels. When ``mask_crop`` the background is zeroed *before* cropping (§9 DO), so appearance —
+    decoded pixels. When ``mask_crop`` the background is zeroed *before* cropping, so appearance —
     not scene — drives the embedding.
     """
     arr = np.asarray(frame.convert("RGB"))

@@ -1,4 +1,4 @@
-"""Freeze the reference for a split (T0.2 — the leakage firewall).
+"""Freeze the reference for a split (the leakage firewall).
 
 For a given :class:`~src.splits.Partition`, freeze the reference species/locations and a probe-cell
 manifest once, so every distance is later computed against a fixed anchor. Disjointness is asserted on

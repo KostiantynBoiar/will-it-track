@@ -4,7 +4,7 @@ Reads the YTVIS-style ``sa_fari_{train,test}_ext.json``. Species and their 7-lev
 ``categories`` keyed by ``category_id`` (a large shared noun-phrase vocabulary; only animal concepts
 carry real taxonomy, the rest are ``NaN``). ``video_np_pairs`` are the (video, prompt) probes and
 carry ``num_masklets`` (``0`` ⇒ hard negative); ``annotations`` hold the per-frame RLE masks. Per-video
-``location_id`` / ``video_creation_datetime`` live on ``videos``. Hard negatives are kept (§9). The
+``location_id`` / ``video_creation_datetime`` live on ``videos``. Hard negatives are kept. The
 species identity is the ``category_id``; ``species`` is the canonical category ``name`` (display only).
 """
 

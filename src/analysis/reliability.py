@@ -1,12 +1,8 @@
-"""Reliability estimator — the practical "will it work here?" tool (T6.1).
+"""Reliability estimator — the practical "will it work here?" tool.
 
-Goal: the deployment output.
-Input: fitted models (T3.1), feature definitions.
-Output: this module — four distances (+ proxy) in -> predicted ``pDetA``/``pAssA`` with CI out; a
-    minimal CLI/notebook demo.
-Method: wrap the fitted models with the feature pipeline and a bootstrap interval.
-Done when: a new ``(species, place)`` description yields a prediction + interval end-to-end.
-Depends on: T3.1, T4.2.
+The deployment output: takes four distances (+ proxy) for a new ``(species, place)`` and returns
+predicted ``pDetA``/``pAssA`` with confidence intervals, by wrapping the fitted models with the
+feature pipeline and a bootstrap interval. Exposes a minimal CLI/notebook demo.
 
 Run: ``PYTHONPATH=. .venv/bin/python -m src.analysis.reliability --species ... --location ...``
 """
@@ -38,7 +34,7 @@ class ReliabilityEstimator:
         Returns:
             ``{"pDetA": (point, lo, hi), "pAssA": (point, lo, hi)}``.
         """
-        raise NotImplementedError("T6.1: features -> fitted models -> prediction + bootstrap CI")
+        raise NotImplementedError("features -> fitted models -> prediction + bootstrap CI")
 
 
 def main() -> None:

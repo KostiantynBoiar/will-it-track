@@ -1,11 +1,7 @@
-"""Temporal gap (T2.4).
+"""Temporal gap.
 
-Goal: capture drift over years.
-Input: an analysis :class:`~src.splits.Partition` (its ``reference_years`` + probe records).
-Output: ``temporal_gap`` per probe cell.
-Method: min |Δyear| between a probe cell's footage and the nearest reference footage year.
-Done when: gaps are non-negative and non-null for every probe cell whose year parses.
-Depends on: T0.3 (the split defines reference vs probe).
+Captures drift over years: the minimum |Δyear| between a probe cell's footage and the nearest
+reference footage year, computed per probe cell.
 """
 
 from __future__ import annotations

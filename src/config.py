@@ -2,9 +2,9 @@
 
 Single source of truth for every constant (paths, data, reference, inference, eval, features,
 model, cross-validation). Defaults are overridable via a YAML file (``configs/*.yaml``) or
-``SAFARI_*`` environment variables. Every §9 hard constraint from ``.claude/CLAUDE.md`` is a config
-toggle here (``keep_hard_negatives``, ``mask_crop``, ``support_weight``, ``log_support_covariate``,
-``group_schemes``) so ablations (T5) flip config, not code.
+``SAFARI_*`` environment variables. Every hard constraint is a config toggle here
+(``keep_hard_negatives``, ``mask_crop``, ``support_weight``, ``log_support_covariate``,
+``group_schemes``) so ablations flip config, not code.
 
 Pydantic v2 + pydantic-settings: any field is overridable via a ``SAFARI_*`` env var, nested with
 ``__`` (e.g. ``SAFARI_DATA__FPS``, ``SAFARI_PATHS__DATA_ROOT``, ``SAFARI_SEED``). ``Config.load(path)``
@@ -42,7 +42,7 @@ class PathsConfig(BaseModel):
 
 
 class DataConfig(BaseModel):
-    """SA-FARI dataset facts (see .claude/CLAUDE.md §4).
+    """SA-FARI dataset facts.
 
     Attributes:
         fps: Frame rate the annotations align to (6 fps downsampled).
@@ -50,7 +50,7 @@ class DataConfig(BaseModel):
         frames_subdir: Subdirectory of ``data_root`` holding the 6 fps frames.
         train_ann: Train-split ``_ext`` annotation JSON (the seen set / reference).
         test_ann: Test-split ``_ext`` annotation JSON (the transfer probes).
-        keep_hard_negatives: Keep queries that return 0 (§9 DON'T filter them).
+        keep_hard_negatives: Keep queries that return 0 (do not filter them).
         hf_repo: Gated Hugging Face dataset id for the annotations.
         gcs_bucket: Public GCS bucket holding the 6 fps frames (anonymous access).
         frames_gcs_dir: Bucket-relative frame root (``{split}``-templated); ``file_names`` append to it.
@@ -68,7 +68,7 @@ class DataConfig(BaseModel):
 
 
 class ReferenceConfig(BaseModel):
-    """The frozen reference (T0.2). Files resolved under ``paths.reference_root/<split-name>/``.
+    """The frozen reference. Files resolved under ``paths.reference_root/<split-name>/``.
 
     Attributes:
         reference_species_file: Frozen reference species set (``category_id``s) for the split.
@@ -82,7 +82,7 @@ class ReferenceConfig(BaseModel):
 
 
 class SplitsConfig(BaseModel):
-    """Analysis-split construction (T0.3).
+    """Analysis-split construction.
 
     Attributes:
         seed: Seed for any stochastic split choices (the LOSO protocol is deterministic).
@@ -94,7 +94,7 @@ class SplitsConfig(BaseModel):
 
 
 class InferenceConfig(BaseModel):
-    """Frozen SAM 3 promptable inference (T1.1).
+    """Frozen SAM 3 promptable inference.
 
     Attributes:
         prompt_mode: ``"species"`` (primary) or ``"generic"`` ("animal", robustness).
@@ -110,7 +110,7 @@ class InferenceConfig(BaseModel):
 
 
 class EvalConfig(BaseModel):
-    """Scoring with the OFFICIAL VEval evaluator (T1.2).
+    """Scoring with the OFFICIAL VEval evaluator.
 
     Attributes:
         metrics: Reported metrics (computed by veval; the metric is never re-implemented).
@@ -122,11 +122,11 @@ class EvalConfig(BaseModel):
 
 
 class FeaturesConfig(BaseModel):
-    """Label-free distance features (T2.x).
+    """Label-free distance features.
 
     Attributes:
-        visual_encoder: ``"dinov2"`` (primary) or ``"clip"`` (robustness, T5.2).
-        mask_crop: Crop visual embeddings to the animal mask (§9 DO); T5.2 toggles it off.
+        visual_encoder: ``"dinov2"`` (primary) or ``"clip"`` (robustness).
+        mask_crop: Crop visual embeddings to the animal mask; robustness ablation toggles it off.
         scene_encoder: Encoder for the environment/background embedding.
         taxonomic_levels: 7-level taxonomy (Kingdom -> Species) for LCA tree distance.
         distance_variant: ``"nearest_prototype"`` (primary), or ``"frechet"`` / ``"mmd"`` (robustness).
@@ -168,13 +168,13 @@ class FeaturesConfig(BaseModel):
 
 
 class ModelConfig(BaseModel):
-    """Per-target regression on the distances (T3.1).
+    """Per-target regression on the distances.
 
     Attributes:
         family: ``"beta"`` / logit-link GLM on bounded scores.
-        support_weight: Weight observations by support (§9).
+        support_weight: Weight observations by support.
         support_col: Support column used for weighting and the covariate.
-        log_support_covariate: Add ``log(n_frames)`` so "rare" is never mistaken for "far" (§9).
+        log_support_covariate: Add ``log(n_frames)`` so "rare" is never mistaken for "far".
     """
 
     family: str = "beta"
@@ -184,10 +184,10 @@ class ModelConfig(BaseModel):
 
 
 class CVConfig(BaseModel):
-    """Group-aware cross-validation + bootstrap (T4).
+    """Group-aware cross-validation + bootstrap.
 
     Attributes:
-        group_schemes: Whole-group hold-out schemes (leave-species-out, leave-location-out) (§9).
+        group_schemes: Whole-group hold-out schemes (leave-species-out, leave-location-out).
         n_bootstrap: Bootstrap resamples for confidence intervals.
     """
 

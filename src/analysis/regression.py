@@ -1,12 +1,8 @@
-"""Per-target regression (T3.1).
+"""Per-target regression.
 
-Goal: model ``pDetA`` and ``pAssA`` SEPARATELY on the four distances.
-Input: ``scores.parquet`` join ``features.parquet``.
-Output: ``outputs/models/{pdeta,passa}_beta.pkl``, coefficient tables.
-Method: beta regression / logit-link GLM (scores in [0,1]); WEIGHT by support; include
-    ``log(n_frames)`` covariate so rare != far.
-Done when: models converge; residuals inspected; coefficients + CIs reported for both targets.
-Depends on: T1.2, T2.6.
+Models ``pDetA`` and ``pAssA`` separately on the four distances using a support-weighted
+beta / logit-link GLM (scores in [0,1]), with a ``log(n_frames)`` covariate so rare is not
+mistaken for far. Writes fitted models and coefficient tables to ``outputs/models/``.
 
 Run: ``PYTHONPATH=. .venv/bin/python -m src.analysis.regression [--config configs/default.yaml]``
 """
@@ -42,7 +38,7 @@ class TargetRegression:
             Path to the pickled fitted model.
         """
         raise NotImplementedError(
-            "T3.1: support-weighted beta/logit GLM with log(n_frames) covariate"
+            "support-weighted beta/logit GLM with log(n_frames) covariate"
         )
 
 

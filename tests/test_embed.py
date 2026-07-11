@@ -1,4 +1,4 @@
-"""Model-dependent smokes for the embedding pipeline (T2.2/T2.3).
+"""Model-dependent smokes for the embedding pipeline.
 
 Gated behind ``RUN_MODEL_TESTS=1`` so a routine ``pytest`` never triggers a weight download or a frame
 pull; run ``RUN_MODEL_TESTS=1 pytest`` once the DINOv2 weights are cached.

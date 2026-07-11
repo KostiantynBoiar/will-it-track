@@ -1,13 +1,9 @@
-"""Taxonomic distance (T2.1).
+"""Taxonomic distance.
 
-Goal: how far a probe's species sits from the nearest *reference* species on the tree of life.
-Input: an analysis :class:`~src.splits.Partition` + per-``category_id`` taxonomy.
-Output: ``taxonomic_distance`` keyed by ``category_id`` (probe species).
-Method: LCA tree steps to the nearest reference species (shares Genus = 1, Family = 2, Order = 3, …).
-    On Split A (``loso=True``) each probe species excludes itself from the reference. Species without a
-    full 7-level taxonomy get ``NaN`` (they carry only visual/environment novelty).
-Done when: distances vary (on SA-FARI's LOSO, 0–4 — the 0 is the ``pig``/``wild boar`` taxonomy twin).
-Depends on: T0.3 (the split defines reference vs probe species).
+How far a probe's species sits from the nearest *reference* species on the tree of life, measured
+as LCA tree steps (shares Genus = 1, Family = 2, Order = 3, …). On Split A (``loso=True``) each probe
+species excludes itself from the reference; species without a full 7-level taxonomy get ``NaN`` (they
+carry only visual/environment novelty). Keyed by ``category_id`` (probe species).
 """
 
 from __future__ import annotations
