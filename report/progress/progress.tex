@@ -1,11 +1,11 @@
 % =====================================================================
-%  MSc dissertation — Implementation Progress Report
+%  MSc dissertation — Implementation Progress Report (illustrated walkthrough)
 %  Predicting the Zero-Shot Transfer of a Promptable Video Tracker (SA-FARI / SAM 3)
 %  Build:  report/build.sh report/progress   (Tectonic + Ghostscript-normalise)
 % =====================================================================
 \documentclass[11pt,a4paper]{article}
 
-\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage[a4paper,margin=2.3cm]{geometry}
 \usepackage{iftex}
 \ifPDFTeX
   \usepackage[T1]{fontenc}
@@ -18,113 +18,335 @@
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{enumitem}
+\usepackage{caption}
 \usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 \usepackage[colorlinks=true,linkcolor=NavyBlue,urlcolor=NavyBlue]{hyperref}
 
 \definecolor{navy}{RGB}{30,64,124}
 \definecolor{forest}{RGB}{34,120,60}
 \definecolor{burnt}{RGB}{214,104,26}
+\definecolor{plum}{RGB}{140,55,135}
 \newcommand{\done}{{\color{forest}\textbf{done}}}
 \newcommand{\built}{{\color{navy}\textbf{built}}}
 \newcommand{\todo}{{\color{burnt}\textbf{next}}}
 \newcommand{\code}[1]{\texttt{#1}}
 \setlist{nosep,leftmargin=1.4em}
+\captionsetup{font=small,labelfont=bf}
 
-\title{\vspace{-1.5em}\textbf{Implementation Progress Report}\\[2pt]
-\large Predicting the Zero-Shot Transfer of a Promptable Video Tracker\\[-2pt]
-\normalsize (SAM\,3 on the SA-FARI benchmark, decomposed into detection and association)}
+% shared TikZ flow-box styles
+\tikzset{
+  box/.style={draw,rounded corners,align=center,font=\footnotesize,inner sep=4pt,minimum height=0.9cm},
+  data/.style={box,fill=black!5},
+  work/.style={box,fill=navy!12},
+  resbox/.style={box,fill=burnt!16},
+  flow/.style={-{Latex[length=2mm]},thick},
+}
+
+\title{\vspace{-1.6em}\textbf{Implementation Progress Report}\\[3pt]
+\large How each step works --- an illustrated walkthrough\\[1pt]
+\normalsize Predicting the Zero-Shot Transfer of a Promptable Video Tracker (SAM\,3 on SA-FARI)}
 \author{Kostiantyn Boiar \,\textbullet\, Supervisor: Dr Marwa Mahmoud\\
 \normalsize School of Computing Science, University of Glasgow}
 \date{\today}
 
 \begin{document}
 \maketitle
-\vspace{-1.2em}
+\vspace{-1.0em}
 
-\section{Context}
-The project asks whether SAM\,3's zero-shot promptable-tracking accuracy on an unseen (species, place)
-can be \emph{predicted before running the model}, from label-free distances, and \emph{which} factors
-govern that transfer --- separately for \textbf{finding} the animal (\code{pDetA}) and \textbf{following}
-it (\code{pAssA}). The deliverable is a validated, out-of-sample reliability estimator, not a higher
-tracking score. This note reports what has been implemented against that plan; all code is committed to
-the project repository and is reproducible from it.
+\noindent
+This report explains, in plain terms and with pictures, \emph{how} each part of the system works and what
+is built so far. The one-line goal: given a new animal in a new place, \textbf{predict how well SAM\,3 will
+track it \emph{before} we run it}, and explain \emph{why} --- separately for \textbf{finding} the animal
+(\code{pDetA}) and \textbf{following} it (\code{pAssA}).
 
-\section{The plan, in brief}
-Frozen SAM\,3 is scored by the official evaluator to give the dependent variables (\code{pDetA} /
-\code{pAssA}); four \textbf{label-free distances} (taxonomic, visual, environment, temporal) form the
-predictors; a small support-weighted beta regression is fit and validated out-of-sample. Two
-complementary experiments isolate the two hypotheses: a \textbf{species hold-out} (leave-one-species-out,
-the primary novelty axis) and the official \textbf{location hold-out} (the environment axis). The work is
-split into six phases: setup and reference, measurement, distance features, fitting the law, out-of-sample
-validation, and the reliability tool plus write-up.
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+  \node[data] (saf) at (0,0) {SA-FARI\\videos};
+  \node[work] (dist) at (3.1,0.85) {four label-free\\\textbf{distances}\\{\scriptsize how ``new'' is it?}};
+  \node[work] (sam) at (3.1,-0.85) {frozen \textbf{SAM\,3}\\$\to$ VEval\\{\scriptsize the scores}};
+  \node[resbox] (law) at (6.4,0) {the \textbf{law}\\{\scriptsize distance $\to$ score}};
+  \node[resbox] (rel) at (9.3,0) {\textbf{reliability}\\{\scriptsize pDetA/pAssA $+$ CI}};
+  \draw[flow] (saf) -- (dist);
+  \draw[flow] (saf) -- (sam);
+  \draw[flow] (dist) -- (law);
+  \draw[flow] (sam) -- (law);
+  \draw[flow] (law) -- (rel);
+\end{tikzpicture}
+\caption{The whole system. The \textbf{distances} (top) are the inputs $X$; the frozen \textbf{SAM\,3}
+scores (bottom) are the outputs $Y$; we fit a small \textbf{law} $X\!\to\!Y$ and turn it into a
+\textbf{reliability} estimate. The distance side is complete; the score side is built and awaiting a GPU run.}
+\end{figure}
 
-\section{Implementation status}
-The entire \textbf{label-free predictor side is complete and validated}, and the \textbf{measurement leg
-is implemented and awaiting a GPU run}; the modelling half is scaffolded and unblocks once the scores exist.
-
-\begin{center}
-\small
-\begin{tabular}{@{}p{5.9cm}cp{6.6cm}@{}}
+\vspace{-0.4em}
+\begin{center}\small
+\begin{tabular}{@{}lp{11.4cm}@{}}
 \toprule
-\textbf{Component} & \textbf{Status} & \textbf{Notes}\\
+\textbf{Where we are} & \\
 \midrule
-Data acquisition (annotations + frames) & \done & Gated Hugging Face annotations and public GCS 6\,fps
-  frames; both fetch end-to-end.\\
-Dataset loader + schema & \done & Real \code{\_ext} schema; species/taxonomy via \code{category\_id};
-  RLE masks; hard negatives kept; pooled records.\\
-Two experiments + frozen reference & \done & Species hold-out (leave-one-out) and official location
-  hold-out; leakage firewall; honest disjointness reporting.\\
-Taxonomic distance & \done & Lowest-common-ancestor tree steps, leave-one-species-out.\\
-Temporal gap & \done & Years to the nearest reference footage.\\
-Visual distance & \done & DINOv2 mask-crop prototypes; nearest-species cosine gap.\\
-Environment distance & \done & DINOv2 masked-background scene prototypes; night/IR + clutter covariates.\\
-Shared embedding pipeline & \done & Unified encode/cache/prototype engine; refactored and comment-clean.\\
-SAM\,3 inference harness & \built & Frozen promptable video tracking; resumable per-video predictions;
-  runs on Colab (weights access confirmed).\\
-VEval scoring & \built & Official evaluator wrapper; support counts; per-cell \code{pDetA}/\code{pAssA}/
-  \code{pHOTA} $\rightarrow$ \code{scores.parquet}.\\
-SAM\,3 familiarity proxy & \todo & Needs SAM\,3 features (same run as inference).\\
-Feature-table assembly & \todo & Join the four distances $+$ support (label-free; not yet run at scale).\\
-Fit the law, CV, reliability tool & \todo & Beta regression, variance partitioning, grouped CV, bootstrap;
-  gated on the scores.\\
+\done   & data acquisition; dataset/schema; the two experiments $+$ frozen reference; all four label-free
+          distances (taxonomic, temporal, visual, environment); the shared embedding pipeline.\\
+\built  & SAM\,3 inference harness $+$ VEval scoring (run on Colab; weights access confirmed).\\
+\todo   & SAM\,3 familiarity proxy; feature-table assembly; fit the law, cross-validation, reliability tool.\\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\section{Key findings and design decisions}
+% =====================================================================
+\section{Step 1 --- Getting the data}
+Everything is built on \textbf{SA-FARI}: thousands of short camera-trap videos of wild animals, each frame
+hand-outlined. Four lists describe it, linked by ids (Fig.~\ref{fig:schema}):
 \begin{itemize}
-  \item \textbf{The split premise was corrected.} Inspecting the released annotations showed the official
-    SA-FARI split is disjoint by \emph{location}, but the \emph{species are largely shared} across it
-    (only a handful of genuinely unseen test species). Because SAM\,3 is frozen and zero-shot on the whole
-    dataset, the split is only our reference anchor for distances --- which licenses a \emph{constructed}
-    species hold-out for the novelty experiment. This is now the design of record, replacing the original
-    ``disjoint by species and location'' assumption.
-  \item \textbf{The species-novelty axis is usable.} Over the $99$ present species ($72$ with full
-    taxonomy), the leave-one-species-out taxonomic distance spans $0$--$4$ steps with a healthy spread, and
-    species vary largely independently of location --- so the two hypotheses can be tested separately.
-  \item \textbf{The distances behave sensibly on real data.} Spot checks are as expected (e.g.\ visually
-    distinct animals score farther; infrared night footage is flagged correctly), giving confidence before
-    the scores arrive.
-  \item \textbf{Related work is positioned.} Label-free performance prediction is established for
-    classifiers and, very recently, static detectors/segmenters --- never for a promptable \emph{video
-    tracker}, and never split into detection versus association: precisely the gap this work fills.
+  \item \textbf{videos} --- one entry per clip, with its frame files, its camera \emph{location}, and \emph{when}
+        it was filmed.
+  \item \textbf{categories} --- a big dictionary of text concepts (``a monkey'', ``ocelot'', \dots), each with
+        a \code{category\_id}. The real animals carry a full \emph{tree-of-life} classification; most entries
+        are generic distractors with no classification.
+  \item \textbf{annotations} --- the ground-truth outlines (masks), one per frame, for the animals that are
+        actually present.
+  \item \textbf{probes} (\code{video\_np\_pairs}) --- the questions we ask: ``is \emph{this animal} in
+        \emph{this video}?''. Many are \textbf{hard negatives} --- the animal is \emph{absent}, and a good
+        model should return nothing.
+\end{itemize}
+We fetch the outlines from Hugging Face (a gated download) and pull only the frames we need from a public
+Google bucket, on demand. A key early correction: the animal's identity is the \code{category\_id}, not the
+raw prompt text (two different prompts can mean the same species), so everything keys on \code{category\_id}.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+  \node[data] (vid) at (0,0) {\textbf{videos}\\{\scriptsize frames, location, date}};
+  \node[data] (cat) at (7.2,0) {\textbf{categories}\\{\scriptsize category\_id $+$ tree-of-life}};
+  \node[data] (pair) at (3.6,1.25) {\textbf{probes}\\{\scriptsize ``is this animal here?''}};
+  \node[data] (ann) at (3.6,-1.25) {\textbf{annotations}\\{\scriptsize the outline (mask)}};
+  \draw[flow] (pair) -- (vid); \draw[flow] (pair) -- (cat);
+  \draw[flow] (ann) -- (vid);  \draw[flow] (ann) -- (cat);
+\end{tikzpicture}
+\caption{How SA-FARI is wired together. A \emph{probe} asks whether a named animal (a \code{category\_id})
+appears in a video; \emph{annotations} give the ground-truth outlines for the ones that do.}
+\label{fig:schema}
+\end{figure}
+
+% =====================================================================
+\section{Step 2 --- The two experiments}
+The whole idea rests on a \emph{reference} (``what we've seen'') and a \emph{probe} (``the new thing''): a
+distance measures how far a probe is from the reference. Inspecting the data changed our plan here. The
+official split holds out \emph{new places} but re-uses the \emph{same species} on both sides --- so on that
+split ``species novelty'' is always zero. Because SAM\,3 is \textbf{frozen} (it never trains on any of this),
+the split is only \emph{our} choice of reference, so we are free to re-slice it. We therefore run \textbf{two
+complementary experiments} (Fig.~\ref{fig:splits}):
+\begin{itemize}
+  \item \textbf{Species hold-out} (primary). Hide one species at a time and ask ``how novel is it versus
+        \emph{all the others}?'' --- \emph{leave-one-species-out}. This is the detection/novelty test.
+  \item \textbf{Location hold-out} (the official split). Reference $=$ one region, probe $=$ a totally
+        different region. This is the environment/association test.
+\end{itemize}
+The \emph{leakage firewall} is simply a closed-book rule: when we score how novel species $X$ is, $X$ is
+never allowed into its own reference --- otherwise it would trivially look ``distance $0$ from itself''. A
+test checks this.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[font=\footnotesize]
+  % species hold-out
+  \begin{scope}
+    \node[font=\bfseries] at (2,1.4) {Species hold-out (novelty)};
+    \foreach \x/\c in {0/forest,1/forest,2/burnt,3/forest} {
+      \node[draw,rounded corners,fill=\c!18,minimum width=7mm,minimum height=6mm] at (\x*0.9,0.4) {};}
+    \node[font=\scriptsize] at (2*0.9,-0.35) {$\uparrow$ held out};
+    \node[forest,font=\scriptsize] at (3.6,0.9) {reference $=$ the rest};
+  \end{scope}
+  % location hold-out
+  \begin{scope}[xshift=6.2cm]
+    \node[font=\bfseries] at (2,1.4) {Location hold-out (environment)};
+    \draw[rounded corners,fill=navy!12] (-0.2,0.05) rectangle (2.0,0.75);
+    \node[navy] at (0.9,0.4) {train sites};
+    \draw[rounded corners,fill=plum!14] (2.3,0.05) rectangle (4.1,0.75);
+    \node[plum] at (3.2,0.4) {test sites};
+    \node[font=\scriptsize] at (0.9,-0.35) {reference};
+    \node[font=\scriptsize] at (3.2,-0.35) {probe (unseen)};
+  \end{scope}
+\end{tikzpicture}
+\caption{Two ways to slice the same data. \textbf{Left}: each species is held out in turn and compared to
+the others (species varies, place stays familiar). \textbf{Right}: the official geographic split (place
+varies, species stays familiar). Together they isolate the two hypotheses.}
+\label{fig:splits}
+\end{figure}
+
+% =====================================================================
+\section{Step 3 --- The four ``how new is it?'' distances}
+Each distance answers a plain question and is computed with \emph{no label of the target animal}.
+
+\subsection*{Taxonomic --- how far apart on the tree of life?}
+Count the steps up the family tree until two animals share an ancestor: same genus $=1$, same family $=2$,
+same order $=3$, and so on (Fig.~\ref{fig:tree}). For each species we take the distance to its
+\emph{nearest other} species. Across the $72$ fully-classified species this spreads from $0$ to $4$
+(Fig.~\ref{fig:taxhist}) --- most animals have a same-family neighbour, but a fifth are clearly novel
+($\ge 3$). The two $0$s are a quirk: ``pig'' and ``wild boar'' are the \emph{same} species under two names.
+This spread is what makes the novelty axis testable.
+
+\begin{figure}[h]
+\centering
+\begin{minipage}[c]{0.44\textwidth}\centering
+\begin{tikzpicture}[font=\scriptsize,
+   level 1/.style={sibling distance=25mm,level distance=9mm},
+   level 2/.style={sibling distance=12mm,level distance=9mm},
+   every node/.style={draw,rounded corners,inner sep=2.5pt,fill=black!4}]
+  \node {Felidae {\tiny(family)}}
+    child {node {\emph{Panthera}}
+      child {node[fill=forest!15] {lion}}
+      child {node[fill=forest!15] {leopard}}}
+    child {node {\emph{Leopardus}}
+      child {node[fill=burnt!18] {ocelot}}};
+\end{tikzpicture}
+\captionof{figure}{Lion\,$\leftrightarrow$\,leopard share a genus (distance $1$); lion\,$\leftrightarrow$\,
+ocelot share only the family (distance $2$).}
+\label{fig:tree}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.52\textwidth}\centering
+\begin{tikzpicture}
+\begin{axis}[width=\textwidth,height=4.2cm,ybar,bar width=10pt,
+  xlabel={tree-steps to nearest other species},ylabel={\# species},
+  xtick={0,1,2,3,4},ymin=0,ymax=42,nodes near coords,
+  every node near coord/.append style={font=\scriptsize},
+  tick label style={font=\scriptsize},label style={font=\scriptsize}]
+\addplot[fill=navy!55,draw=navy] coordinates {(0,2)(1,13)(2,36)(3,15)(4,6)};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Measured leave-one-species-out distances (72 species). Real numbers from our run.}
+\label{fig:taxhist}
+\end{minipage}
+\end{figure}
+
+\subsection*{Temporal --- how many years apart?}
+The simplest one: the number of years between the probe's footage and the nearest reference footage
+(2014\,$\rule[0.4ex]{5mm}{0.6pt}$\,2024). A 2023 clip against a 2015 reference is a gap of $8$.
+
+\subsection*{Visual --- how unfamiliar does the animal \emph{look}?}
+We cut the animal out of a few frames using its outline (background blacked out, so we measure the
+\emph{animal}, not the bush behind it), pass each cut-out through a frozen vision model (DINOv2) to get a
+numeric ``fingerprint'', and average a species' fingerprints into one \textbf{prototype}. The distance is
+how different a species' prototype is from the nearest \emph{other} prototype (cosine distance;
+Fig.~\ref{fig:vispipe}). On a six-species check the spread is sensible --- the pig looks most distinct, the
+smaller mammals cluster together (Fig.~\ref{fig:visbar}).
+
+\begin{figure}[h]
+\centering
+\begin{minipage}[c]{0.60\textwidth}\centering
+\begin{tikzpicture}[node distance=4mm and 7mm]
+  \node[data] (fr) {frame\\{\scriptsize $+$ outline}};
+  \node[work,right=of fr] (crop) {cut-out\\{\scriptsize animal only}};
+  \node[work,right=of crop] (emb) {DINOv2\\{\scriptsize fingerprint}};
+  \node[work,right=of emb] (proto) {species\\prototype};
+  \node[resbox,below=6mm of proto] (dist) {$1-\!\cos$ to\\nearest other};
+  \draw[flow] (fr)--(crop); \draw[flow] (crop)--(emb); \draw[flow] (emb)--(proto);
+  \draw[flow] (proto)--(dist);
+\end{tikzpicture}
+\captionof{figure}{The visual distance, end to end. ``Environment'' is the same picture with the animal
+\emph{erased} instead of cut out, grouped by location instead of species.}
+\label{fig:vispipe}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.36\textwidth}\centering
+\begin{tikzpicture}
+\begin{axis}[width=\textwidth,height=4.2cm,ybar,bar width=8pt,
+  symbolic x coords={pig,deer,frog,cow,racc,rabbit},xtick=data,
+  x tick label style={rotate=35,anchor=east,font=\scriptsize},
+  ylabel={visual distance},ymin=0,ymax=0.6,nodes near coords,
+  every node near coord/.append style={font=\tiny,rotate=90,anchor=west},
+  tick label style={font=\scriptsize},label style={font=\scriptsize}]
+\addplot[fill=forest!55,draw=forest] coordinates
+  {(pig,0.49)(deer,0.31)(frog,0.25)(cow,0.23)(racc,0.21)(rabbit,0.21)};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Measured visual distances (six-species subset). Real numbers from our run.}
+\label{fig:visbar}
+\end{minipage}
+\end{figure}
+
+\subsection*{Environment --- how unfamiliar does the \emph{place} look?}
+Same trick for the scene: \emph{erase} the animal (fill its pixels with the average background) so only the
+habitat remains, fingerprint that, and average per camera site into a ``typical scene''. The distance is
+how far a probe site looks from the nearest reference site. A bonus flag spots \textbf{night / infrared}
+footage by noticing the frame is basically grey. On the location hold-out the distances ran roughly
+$0.06$--$0.44$, and the infrared night sites were flagged correctly while the daytime colour sites were not.
+
+% =====================================================================
+\section{Step 4 --- Measuring SAM\,3 (the scores we predict)}
+This is the ``truth'' we compare against. \textbf{SAM\,3} is a \emph{promptable} tracker: give it a text
+prompt (``ocelot'') and it finds and follows every matching animal across the video --- with no training on
+that species. The official evaluator splits its score into the two things we care about (Fig.~\ref{fig:meas}):
+\begin{itemize}
+  \item \code{pDetA} --- \textbf{detection}: did it \emph{find} the animals (and not hallucinate on the hard
+        negatives)?
+  \item \code{pAssA} --- \textbf{association}: did it keep \emph{each identity} consistent over time?
+\end{itemize}
+Our harness runs this over every probe and writes one small file per video, so a run can stop and resume
+without losing work (important on Colab, where sessions time out). The evaluator then turns the outlines
+into the two numbers per cell. \emph{This code is built and tested with a stand-in; the real run happens on
+a GPU.}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=4mm and 9mm]
+  \node[data] (v) {video $+$\\prompt};
+  \node[work,right=of v] (s) {SAM\,3\\{\scriptsize frozen}};
+  \node[work,right=of s] (m) {predicted\\outlines};
+  \node[work,right=of m] (ve) {VEval\\{\scriptsize official}};
+  \node[resbox,right=of ve] (sc) {\code{pDetA}\\\code{pAssA}};
+  \draw[flow] (v)--(s); \draw[flow] (s)--node[midway,above,font=\scriptsize]{track}(m);
+  \draw[flow] (m)--(ve); \draw[flow] (ve)--(sc);
+\end{tikzpicture}
+\caption{Measuring the ground truth. A prompt goes into frozen SAM\,3, which outlines and tracks matches;
+the official scorer turns that into \emph{detection} and \emph{association} numbers per cell.}
+\label{fig:meas}
+\end{figure}
+
+% =====================================================================
+\section{Step 5 --- Fitting the law (planned)}
+With the distances ($X$) and scores ($Y$) in hand, the last stage fits a small, honest model:
+\begin{itemize}
+  \item \textbf{A curve, not a black box.} A beta regression (a straight line through a ``squashing''
+        transform, because scores live in $[0,1]$) maps distances to a predicted score --- one model for
+        detection, one for association.
+  \item \textbf{Which factor matters?} Variance partitioning asks whether \emph{detection} is driven by
+        \emph{species novelty} and \emph{association} by \emph{environment} --- the headline contrast.
+  \item \textbf{Does it generalise?} We hide whole species (and whole places), predict them from distance
+        \emph{alone}, and check the prediction lands near the truth, with honest error bars
+        (Fig.~\ref{fig:predline}). Success is a \emph{validated} predictor, not a higher score.
+  \item \textbf{The tool.} Four distances in $\to$ predicted \code{pDetA}/\code{pAssA} $+$ a confidence
+        interval out: the practical ``will it work here?'' answer.
 \end{itemize}
 
-\section{Engineering quality}
-The codebase is typed and configuration-driven (Pydantic\,v2), lints clean, and carries a growing test
-suite (currently $29$ passing tests, with heavier data- and GPU-dependent checks gated behind skip
-markers). The label-free features were refactored into a shared pipeline and verified to reproduce their
-outputs \emph{exactly}; the measurement leg is built so that its one model/format-specific step is
-isolated and confirmed when the GPU environment is set up. Every result is regenerable from the repository.
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=8.2cm,height=4.4cm,
+  xlabel={distance from the reference},ylabel={SAM\,3 score},
+  xmin=0,xmax=1,ymin=0,ymax=1,tick label style={font=\scriptsize},label style={font=\scriptsize},
+  legend style={font=\scriptsize,at={(0.98,0.98)},anchor=north east}]
+  \addplot[navy,very thick,domain=0:1]{0.9-0.55*x};
+  \addplot[only marks,mark=*,mark size=1.3pt,forest]
+    coordinates {(0.08,0.9)(0.2,0.83)(0.33,0.74)(0.45,0.66)(0.55,0.62)(0.7,0.52)(0.82,0.46)(0.9,0.41)};
+  \addplot[burnt,mark=square*,mark size=1.6pt,only marks] coordinates {(0.6,0.58)};
+  \legend{fitted line, held-out cells, one held-out}
+\end{axis}
+\end{tikzpicture}
+\caption{The target picture (\emph{illustrative --- pending the real scores}): predict a held-out cell's
+score from its distance and check it lands on the line, with bootstrap confidence intervals.}
+\label{fig:predline}
+\end{figure}
 
-\section{Remaining work and next steps}
-The immediate milestone is the \textbf{first decision gate}: run the frozen SAM\,3 inference on the test
-split (on Colab Pro, following the project's run\-book), score with the official evaluator, and confirm the
-aggregate numbers land in SA-FARI's published SAM\,3 range. Passing that gate opens the modelling half ---
-fitting the detection-versus-association law, attributing variance to each factor, validating it
-out-of-sample with grouped cross-validation and bootstrap intervals, and wrapping the fitted models into
-the ``will it work here?'' reliability estimator. The label-free feature table can be assembled in parallel,
-as it needs no further access. In short: the predictors and the measurement machinery are in place; the
-next step is to generate the scores and begin fitting.
+% =====================================================================
+\section{Where we are, and the next step}
+The \textbf{distance side is finished and sanity-checked} on real data, and the \textbf{measurement side is
+built}. The codebase is typed, configuration-driven, lint-clean, and covered by a growing test suite; the
+label-free features were refactored and verified to reproduce their outputs exactly. The immediate milestone
+is the \textbf{first decision gate}: run frozen SAM\,3 over the test split on Colab (weights access is
+confirmed), score it, and check the numbers sit in SA-FARI's published SAM\,3 range. Passing that gate opens
+the modelling half --- fitting the detection-versus-association law and building the reliability estimator.
 
 \end{document}
