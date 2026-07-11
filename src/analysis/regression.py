@@ -37,9 +37,7 @@ class TargetRegression:
         Returns:
             Path to the pickled fitted model.
         """
-        raise NotImplementedError(
-            "support-weighted beta/logit GLM with log(n_frames) covariate"
-        )
+        raise NotImplementedError("support-weighted beta/logit GLM with log(n_frames) covariate")
 
 
 def main() -> None:

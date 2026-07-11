@@ -37,6 +37,7 @@ def test_import_all_modules() -> None:
     import src.features.temporal  # noqa: F401
     import src.features.visual  # noqa: F401
     import src.inference.harness  # noqa: F401
+    import src.inference.sam3_tracker  # noqa: F401
     import src.io  # noqa: F401
     import src.reference  # noqa: F401
     import src.splits  # noqa: F401

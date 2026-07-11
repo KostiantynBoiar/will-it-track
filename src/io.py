@@ -20,7 +20,10 @@ def write_parquet(df: pd.DataFrame, path: Path) -> Path:
     Returns:
         ``path``.
     """
-    raise NotImplementedError("parquet write with parent mkdir")
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(path)
+    return path
 
 
 def read_parquet(path: Path) -> pd.DataFrame:
@@ -32,4 +35,4 @@ def read_parquet(path: Path) -> pd.DataFrame:
     Returns:
         The table.
     """
-    raise NotImplementedError("parquet read")
+    return pd.read_parquet(path)

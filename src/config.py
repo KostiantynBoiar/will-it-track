@@ -97,28 +97,34 @@ class InferenceConfig(BaseModel):
     """Frozen SAM 3 promptable inference.
 
     Attributes:
+        sam3_model: Hugging Face id (or local path) of the frozen SAM 3 checkpoint.
         prompt_mode: ``"species"`` (primary) or ``"generic"`` ("animal", robustness).
-        sam3_weights: Path/id of the frozen SAM 3 checkpoint.
         device: Torch device for inference.
+        precision: ``"bf16"`` / ``"fp16"`` / ``"fp32"`` (tune to the GPU tier).
         batch_frames: Frames per inference batch.
+        score_threshold: Minimum confidence for a predicted masklet to be kept.
+        predictions_subdir: Where per-video prediction JSONs are written, under ``paths.outputs_root``.
     """
 
+    sam3_model: str = "facebook/sam3"
     prompt_mode: str = "species"
-    sam3_weights: str = ""
     device: str = "cuda"
+    precision: str = "bf16"
     batch_frames: int = 16
+    score_threshold: float = 0.5
+    predictions_subdir: str = "predictions"
 
 
 class EvalConfig(BaseModel):
-    """Scoring with the OFFICIAL VEval evaluator.
+    """Scoring with the OFFICIAL VEval evaluator (never re-implemented).
 
     Attributes:
-        metrics: Reported metrics (computed by veval; the metric is never re-implemented).
-        veval_module: Import path into the vendored VEval scorer.
+        metrics: Reported metrics (computed by the vendored VEval scorer).
+        veval_script: Path to the vendored evaluator, under ``paths.third_party_root``.
     """
 
     metrics: tuple[str, ...] = ("pHOTA", "pDetA", "pAssA")
-    veval_module: str = "veval"
+    veval_script: str = "sam3/eval/saco_veval_eval.py"
 
 
 class FeaturesConfig(BaseModel):
