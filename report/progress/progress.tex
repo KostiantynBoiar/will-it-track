@@ -1,0 +1,130 @@
+% =====================================================================
+%  MSc dissertation — Implementation Progress Report
+%  Predicting the Zero-Shot Transfer of a Promptable Video Tracker (SA-FARI / SAM 3)
+%  Build:  report/build.sh report/progress   (Tectonic + Ghostscript-normalise)
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \IfFileExists{lmodern.sty}{\usepackage{lmodern}\usepackage{microtype}}{}
+\else
+  \usepackage{fontspec}
+  \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\fi
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[colorlinks=true,linkcolor=NavyBlue,urlcolor=NavyBlue]{hyperref}
+
+\definecolor{navy}{RGB}{30,64,124}
+\definecolor{forest}{RGB}{34,120,60}
+\definecolor{burnt}{RGB}{214,104,26}
+\newcommand{\done}{{\color{forest}\textbf{done}}}
+\newcommand{\built}{{\color{navy}\textbf{built}}}
+\newcommand{\todo}{{\color{burnt}\textbf{next}}}
+\newcommand{\code}[1]{\texttt{#1}}
+\setlist{nosep,leftmargin=1.4em}
+
+\title{\vspace{-1.5em}\textbf{Implementation Progress Report}\\[2pt]
+\large Predicting the Zero-Shot Transfer of a Promptable Video Tracker\\[-2pt]
+\normalsize (SAM\,3 on the SA-FARI benchmark, decomposed into detection and association)}
+\author{Kostiantyn Boiar \,\textbullet\, Supervisor: Dr Marwa Mahmoud\\
+\normalsize School of Computing Science, University of Glasgow}
+\date{\today}
+
+\begin{document}
+\maketitle
+\vspace{-1.2em}
+
+\section{Context}
+The project asks whether SAM\,3's zero-shot promptable-tracking accuracy on an unseen (species, place)
+can be \emph{predicted before running the model}, from label-free distances, and \emph{which} factors
+govern that transfer --- separately for \textbf{finding} the animal (\code{pDetA}) and \textbf{following}
+it (\code{pAssA}). The deliverable is a validated, out-of-sample reliability estimator, not a higher
+tracking score. This note reports what has been implemented against that plan; all code is committed to
+the project repository and is reproducible from it.
+
+\section{The plan, in brief}
+Frozen SAM\,3 is scored by the official evaluator to give the dependent variables (\code{pDetA} /
+\code{pAssA}); four \textbf{label-free distances} (taxonomic, visual, environment, temporal) form the
+predictors; a small support-weighted beta regression is fit and validated out-of-sample. Two
+complementary experiments isolate the two hypotheses: a \textbf{species hold-out} (leave-one-species-out,
+the primary novelty axis) and the official \textbf{location hold-out} (the environment axis). The work is
+split into six phases: setup and reference, measurement, distance features, fitting the law, out-of-sample
+validation, and the reliability tool plus write-up.
+
+\section{Implementation status}
+The entire \textbf{label-free predictor side is complete and validated}, and the \textbf{measurement leg
+is implemented and awaiting a GPU run}; the modelling half is scaffolded and unblocks once the scores exist.
+
+\begin{center}
+\small
+\begin{tabular}{@{}p{5.9cm}cp{6.6cm}@{}}
+\toprule
+\textbf{Component} & \textbf{Status} & \textbf{Notes}\\
+\midrule
+Data acquisition (annotations + frames) & \done & Gated Hugging Face annotations and public GCS 6\,fps
+  frames; both fetch end-to-end.\\
+Dataset loader + schema & \done & Real \code{\_ext} schema; species/taxonomy via \code{category\_id};
+  RLE masks; hard negatives kept; pooled records.\\
+Two experiments + frozen reference & \done & Species hold-out (leave-one-out) and official location
+  hold-out; leakage firewall; honest disjointness reporting.\\
+Taxonomic distance & \done & Lowest-common-ancestor tree steps, leave-one-species-out.\\
+Temporal gap & \done & Years to the nearest reference footage.\\
+Visual distance & \done & DINOv2 mask-crop prototypes; nearest-species cosine gap.\\
+Environment distance & \done & DINOv2 masked-background scene prototypes; night/IR + clutter covariates.\\
+Shared embedding pipeline & \done & Unified encode/cache/prototype engine; refactored and comment-clean.\\
+SAM\,3 inference harness & \built & Frozen promptable video tracking; resumable per-video predictions;
+  runs on Colab (weights access confirmed).\\
+VEval scoring & \built & Official evaluator wrapper; support counts; per-cell \code{pDetA}/\code{pAssA}/
+  \code{pHOTA} $\rightarrow$ \code{scores.parquet}.\\
+SAM\,3 familiarity proxy & \todo & Needs SAM\,3 features (same run as inference).\\
+Feature-table assembly & \todo & Join the four distances $+$ support (label-free; not yet run at scale).\\
+Fit the law, CV, reliability tool & \todo & Beta regression, variance partitioning, grouped CV, bootstrap;
+  gated on the scores.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Key findings and design decisions}
+\begin{itemize}
+  \item \textbf{The split premise was corrected.} Inspecting the released annotations showed the official
+    SA-FARI split is disjoint by \emph{location}, but the \emph{species are largely shared} across it
+    (only a handful of genuinely unseen test species). Because SAM\,3 is frozen and zero-shot on the whole
+    dataset, the split is only our reference anchor for distances --- which licenses a \emph{constructed}
+    species hold-out for the novelty experiment. This is now the design of record, replacing the original
+    ``disjoint by species and location'' assumption.
+  \item \textbf{The species-novelty axis is usable.} Over the $99$ present species ($72$ with full
+    taxonomy), the leave-one-species-out taxonomic distance spans $0$--$4$ steps with a healthy spread, and
+    species vary largely independently of location --- so the two hypotheses can be tested separately.
+  \item \textbf{The distances behave sensibly on real data.} Spot checks are as expected (e.g.\ visually
+    distinct animals score farther; infrared night footage is flagged correctly), giving confidence before
+    the scores arrive.
+  \item \textbf{Related work is positioned.} Label-free performance prediction is established for
+    classifiers and, very recently, static detectors/segmenters --- never for a promptable \emph{video
+    tracker}, and never split into detection versus association: precisely the gap this work fills.
+\end{itemize}
+
+\section{Engineering quality}
+The codebase is typed and configuration-driven (Pydantic\,v2), lints clean, and carries a growing test
+suite (currently $29$ passing tests, with heavier data- and GPU-dependent checks gated behind skip
+markers). The label-free features were refactored into a shared pipeline and verified to reproduce their
+outputs \emph{exactly}; the measurement leg is built so that its one model/format-specific step is
+isolated and confirmed when the GPU environment is set up. Every result is regenerable from the repository.
+
+\section{Remaining work and next steps}
+The immediate milestone is the \textbf{first decision gate}: run the frozen SAM\,3 inference on the test
+split (on Colab Pro, following the project's run\-book), score with the official evaluator, and confirm the
+aggregate numbers land in SA-FARI's published SAM\,3 range. Passing that gate opens the modelling half ---
+fitting the detection-versus-association law, attributing variance to each factor, validating it
+out-of-sample with grouped cross-validation and bootstrap intervals, and wrapping the fitted models into
+the ``will it work here?'' reliability estimator. The label-free feature table can be assembled in parallel,
+as it needs no further access. In short: the predictors and the measurement machinery are in place; the
+next step is to generate the scores and begin fitting.
+
+\end{document}
