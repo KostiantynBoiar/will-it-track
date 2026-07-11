@@ -67,23 +67,28 @@ class Embedder:
         model.eval().to(self._device)
         self._model = model
 
+    def _encode_batch(self, batch: list[Image.Image]) -> np.ndarray:
+        """Encode one batch to a float32 array, falling back to CPU if an MPS op is unsupported."""
+        x = torch.stack([self._transform(im) for im in batch]).to(self._device)
+        try:
+            feats = self._encode(x)
+        except (RuntimeError, NotImplementedError):  # MPS op unsupported -> CPU fallback
+            self._device = "cpu"
+            self._model.to("cpu")
+            feats = self._encode(x.to("cpu"))
+        return feats.float().cpu().numpy()
+
     def embed(self, images: list[Image.Image]) -> np.ndarray:
         """Embed images to L2-normalised float32 vectors, shape ``(len(images), D)``."""
         if not images:
             return np.zeros((0, 0), dtype="float32")
         self._load()
-        chunks: list[np.ndarray] = []
+        batch_size = self.config.features.embed_batch
         with torch.no_grad():
-            for start in range(0, len(images), self.config.features.embed_batch):
-                batch = images[start : start + self.config.features.embed_batch]
-                x = torch.stack([self._transform(im) for im in batch]).to(self._device)
-                try:
-                    feats = self._encode(x)
-                except (RuntimeError, NotImplementedError):  # MPS op unsupported -> CPU fallback
-                    self._device = "cpu"
-                    self._model.to("cpu")
-                    feats = self._encode(x.to("cpu"))
-                chunks.append(feats.float().cpu().numpy())
+            chunks = [
+                self._encode_batch(images[start : start + batch_size])
+                for start in range(0, len(images), batch_size)
+            ]
         vecs = np.concatenate(chunks, axis=0)
         norms = np.linalg.norm(vecs, axis=1, keepdims=True)
         return (vecs / np.clip(norms, 1e-12, None)).astype("float32")
