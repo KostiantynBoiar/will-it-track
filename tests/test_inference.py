@@ -45,7 +45,7 @@ def test_fake_tracker() -> None:
 
 
 def test_predict_video_hermetic(tmp_path: Path) -> None:
-    """A probe with local frames + the fake tracker produces a well-formed prediction entry."""
+    """A probe with local frames + the fake tracker produces flat, VEval-shaped masklet entries."""
     cfg = Config()
     cfg.paths.data_root = tmp_path
     frame_dir = tmp_path / cfg.data.frames_subdir / "vid"
@@ -53,7 +53,7 @@ def test_predict_video_hermetic(tmp_path: Path) -> None:
     for i in range(3):
         Image.new("RGB", (40, 30)).save(frame_dir / f"{i}.jpg")
     record = VideoRecord(
-        video_id="vid",
+        video_id="7",
         file_names=[f"vid/{i}.jpg" for i in range(3)],
         category_id="1",
         species="cat",
@@ -66,14 +66,17 @@ def test_predict_video_hermetic(tmp_path: Path) -> None:
     )
     harness = InferenceHarness(cfg, FakeTracker(cfg))
 
-    pred = harness._predict_video(record)
-    assert pred["video_id"] == "vid" and pred["prompt"] == "cat" and pred["n_frames"] == 3
-    assert len(pred["masklets"]) == 1
-    assert len(pred["masklets"][0]["segmentations"]) == 3
-    assert pred["masklets"][0]["bboxes"][0] is not None
+    preds = harness._predict_video(record)
+    assert isinstance(preds, list) and len(preds) == 1  # one flat entry per masklet
+    entry = preds[0]
+    assert entry["video_id"] == 7 and entry["category_id"] == 1  # ints for the VEval GT join
+    assert entry["score"] == 0.9
+    assert len(entry["segmentations"]) == len(entry["bboxes"]) == len(entry["areas"]) == 3
+    assert entry["bboxes"][0] is not None and entry["areas"][0] > 0  # object present on frame 0
+    assert entry["bboxes"][1] is None and entry["areas"][1] == 0  # absent frame nulled
 
     empty = InferenceHarness(cfg, FakeTracker(cfg, masklets_per_call=0))._predict_video(record)
-    assert empty["masklets"] == []  # hard-negative style: nothing found
+    assert empty == []  # hard-negative style: nothing found
 
 
 def test_io_parquet_roundtrip(tmp_path: Path) -> None:

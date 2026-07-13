@@ -80,9 +80,7 @@ class Sam3Tracker:
         with self._torch.no_grad():
             for output in self._model.propagate_in_video_iterator(session):
                 processed = self._processor.postprocess_outputs(session, output)
-                # NOTE: the exact per-object output shape (obj ids, masks, scores) is finalised against
-                # the real transformers SAM 3 video output on the GPU box; kept isolated here.
-                for obj_id, mask, score in _objects(processed, output):
+                for obj_id, mask, score in _objects(processed):
                     segs.setdefault(obj_id, [None] * n)[output.frame_idx] = encode_rle(mask)
                     scores[obj_id] = max(scores.get(obj_id, 0.0), float(score))
 
@@ -94,11 +92,20 @@ class Sam3Tracker:
         ]
 
 
-def _objects(processed, output):  # noqa: ANN001 - shape finalised on the GPU box
-    """Yield ``(obj_id, bool_mask, score)`` from one frame's postprocessed SAM 3 output."""
-    for obj in processed:
-        mask = np.asarray(obj["mask"]).astype(bool)
-        yield int(obj["obj_id"]), mask, float(obj.get("score", 1.0))
+def _objects(processed):  # noqa: ANN001 - transformers SAM 3 postprocess dict
+    """Yield ``(obj_id, bool_mask, score)`` from one frame's postprocessed SAM 3 output.
+
+    ``Sam3VideoProcessor.postprocess_outputs`` returns a dict of parallel tensors --- ``object_ids``
+    ``(N,)``, ``scores`` ``(N,)`` and ``masks`` ``(N, H, W)`` (binary at original resolution) --- not an
+    iterable of per-object dicts. Comparing ``> 0.5`` is a no-op on an already-binary mask and a safe
+    threshold should a build return float probabilities instead.
+    """
+    obj_ids = processed["object_ids"].tolist()
+    scores = processed["scores"].tolist()
+    masks = processed["masks"]
+    for i, obj_id in enumerate(obj_ids):
+        mask = (masks[i] > 0.5).detach().cpu().numpy().astype(bool)
+        yield int(obj_id), mask, float(scores[i])
 
 
 class FakeTracker:

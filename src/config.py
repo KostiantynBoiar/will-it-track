@@ -102,7 +102,8 @@ class InferenceConfig(BaseModel):
         device: Torch device for inference.
         precision: ``"bf16"`` / ``"fp16"`` / ``"fp32"`` (tune to the GPU tier).
         batch_frames: Frames per inference batch.
-        score_threshold: Minimum confidence for a predicted masklet to be kept.
+        score_threshold: Minimum confidence to keep a predicted masklet; ``0.0`` writes raw scores so
+            VEval (not the harness) owns the operating point (its own ``prob_thresh`` decides HOTA).
         predictions_subdir: Where per-video prediction JSONs are written, under ``paths.outputs_root``.
     """
 
@@ -111,7 +112,7 @@ class InferenceConfig(BaseModel):
     device: str = "cuda"
     precision: str = "bf16"
     batch_frames: int = 16
-    score_threshold: float = 0.5
+    score_threshold: float = 0.0
     predictions_subdir: str = "predictions"
 
 

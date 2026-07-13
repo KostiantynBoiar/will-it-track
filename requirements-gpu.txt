@@ -1,13 +1,18 @@
 # SAM-3 zero-shot transfer study — GPU inference box.
-# Adds the frozen SAM 3 backbone + the OFFICIAL VEval scorer on top of the local analysis stack.
-# A single modern GPU (24-40 GB) suffices — inference only.
+# Adds the frozen SAM 3 backbone (via transformers) + the OFFICIAL VEval scorer (vendored) on top of
+# the local analysis stack. A single modern GPU (24-40 GB) suffices — inference only.
 #
-# SAM 3 and VEval are NOT PyPI packages — vendor them under third_party/ (gitignored) as a pinned
-# git clone with a VENDORED_COMMIT.txt, then install editable, e.g.:
-#   git clone https://github.com/facebookresearch/sam3 third_party/sam3   # SAM 3 + the VEval scorer
-#   .venv/bin/pip install -e third_party/sam3
+# The frozen SAM 3 model ships INSIDE transformers (Sam3VideoModel / Sam3VideoProcessor), first in
+# transformers v5.0.0 — NOT from the facebookresearch/sam3 repo. That repo is vendored under
+# third_party/ ONLY for the official VEval scorer (sam3/eval/saco_veval_eval.py) + its toy files:
+#   git clone https://github.com/facebookresearch/sam3 third_party/sam3
+# Do NOT `pip install -e third_party/sam3` (its deps pin numpy<2 and can reinstall torch); run the
+# scorer as a standalone script. If an import demands the package, use `pip install -e . --no-deps`.
 
 -r requirements-local.txt
 
+transformers>=5.0     # ships the frozen Sam3VideoModel / Sam3VideoProcessor (v5.0.0+; pin exact once verified)
+accelerate>=0.34      # device_map / bf16 loading (bitsandbytes NOT needed for plain bf16)
+
 # --- pinned via third_party/ (documented, not pip-resolved) ---
-# sam3  @ third_party/sam3   # frozen promptable backbone + official VEval scorer
+# sam3  @ third_party/sam3   # official VEval scorer + toy files ONLY (model comes from transformers)

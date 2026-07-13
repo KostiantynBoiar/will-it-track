@@ -27,6 +27,23 @@ from src.io import write_parquet
 
 _METRICS = ("pDetA", "pAssA", "pHOTA")
 
+# VEval reports HOTA-family metrics; the exact per-entry spelling (bare, ``phrase``-prefixed, or
+# ``p``-prefixed) is confirmed once against the vendored toy output (runbook cell 7). Each of our
+# columns is resolved from the first candidate field present, so a spelling drift never silently NaNs.
+_METRIC_KEYS = {
+    "pDetA": ("pDetA", "DetA", "phrase_DetA", "video_mask_all_phrase_DetA"),
+    "pAssA": ("pAssA", "AssA", "phrase_AssA", "video_mask_all_phrase_AssA"),
+    "pHOTA": ("pHOTA", "HOTA", "phrase_HOTA", "video_mask_all_phrase_HOTA"),
+}
+
+
+def _first_present(entry: dict, keys: tuple[str, ...]) -> float | None:
+    """First non-null value among ``keys`` in ``entry`` as a float (``None`` if none present)."""
+    for key in keys:
+        if entry.get(key) is not None:
+            return float(entry[key])
+    return None
+
 
 class Scorer:
     """Dispatch to the vendored VEval scorer and aggregate its per-probe metrics to cells."""
@@ -126,11 +143,23 @@ class Scorer:
         return json.loads(result_path.read_text())
 
     def _parse_veval(self, result: dict) -> dict[tuple[str, str], dict]:
-        """Map the VEval result into ``{(video_id, category_id): {metric: value}}`` (finalised on vendor)."""
+        """Map the VEval result into ``{(video_id, category_id): {metric: value}}``.
+
+        The evaluator emits ``{"dataset_results": {..aggregate..}, "video_np_results": [{video_id,
+        category_id, **metrics}]}``; we key each per-probe entry by ``(video_id, category_id)`` (as
+        strings, to match the harness records) and resolve each metric via :data:`_METRIC_KEYS`. Absent
+        ``video_np_results`` yields an empty map (scores become NaN, support is still counted).
+        """
+        entries = (
+            result.get("video_np_results")
+            or result.get("per_video")
+            or result.get("results")
+            or []
+        )
         per_probe: dict[tuple[str, str], dict] = {}
-        for entry in result.get("per_video", result.get("results", [])):
+        for entry in entries:
             key = (str(entry["video_id"]), str(entry["category_id"]))
-            per_probe[key] = {m: entry.get(m) for m in _METRICS}
+            per_probe[key] = {m: _first_present(entry, keys) for m, keys in _METRIC_KEYS.items()}
         return per_probe
 
     def score(self, split: str = "test") -> Path:

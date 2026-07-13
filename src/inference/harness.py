@@ -22,10 +22,19 @@ from src.features.frames import ensure_frames, load_frame
 from src.inference.sam3_tracker import Masklet, Tracker
 
 
+def _packed(rle: dict) -> dict:
+    """A pycocotools-ready RLE (``counts`` as bytes) from our JSON-serialisable ``{size, counts}``."""
+    return {"size": rle["size"], "counts": rle["counts"].encode("ascii")}
+
+
 def _bbox(rle: dict) -> list[float]:
     """COCO ``[x, y, w, h]`` bounding box for one RLE mask."""
-    packed = {"size": rle["size"], "counts": rle["counts"].encode("ascii")}
-    return [float(v) for v in coco_mask.toBbox(packed).tolist()]
+    return [float(v) for v in coco_mask.toBbox(_packed(rle)).tolist()]
+
+
+def _area(rle: dict) -> int:
+    """Mask area (pixel count) for one RLE mask."""
+    return int(coco_mask.area(_packed(rle)))
 
 
 class InferenceHarness:
@@ -72,28 +81,31 @@ class InferenceHarness:
             ]
         return frames
 
-    def _predict_video(self, record: VideoRecord) -> dict:
-        """Track one probe and build its prediction entry (empty ``masklets`` when nothing is found)."""
+    def _predict_video(self, record: VideoRecord) -> list[dict]:
+        """Track one probe → a flat list of per-masklet entries in the official VEval schema.
+
+        Each entry is one masklet: integer ``video_id`` / ``category_id`` matching the split GT (VEval
+        joins predictions to ground truth on that pair), a single ``score``, and equal-length per-frame
+        ``segmentations`` (RLE), ``bboxes`` (COCO ``[x, y, w, h]``) and ``areas`` — ``None`` / ``0`` on
+        frames where the object is absent. Hard negatives (and unavailable frames) contribute no entries.
+        """
         frames = self._frames(record)
         if not frames or any(frame is None for frame in frames):
             masklets: list[Masklet] = []  # frames unavailable → no prediction (scored as a miss)
         else:
             masklets = self.tracker.track(frames, self._prompt(record))
-        return {
-            "video_id": record.video_id,
-            "category_id": record.category_id,
-            "noun_phrase": record.noun_phrase,
-            "prompt": self._prompt(record),
-            "n_frames": len(record.file_names),
-            "masklets": [
-                {
-                    "segmentations": m.segmentations,
-                    "bboxes": [_bbox(s) if s is not None else None for s in m.segmentations],
-                    "score": m.score,
-                }
-                for m in masklets
-            ],
-        }
+        video_id, category_id = int(record.video_id), int(record.category_id)
+        return [
+            {
+                "video_id": video_id,
+                "category_id": category_id,
+                "score": m.score,
+                "segmentations": m.segmentations,
+                "bboxes": [_bbox(s) if s is not None else None for s in m.segmentations],
+                "areas": [_area(s) if s is not None else 0 for s in m.segmentations],
+            }
+            for m in masklets
+        ]
 
     def run(self, split: str = "test", limit: int | None = None) -> Path:
         """Predict masklets for every probe and write per-video JSONs; return the predictions dir.
@@ -119,10 +131,12 @@ class InferenceHarness:
             if (i + 1) % 50 == 0:
                 print(f"  {i + 1}/{len(records)} probes predicted")
 
-        combined = [json.loads(p.read_text()) for p in sorted(out_dir.glob("*.json"))]
+        masklets = [
+            entry for p in sorted(out_dir.glob("*.json")) for entry in json.loads(p.read_text())
+        ]
         combined_path = out_dir.with_suffix(".json")
-        combined_path.write_text(json.dumps({"predictions": combined}))
-        print(f"predictions -> {out_dir} ({len(combined)} videos) | combined -> {combined_path}")
+        combined_path.write_text(json.dumps(masklets))  # flat list — the format VEval ingests
+        print(f"predictions -> {out_dir} ({len(masklets)} masklets) | combined -> {combined_path}")
         return out_dir
 
 

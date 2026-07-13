@@ -31,13 +31,26 @@ pat = userdata.get('GITHUB_PAT')
 ```python
 # 3 — deps: our analysis stack + transformers (ships the SAM 3 modeling code)
 !pip -q install -r requirements-local.txt
-!pip -q install -U "transformers>=4.57" accelerate
+!pip -q install -U "transformers>=5.0" accelerate   # v5.0.0 first ships Sam3VideoModel; 4.x has none
+# If the import in cell 4b fails, the classes may be main-only:
+#   !pip -q install -U "git+https://github.com/huggingface/transformers"
 ```
 
 ```python
-# 4 — vendor SAM 3 + the official VEval scorer (single clone provides both)
+# 4 — vendor the official VEval SCORER only (the frozen SAM 3 model comes from transformers, not here)
 !git clone https://github.com/facebookresearch/sam3 third_party/sam3
-!pip -q install -e third_party/sam3          # needs torch>=2.7 / CUDA 12.6 (Colab has CUDA)
+# Do NOT `pip install -e third_party/sam3`: its deps pin numpy<2 (and its README reinstalls torch),
+# clobbering the stack transformers just validated. Run the scorer as a standalone script (cell 7).
+# Only if a scorer import demands the package:  !pip -q install -e third_party/sam3 --no-deps
+```
+
+```python
+# 4b — GUARD: assert the stack BEFORE any GPU work (fail here, not 30 min into a run)
+import numpy, torch, transformers, platform
+print("python", platform.python_version(), "| numpy", numpy.__version__,
+      "| torch", torch.__version__, torch.version.cuda, "| transformers", transformers.__version__)
+from transformers import Sam3VideoModel, Sam3VideoProcessor  # ImportError here => fix cell 3
+print("SAM 3 video classes import OK")
 ```
 
 ```python
@@ -51,10 +64,17 @@ from huggingface_hub import login; login(userdata.get('HF_TOKEN'))
 ```
 
 ```python
-# 7 — FINALISE THE VEval SCHEMA (do this once): inspect the vendored toy prediction + eval script,
-#     then adjust src/inference/harness.py (_predict_video) and src/eval/score.py (_parse_veval / _run_veval)
-#     if the field names / CLI differ.
-!find third_party/sam3 -path '*veval*' \( -name '*.json' -o -name '*.py' -o -name 'README*' \) | head
+# 7 — CONFIRM THE VEval SCHEMA (once): run the scorer on the vendored toy files and read the REAL keys.
+#     The harness/scorer are already coded to the documented schema; this only confirms the metric
+#     spelling inside `video_np_results` (add any new spelling to _METRIC_KEYS in src/eval/score.py).
+!python third_party/sam3/sam3/eval/saco_veval_eval.py one \
+    --gt_annot_file  third_party/sam3/sam3/assets/veval/toy_gt_and_pred/toy_saco_veval_sav_test_gt.json \
+    --pred_file      third_party/sam3/sam3/assets/veval/toy_gt_and_pred/toy_saco_veval_sav_test_pred.json \
+    --eval_res_file  /tmp/toy_res.json
+import json; r = json.load(open("/tmp/toy_res.json"))
+print("top-level keys:", list(r.keys()))
+print("dataset_results keys:", list(r.get("dataset_results", {}).keys())[:12])
+print("one per-probe entry:", (r.get("video_np_results") or [{}])[0])
 ```
 
 ```python
@@ -73,8 +93,11 @@ import pandas as pd; pd.read_parquet(os.environ["SAFARI_PATHS__OUTPUTS_ROOT"] + 
 ## Notes
 - **Resumable:** predictions are one JSON per video under `outputs/predictions/…`; a re-run skips finished
   videos. Because `outputs/` is on Drive (cell 1), progress survives session timeouts.
-- **GPU tiers:** on L4/T4 set `os.environ["SAFARI_INFERENCE__PRECISION"]="fp16"` and lower
-  `SAFARI_INFERENCE__BATCH_FRAMES`.
+- **GPU tiers:** `bf16` (the config default) needs an Ampere+ GPU (A100/L4). **T4 has no bf16** — you
+  *must* set `os.environ["SAFARI_INFERENCE__PRECISION"]="fp16"` (and lower `SAFARI_INFERENCE__BATCH_FRAMES`).
+  Only `accelerate` is needed for bf16; `bitsandbytes` is **not** (that is for 8/4-bit quant).
+- **Operating point:** the harness writes **raw scores** (`score_threshold=0.0`) so VEval owns the
+  threshold; it applies its own `prob_thresh` (~0.5) for HOTA and the full score range for AP-style metrics.
 - **Robustness prompt:** re-run cells 8–9 with `os.environ["SAFARI_INFERENCE__PROMPT_MODE"]="generic"` for
   the generic-prompt condition.
 - **Gate 1:** check the aggregate `pDetA`/`pAssA` land in the SA-FARI paper's SAM 3 ballpark before moving on.
