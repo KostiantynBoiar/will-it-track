@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 
 from pycocotools import mask as coco_mask
+from tqdm import tqdm
 
 from src.config import Config
 from src.dataset import SAFARI, VideoRecord
@@ -123,13 +124,12 @@ class InferenceHarness:
         if limit is not None:
             records = records[:limit]
 
-        for i, record in enumerate(records):
+        desc = f"SAM 3 {split}/{self.config.inference.prompt_mode}"
+        for record in tqdm(records, desc=desc, unit="probe"):
             path = out_dir / f"{record.video_id}.json"
             if path.exists():
                 continue  # resumable: already predicted
             path.write_text(json.dumps(self._predict_video(record)))
-            if (i + 1) % 50 == 0:
-                print(f"  {i + 1}/{len(records)} probes predicted")
 
         masklets = [
             entry for p in sorted(out_dir.glob("*.json")) for entry in json.loads(p.read_text())
