@@ -27,13 +27,13 @@ from src.io import write_parquet
 
 _METRICS = ("pDetA", "pAssA", "pHOTA")
 
-# VEval reports HOTA-family metrics; the exact per-entry spelling (bare, ``phrase``-prefixed, or
-# ``p``-prefixed) is confirmed once against the vendored toy output (runbook cell 7). Each of our
-# columns is resolved from the first candidate field present, so a spelling drift never silently NaNs.
+# VEval's per-probe ``video_np_results`` entries report HOTA-family metrics prefixed by annotation type
+# (``mask_*`` / ``bbox_*``), confirmed against the vendored toy output (runbook cell 7). SA-FARI is
+# mask-based, so we take the ``mask_*`` value first and fall back to ``bbox_*`` (then bare spellings).
 _METRIC_KEYS = {
-    "pDetA": ("pDetA", "DetA", "phrase_DetA", "video_mask_all_phrase_DetA"),
-    "pAssA": ("pAssA", "AssA", "phrase_AssA", "video_mask_all_phrase_AssA"),
-    "pHOTA": ("pHOTA", "HOTA", "phrase_HOTA", "video_mask_all_phrase_HOTA"),
+    "pDetA": ("mask_DetA", "bbox_DetA", "pDetA", "DetA"),
+    "pAssA": ("mask_AssA", "bbox_AssA", "pAssA", "AssA"),
+    "pHOTA": ("mask_HOTA", "bbox_HOTA", "pHOTA", "HOTA"),
 }
 
 
