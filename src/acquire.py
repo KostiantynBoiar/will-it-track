@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import gcsfs
@@ -130,15 +131,23 @@ class FrameFetcher:
                 f"cannot locate {file_names[0]!r} at {self._frame_uri(split, file_names[0])}"
             )
         dest_root = self.config.paths.data_root / self.config.data.frames_subdir
-        pulled = 0
-        for name in file_names:
+        todo = [name for name in file_names if not (dest_root / name).exists()]
+        if not todo:
+            return 0
+
+        def _pull(name: str) -> None:
             dest = dest_root / name
-            if dest.exists():
-                continue
             dest.parent.mkdir(parents=True, exist_ok=True)
             self.fs.get_file(self._frame_uri(split, name), str(dest))
-            pulled += 1
-        return pulled
+
+        workers = min(max(1, self.config.data.download_workers), len(todo))
+        if workers == 1:
+            for name in todo:
+                _pull(name)
+        else:
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                list(pool.map(_pull, todo))  # raises on the first failure, like the serial path
+        return len(todo)
 
 
 def main() -> None:

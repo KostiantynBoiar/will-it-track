@@ -65,6 +65,7 @@ class DataConfig(BaseModel):
     hf_repo: str = "facebook/SA-FARI"
     gcs_bucket: str = "cxl-public-camera-trap"
     frames_gcs_dir: str = "sa_fari/sa_fari_{split}/JPEGImages_6fps"
+    download_workers: int = 16  # parallel GCS frame downloads (I/O-bound; 1 = serial)
 
 
 class ReferenceConfig(BaseModel):
