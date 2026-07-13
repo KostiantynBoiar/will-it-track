@@ -46,6 +46,7 @@ class Sam3Tracker:
         self._model = None
         self._processor = None
         self._torch = None
+        self._dtype = None
 
     def load(self) -> None:
         """Lazily build the frozen predictor on the configured device."""
@@ -65,12 +66,13 @@ class Sam3Tracker:
         )
         self._processor = Sam3VideoProcessor.from_pretrained(name)
         self._torch = torch
+        self._dtype = dtype
 
     def track(self, frames: list[Image.Image], prompt: str) -> list[Masklet]:
         """Run promptable tracking and return one :class:`Masklet` per kept object."""
         self.load()
         session = self._processor.init_video_session(
-            video=frames, inference_device=self.config.inference.device
+            video=frames, inference_device=self.config.inference.device, dtype=self._dtype
         )
         self._processor.add_text_prompt(session, text=prompt)
 
