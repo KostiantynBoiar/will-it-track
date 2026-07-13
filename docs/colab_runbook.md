@@ -24,8 +24,8 @@ os.environ["SAFARI_PATHS__OUTPUTS_ROOT"] = "/content/drive/MyDrive/mambr/outputs
 # 2 — clone the private repo (GITHUB_PAT secret)
 from google.colab import userdata
 pat = userdata.get('GITHUB_PAT')
-!git clone https://{pat}@github.com/KostiantynBoiar/mambr.git
-%cd mambr
+!git clone https://{pat}@github.com/KostiantynBoiar/will-it-track.git
+%cd will-it-track
 ```
 
 ```python
