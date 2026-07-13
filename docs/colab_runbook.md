@@ -39,6 +39,7 @@ pat = userdata.get('GITHUB_PAT')
 ```python
 # 4 — vendor the official VEval SCORER only (the frozen SAM 3 model comes from transformers, not here)
 !git clone https://github.com/facebookresearch/sam3 third_party/sam3
+!pip -q install iopath   # lightweight scorer dep (add regex/ftfy too if cell 7 asks for them)
 # Do NOT `pip install -e third_party/sam3`: its deps pin numpy<2 (and its README reinstalls torch),
 # clobbering the stack transformers just validated. Run the scorer as a standalone script (cell 7).
 # Only if a scorer import demands the package:  !pip -q install -e third_party/sam3 --no-deps
@@ -68,8 +69,8 @@ from huggingface_hub import login; login(userdata.get('HF_TOKEN'))
 #     The harness/scorer are already coded to the documented schema; this only confirms the metric
 #     spelling inside `video_np_results` (add any new spelling to _METRIC_KEYS in src/eval/score.py).
 !python third_party/sam3/sam3/eval/saco_veval_eval.py one \
-    --gt_annot_file  third_party/sam3/sam3/assets/veval/toy_gt_and_pred/toy_saco_veval_sav_test_gt.json \
-    --pred_file      third_party/sam3/sam3/assets/veval/toy_gt_and_pred/toy_saco_veval_sav_test_pred.json \
+    --gt_annot_file  third_party/sam3/assets/veval/toy_gt_and_pred/toy_saco_veval_sav_test_gt.json \
+    --pred_file      third_party/sam3/assets/veval/toy_gt_and_pred/toy_saco_veval_sav_test_pred.json \
     --eval_res_file  /tmp/toy_res.json
 import json; r = json.load(open("/tmp/toy_res.json"))
 print("top-level keys:", list(r.keys()))
