@@ -125,7 +125,7 @@ class EvalConfig(BaseModel):
     """
 
     metrics: tuple[str, ...] = ("pHOTA", "pDetA", "pAssA")
-    veval_script: str = "sam3/eval/saco_veval_eval.py"
+    veval_script: str = "sam3/sam3/eval/saco_veval_eval.py"  # <clone>/sam3/eval/... (repo dir + package)
 
 
 class FeaturesConfig(BaseModel):

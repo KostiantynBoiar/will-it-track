@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -120,10 +121,14 @@ class Scorer:
     def _run_veval(self, pred_file: Path, gt_file: Path) -> dict:
         """Run the vendored VEval script on (predictions, GT) and return its result JSON.
 
-        The exact CLI and result schema are finalised against the vendored ``saco_veval_eval.py`` on the
-        GPU box; kept isolated here.
+        The scorer is run as a standalone script (not pip-installed), so its own package must be on
+        ``PYTHONPATH`` — we point it at the vendored clone root so ``import sam3`` resolves regardless of
+        the caller's environment.
         """
         script = self.config.paths.third_party_root / self.config.eval.veval_script
+        sam3_root = self.config.paths.third_party_root / "sam3"  # clone dir → makes `import sam3` work
+        env = {**os.environ}
+        env["PYTHONPATH"] = os.pathsep.join(filter(None, [str(sam3_root), env.get("PYTHONPATH", "")]))
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
             result_path = Path(tmp.name)
         subprocess.run(
@@ -139,6 +144,7 @@ class Scorer:
                 str(result_path),
             ],
             check=True,
+            env=env,
         )
         return json.loads(result_path.read_text())
 
