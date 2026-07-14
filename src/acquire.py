@@ -14,21 +14,23 @@ Usage::
 
 from __future__ import annotations
 
-import argparse
-import shutil
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
+import os
 
-import gcsfs
-from huggingface_hub import constants as hf_constants
-from huggingface_hub import hf_hub_download
+# Fine-grained HF tokens 403 on the Xet transfer backend (both the gated annotations and the SAM 3
+# weights). Force plain HTTPS by disabling Xet *before* huggingface_hub is first imported anywhere —
+# this module is imported (via src.features.frames) ahead of transformers' weight download.
+os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
-from src.config import Config
-from src.dataset import SAFARI
+import argparse  # noqa: E402
+import shutil  # noqa: E402
+from concurrent.futures import ThreadPoolExecutor  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-# Fine-grained HF tokens 403 on the Xet download backend; force plain HTTPS. `is_xet_available()`
-# reads this flag live, so overriding it here (after import) is enough.
-hf_constants.HF_HUB_DISABLE_XET = True
+import gcsfs  # noqa: E402
+from huggingface_hub import hf_hub_download  # noqa: E402
+
+from src.config import Config  # noqa: E402
+from src.dataset import SAFARI  # noqa: E402
 
 
 class AnnotationFetcher:
