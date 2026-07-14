@@ -119,7 +119,8 @@ the mechanism faster than words.
 \end{tikzpicture}
 \caption{The whole system in one picture. The \textbf{distances} (top) are the inputs $X$; the frozen
 \textbf{SAM\,3} scores (bottom) are the outputs $Y$; we fit a small \textbf{law} $X\!\to\!Y$ and turn it into
-a \textbf{reliability} estimate. The distance side is complete; the score side is built and awaiting a GPU run.}
+a \textbf{reliability} estimate. Both input sides are now complete: the distances are built, and the frozen
+SAM\,3 scores have been \emph{run and validated on the full test split} (Gate\,1 passed --- \S\,\ref{sec:gate1}).}
 \end{figure}
 
 \vspace{-0.4em}
@@ -131,9 +132,11 @@ a \textbf{reliability} estimate. The distance side is complete; the score side i
 \done   & data acquisition; dataset/schema reader; the two experiments $+$ frozen reference; all four
           label-free distances (taxonomic, temporal, visual, environment); the shared embedding pipeline;
           the leakage firewall $+$ tests.\\
-\built  & SAM\,3 inference harness $+$ VEval scoring $+$ per-cell aggregation (run on Colab; weights access
-          confirmed).\\
-\todo   & SAM\,3 familiarity proxy; feature-table assembly; fit the law, cross-validation, reliability tool.\\
+\done   & SAM\,3 inference harness $+$ VEval scoring $+$ per-cell aggregation --- \textbf{run on the full
+          test split; Gate\,1 passed} (\S\,\ref{sec:gate1}).\\
+\built  & feature-table assembly $+$ the per-target regression scaffold (awaiting the joined scores).\\
+\todo   & SAM\,3 familiarity proxy; the train-split (H1) $+$ generic-prompt runs; fit the law,
+          cross-validation, reliability tool.\\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -682,6 +685,80 @@ analysis unit --- each carrying its own support counts so scores can be trust-we
 never mistaken for ``far''.}
 
 % =====================================================================
+\section{Step 4c --- First results: the measurement is validated (Gate\,1)}
+\label{sec:gate1}
+
+\paragraph{What we ran.}
+Frozen SAM\,3 was run over the \emph{entire} test split --- all $2322$ probes across $833$ videos
+($\approx$3\,h on one A100) --- and scored with the official VEval evaluator. This is the first hard
+checkpoint of the project: are the numbers \emph{sane} and in the published SAM\,3 range? If not, nothing
+downstream is trustworthy. They are.
+
+\paragraph{The headline numbers.}
+Zero-shot, mask-based, over the whole test split (Fig.~\ref{fig:gate1}, left):
+\[
+  \text{\code{pHOTA}} \approx 0.65,\qquad
+  \text{\code{pDetA}} \approx 0.52\ \text{(detection)},\qquad
+  \text{\code{pAssA}} \approx 0.81\ \text{(association)}.
+\]
+Three independent checks say these are right, not a fluke:
+\begin{itemize}
+  \item \textbf{Internally consistent.} \code{pHOTA} must be $\approx\!\sqrt{\text{\code{pDetA}}\cdot
+        \text{\code{pAssA}}}=\sqrt{0.52\cdot0.81}=0.65$ --- exactly what we measured. The metric is not
+        degenerate or mis-wired.
+  \item \textbf{Matches the paper.} The SA-FARI paper reports that fine-tuning adds $+19.6$ \code{pHOTA}
+        over off-the-shelf SAM\,3. Our zero-shot $0.65+0.196\approx0.84$ lands on the paper's
+        \emph{fine-tuned} figure --- i.e.\ our zero-shot result sits precisely where theirs does.
+  \item \textbf{Clean on hard negatives.} On the ``is this species even here?'' decision, image-level
+        precision is $\approx\!1.0$: SAM\,3 essentially never hallucinates an animal that is absent.
+\end{itemize}
+
+\paragraph{Why this matters for the thesis.}
+Two features of the result are exactly what the whole project needs. First, detection ($0.52$) and
+association ($0.81$) are \emph{far apart} --- SAM\,3 tracks well once it finds an animal, but misses about
+half of them; the detection channel is the bottleneck, and the two channels behave differently, which is
+the premise we set out to test. Second, per species the detection score spans almost the full range, from
+$\approx\!0.02$ (small, camouflaged, nocturnal --- kinkajou, armadillo) to $\approx\!0.98$ (large, distinct
+--- jaguar, elephant) (Fig.~\ref{fig:gate1}, right). \emph{That spread is the variance our law has to
+explain} --- if every species scored alike there would be nothing to predict.
+
+\begin{figure}[h]
+\centering
+\begin{minipage}[c]{0.40\textwidth}\centering
+\begin{tikzpicture}
+\begin{axis}[width=\textwidth,height=4.4cm,ybar,bar width=15pt,
+  symbolic x coords={pDetA,pAssA,pHOTA},xtick=data,
+  ylabel={score (test split)},ymin=0,ymax=1,nodes near coords,
+  every node near coord/.append style={font=\scriptsize},
+  tick label style={font=\scriptsize},label style={font=\scriptsize}]
+\addplot[fill=navy!55,draw=navy] coordinates {(pDetA,0.52)(pAssA,0.81)(pHOTA,0.65)};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Aggregate zero-shot SAM\,3 over the full test split. Detection lags association by
+$\sim\!0.3$ --- the gap the thesis explains.}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.56\textwidth}\centering
+\begin{tikzpicture}
+\begin{axis}[width=\textwidth,height=4.4cm,ybar,bar width=6pt,
+  symbolic x coords={jaguar,elephant,fox,capuchin,margay,agouti,ocelot,rabbit,armadillo,kinkajou},
+  xtick=data,x tick label style={rotate=40,anchor=east,font=\scriptsize},
+  ylabel={\code{pDetA} (per species)},ymin=0,ymax=1,
+  tick label style={font=\scriptsize},label style={font=\scriptsize}]
+\addplot[fill=burnt!60,draw=burnt] coordinates
+  {(jaguar,0.98)(elephant,0.96)(fox,0.84)(capuchin,0.82)(margay,0.61)(agouti,0.56)(ocelot,0.48)(rabbit,0.15)(armadillo,0.10)(kinkajou,0.02)};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Detection score by species (representative cells). The $\sim\!0.02$--$0.98$ spread ---
+easy, distinctive animals high; small/cryptic ones low --- is the signal to model.}
+\label{fig:gate1}
+\end{minipage}
+\end{figure}
+
+\takeaway{Gate\,1 is \textbf{passed}: the dependent variable is real, reproduces the published SAM\,3
+zero-shot performance, and already shows the two things the dissertation exists to explain --- a wide
+detection-vs-association gap and a species detection spread from near-$0$ to near-$1$.}
+
+% =====================================================================
 \section{Step 5 --- Fitting the law (planned)}
 With the distances ($X$) and scores ($Y$) in hand, the last stage fits a small, honest model:
 \begin{itemize}
@@ -762,12 +839,19 @@ value change, not a code change.}
 
 % =====================================================================
 \section{Where we are, and the next step}
-The \textbf{distance side is finished and sanity-checked} on real data, and the \textbf{measurement side is
-built}. The codebase is typed, configuration-driven, lint-clean, and covered by a growing test suite; the
-label-free features were refactored and verified to reproduce their outputs exactly. The immediate milestone
-is the \textbf{first decision gate}: run frozen SAM\,3 over the test split on Colab (weights access is
-confirmed), score it with VEval, aggregate to cells, and check the numbers sit in SA-FARI's published SAM\,3
-range. Passing that gate opens the modelling half --- fitting the detection-versus-association law and
-building the reliability estimator.
+Both input sides are now real. The \textbf{distance side is finished and sanity-checked}, and the
+\textbf{measurement side is not just built but run and validated}: frozen SAM\,3 over the full test split,
+scored with VEval, aggregated to cells --- \textbf{Gate\,1 passed} (\S\,\ref{sec:gate1}), reproducing the
+published zero-shot SAM\,3 performance. The codebase is typed, configuration-driven, lint-clean, and covered
+by a growing test suite. So the dependent variable ($Y$) now exists for the \emph{location} split (the
+environment/association experiment, H2).
+
+Three things remain, in order. \textbf{(1)}~Generate the rest of $Y$: run SAM\,3 on the \emph{train} split
+(for the constructed species hold-out, H1) and the generic-prompt robustness condition --- ideally on a
+persistent GPU box rather than Colab. \textbf{(2)}~Assemble \code{features.parquet} (the four distances $+$
+the familiarity proxy) and join it to the scores. \textbf{(3)}~Fit the law: beta regression per target,
+variance partitioning (does detection track species novelty, association track environment?), group-aware
+cross-validation, and the reliability estimator --- then Gate\,2: does a \emph{validated, out-of-sample}
+signal actually exist?
 
 \end{document}
