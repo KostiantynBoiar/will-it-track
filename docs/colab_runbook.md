@@ -91,6 +91,17 @@ import pandas as pd; pd.read_parquet(os.environ["SAFARI_PATHS__OUTPUTS_ROOT"] + 
 !python -m src.eval.score --split test
 ```
 
+```python
+# 10 — MODELLING (H2 / Gate 2): distances -> features -> fit the law -> validate out-of-sample.
+#      assemble pulls the reference (train-site) frames it needs on demand + embeds with DINOv2 (first
+#      run downloads the encoder); the analysis steps are CPU-only. Reads outputs/scores.parquet.
+!python -m src.features.assemble                 # -> outputs/features.parquet (per-cell distances + scores)
+!python -m src.analysis.regression               # -> outputs/models/{pDetA,pAssA}_beta.pkl (+ coef CSVs)
+!python -m src.analysis.variance                 # dominance + VIF + the det-vs-assoc coefficient contrast
+!python -m src.analysis.cross_val                # leave-location-out OOS error -> outputs/validation/
+!python -m src.analysis.uncertainty              # -> outputs/figures/predictive_line_{det,assoc}.png
+```
+
 ## Notes
 - **Resumable:** predictions are one JSON per video under `outputs/predictions/…`; a re-run skips finished
   videos. Because `outputs/` is on Drive (cell 1), progress survives session timeouts.
@@ -102,5 +113,7 @@ import pandas as pd; pd.read_parquet(os.environ["SAFARI_PATHS__OUTPUTS_ROOT"] + 
 - **Robustness prompt:** re-run cells 8–9 with `os.environ["SAFARI_INFERENCE__PROMPT_MODE"]="generic"` for
   the generic-prompt condition.
 - **Gate 1:** check the aggregate `pDetA`/`pAssA` land in the SA-FARI paper's SAM 3 ballpark before moving on.
+- **Gate 2 (cell 10):** does `pAssA` fall with `environment_distance`, and does leave-location-out CV beat a
+  mean predictor (`mae < baseline_mae`)? If yes, out-of-sample signal exists; if not, invoke H0.
 - **Species split later:** `--split train` runs SAM 3 on the train videos too (a bigger batch), needed for
-  the species-hold-out experiment.
+  the species-hold-out experiment (H1) — feeds the same cell-10 modelling on the species partition.
