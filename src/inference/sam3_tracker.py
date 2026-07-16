@@ -69,10 +69,20 @@ class Sam3Tracker:
         self._dtype = dtype
 
     def track(self, frames: list[Image.Image], prompt: str) -> list[Masklet]:
-        """Run promptable tracking and return one :class:`Masklet` per kept object."""
+        """Run promptable tracking and return one :class:`Masklet` per kept object.
+
+        The video frames and their preprocessing are kept on the CPU (``processing_device`` /
+        ``video_storage_device``); only per-frame vision features move to the GPU. This keeps the
+        peak GPU footprint bounded by one frame, not the whole clip --- so a long/high-resolution
+        video does not OOM a modest (e.g. 20 GB) card. The per-clip session is freed before returning.
+        """
         self.load()
         session = self._processor.init_video_session(
-            video=frames, inference_device=self.config.inference.device, dtype=self._dtype
+            video=frames,
+            inference_device=self.config.inference.device,
+            processing_device="cpu",
+            video_storage_device="cpu",
+            dtype=self._dtype,
         )
         self._processor.add_text_prompt(session, text=prompt)
 
@@ -87,11 +97,15 @@ class Sam3Tracker:
                     scores[obj_id] = max(scores.get(obj_id, 0.0), float(score))
 
         threshold = self.config.inference.score_threshold
-        return [
+        masklets = [
             Masklet(segmentations=segs[oid], score=scores[oid])
             for oid in segs
             if scores[oid] >= threshold
         ]
+        del session  # release the clip's GPU state before the next video
+        if self._torch.cuda.is_available():
+            self._torch.cuda.empty_cache()
+        return masklets
 
 
 def _objects(processed):  # noqa: ANN001 - transformers SAM 3 postprocess dict
