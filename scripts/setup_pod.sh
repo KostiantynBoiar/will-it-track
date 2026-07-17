@@ -17,11 +17,15 @@ echo "==> venv: $VENV   torch: $CU"
 python3 -m venv "$VENV"
 # shellcheck disable=SC1091
 source "$VENV/bin/activate"
-pip install --upgrade pip
+
+# Unpack wheels on the (disk-backed) volume, not RAM-backed /tmp — else the big torch wheel OOM-kills pip.
+export TMPDIR="${TMPDIR:-$(dirname "$VENV")/pip-tmp}"
+mkdir -p "$TMPDIR"
+pip install --no-cache-dir --upgrade pip
 
 # torch first, from the CUDA-matched index (see requirements.txt header for why it's separate)
 pip install --no-cache-dir torch torchvision --index-url "https://download.pytorch.org/whl/$CU"
-pip install -r "$here/requirements.txt"
+pip install --no-cache-dir -r "$here/requirements.txt"
 
 python -c "import torch, transformers; print('torch', torch.__version__, torch.version.cuda,
       '| cuda', torch.cuda.is_available(), '| transformers', transformers.__version__)"
