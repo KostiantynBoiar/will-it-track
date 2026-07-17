@@ -1,0 +1,47 @@
+# Unified requirements for the SA-FARI / SAM 3 pipeline — local analysis, GPU inference, and the
+# vendored VEval scorer, in one place.  `pip install -r requirements.txt`
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+# TORCH IS DELIBERATELY NOT LISTED HERE.  Its wheel must match your machine's CUDA driver, which a
+# requirements file cannot portably pin — installing an unmatched build is what causes the
+# "NVIDIA driver is too old" error.  Install it FIRST, for your box:
+#
+#   • RunPod / CUDA 12.8 driver:  pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+#   • other CUDA (e.g. 12.4):      …/whl/cu124   • Mac / CPU-only:  pip install torch torchvision
+#
+# Then:  pip install -r requirements.txt      (or just run scripts/setup_pod.sh on a pod)
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+
+# --- core / analysis ---
+numpy>=1.24,<3
+pandas>=2.1
+pyarrow>=15
+scipy>=1.11
+scikit-learn>=1.4
+statsmodels>=0.14        # beta / logit-link GLM on bounded scores
+matplotlib>=3.8
+pycocotools>=2.0.7       # RLE decode for SA-FARI masklets + VEval JSON
+tqdm>=4.66
+pyyaml>=6                # config loading (import yaml)
+pydantic>=2
+pydantic-settings>=2     # SAFARI_* env-var overrides
+
+# --- data access ---
+huggingface_hub>=0.24    # gated SA-FARI annotations + SAM 3 weights
+gcsfs>=2024.6            # anonymous 6 fps frame pull from gs://cxl-public-camera-trap
+
+# --- model / inference ---
+transformers>=5.0        # ships the frozen Sam3VideoModel / Sam3VideoProcessor (v5.0.0+)
+accelerate>=0.34         # device_map / bf16 loading (bitsandbytes NOT needed)
+open_clip_torch>=2.24    # CLIP semantic distance (robustness); DINOv2 loads via torch.hub
+
+# --- vendored VEval scorer's import chain (third_party/sam3; deps its pyproject under-declares) ---
+iopath>=0.1.10
+einops
+timm>=1.0.17
+ftfy
+regex
+
+# --- dev ---
+pytest>=8
+ruff>=0.15
