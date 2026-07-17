@@ -71,16 +71,26 @@ class Sam3Tracker:
     def track(self, frames: list[Image.Image], prompt: str) -> list[Masklet]:
         """Run promptable tracking and return one :class:`Masklet` per kept object.
 
-        The video frames and their preprocessing are kept on the CPU (``processing_device`` /
-        ``video_storage_device``); only per-frame vision features move to the GPU. This keeps the
-        peak GPU footprint bounded by one frame, not the whole clip --- so a long/high-resolution
-        video does not OOM a modest (e.g. 20 GB) card. The per-clip session is freed before returning.
+        Runs the model on the GPU (fast); only the raw video is stored on the CPU
+        (``video_storage_device="cpu"``) so the whole clip is never resident on the GPU. If a
+        long/high-res clip still OOMs a modest card, it retries that one clip with preprocessing on the
+        CPU (slow but safe) rather than crashing the run.
         """
         self.load()
+        try:
+            return self._run(frames, prompt, self.config.inference.device)
+        except RuntimeError as exc:
+            if "out of memory" not in str(exc).lower():
+                raise
+            self._torch.cuda.empty_cache()
+            return self._run(frames, prompt, "cpu")  # rare oversized clip: CPU fallback
+
+    def _run(self, frames: list[Image.Image], prompt: str, processing_device: str) -> list[Masklet]:
+        """One promptable-tracking pass with the frame preprocessing on ``processing_device``."""
         session = self._processor.init_video_session(
             video=frames,
             inference_device=self.config.inference.device,
-            processing_device="cpu",
+            processing_device=processing_device,
             video_storage_device="cpu",
             dtype=self._dtype,
         )
@@ -89,23 +99,24 @@ class Sam3Tracker:
         n = len(frames)
         segs: dict[int, list[dict | None]] = {}
         scores: dict[int, float] = {}
-        with self._torch.no_grad():
-            for output in self._model.propagate_in_video_iterator(session):
-                processed = self._processor.postprocess_outputs(session, output)
-                for obj_id, mask, score in _objects(processed):
-                    segs.setdefault(obj_id, [None] * n)[output.frame_idx] = encode_rle(mask)
-                    scores[obj_id] = max(scores.get(obj_id, 0.0), float(score))
+        try:
+            with self._torch.no_grad():
+                for output in self._model.propagate_in_video_iterator(session):
+                    processed = self._processor.postprocess_outputs(session, output)
+                    for obj_id, mask, score in _objects(processed):
+                        segs.setdefault(obj_id, [None] * n)[output.frame_idx] = encode_rle(mask)
+                        scores[obj_id] = max(scores.get(obj_id, 0.0), float(score))
+        finally:
+            del session  # release the clip's GPU state before the next video
+            if self._torch.cuda.is_available():
+                self._torch.cuda.empty_cache()
 
         threshold = self.config.inference.score_threshold
-        masklets = [
+        return [
             Masklet(segmentations=segs[oid], score=scores[oid])
             for oid in segs
             if scores[oid] >= threshold
         ]
-        del session  # release the clip's GPU state before the next video
-        if self._torch.cuda.is_available():
-            self._torch.cuda.empty_cache()
-        return masklets
 
 
 def _objects(processed):  # noqa: ANN001 - transformers SAM 3 postprocess dict
