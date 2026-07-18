@@ -64,6 +64,7 @@ def table(tmp_path):
     """Synthetic table on disk + a config whose outputs_root is the tmp dir."""
     cfg = Config()
     cfg.paths.outputs_root = tmp_path
+    cfg.cv.n_bootstrap = 100  # keep the group-bootstrap CIs / significance test fast in tests
     df = _synthetic()
     path = write_parquet(df, tmp_path / "features.parquet")
     return cfg, df, path
@@ -114,6 +115,22 @@ def test_regression_recovers_negative_slopes(table) -> None:
         assert pkl.exists()
         coef = pd.read_csv(cfg.paths.outputs_root / "models" / f"{target}_coef.csv", index_col=0)
         assert coef.loc[driver, "coef"] < 0  # score falls as the driving distance grows
+        # both the naive and the honest (cluster-bootstrap) intervals are written
+        for col in ("ci_lo_naive", "ci_hi_naive", "ci_lo", "ci_hi"):
+            assert col in coef.columns
+        assert np.isfinite(coef.loc[driver, ["ci_lo", "ci_hi"]].to_numpy(dtype=float)).all()
+
+
+def test_cluster_bootstrap_ci_is_wider_than_naive(table) -> None:
+    """The group-cluster-bootstrap CI is not narrower than the naive model CI (it respects clustering)."""
+    cfg, _df, path = table
+    TargetRegression("pAssA", cfg).fit(path)
+    coef = pd.read_csv(cfg.paths.outputs_root / "models" / "pAssA_coef.csv", index_col=0)
+    naive_w = (coef["ci_hi_naive"] - coef["ci_lo_naive"]).dropna()
+    clust_w = (coef["ci_hi"] - coef["ci_lo"]).dropna()
+    common = naive_w.index.intersection(clust_w.index)
+    # on average the honest interval is wider (the whole point of the correction)
+    assert clust_w[common].mean() >= naive_w[common].mean()
 
 
 def test_variance_partition_finds_the_driver(table) -> None:
@@ -137,6 +154,21 @@ def test_grouped_cv_beats_baseline_and_writes(table) -> None:
 
     out = GroupedCV(cfg).run(path)
     assert out.exists() and len(read_parquet(out)) > 0
+
+
+def test_cv_summary_has_group_bootstrap_significance(table) -> None:
+    """The CV summary carries a paired group-bootstrap: delta CI, one-sided p in [0,1], and a verdict."""
+    from src.analysis.cross_val import _summarise
+
+    cfg, _df, path = table
+    GroupedCV(cfg).run(path)
+    summary = _summarise(read_parquet(cfg.paths.outputs_root / "validation" / "cv_results.parquet"), cfg)
+    for col in ("delta", "delta_lo", "delta_hi", "p_value", "significant"):
+        assert col in summary.columns
+    assert ((summary["p_value"] >= 0) & (summary["p_value"] <= 1)).all()
+    # env→pAssA is a strong synthetic driver, so leaving out location should beat the mean significantly
+    row = summary[(summary["group_scheme"] == "location") & (summary["target"] == "pAssA")]
+    assert bool(row["significant"].iloc[0])
 
 
 def test_predictive_line_writes_png(table) -> None:

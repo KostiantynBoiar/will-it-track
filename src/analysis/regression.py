@@ -54,14 +54,20 @@ class DesignBuilder:
         self.support_col_: str | None = None
 
     def fit(self, df: pd.DataFrame) -> DesignBuilder:
-        """Learn standardisation statistics from ``df`` (a training frame)."""
+        """Learn standardisation statistics from ``df`` (a training frame).
+
+        Zero-variance predictors are dropped, not kept as an all-zero column: a constant regressor
+        carries no information and only makes the design rank-deficient (e.g. ``temporal_gap`` on the
+        location split, which is present for a handful of cells and identical among them).
+        """
         continuous = [c for c in (*DISTANCE_COLS, *_CONT_COVARIATES) if c in df.columns]
         self.cont_ = []
         self.stats_ = {}
         for col in continuous:
             values = _num(df[col])
-            if values.notna().any():
-                self.stats_[col] = (float(values.mean()), float(values.std(ddof=0)) or 1.0)
+            sd = float(values.std(ddof=0)) if values.notna().any() else 0.0
+            if sd > 0:
+                self.stats_[col] = (float(values.mean()), sd)
                 self.cont_.append(col)
         model = self.config.model
         self.support_col_ = (
@@ -121,6 +127,57 @@ def _pseudo_r2(result) -> float:  # noqa: ANN001
     return 1.0 - float(result.deviance) / null if null > 0 else 0.0
 
 
+def _fit_params(rows: pd.DataFrame, target: str, config: Config) -> pd.Series:
+    """Standardised GLM coefficients for one row subset (refit design + model)."""
+    builder = DesignBuilder(config).fit(rows)
+    return fit_glm(rows, target, builder, config).params
+
+
+def group_bootstrap_cis(
+    df: pd.DataFrame, target: str, config: Config, *, n_boot: int | None = None, alpha: float = 0.05
+) -> pd.DataFrame:
+    """Group-cluster-bootstrap CIs for the standardised coefficients (the honest interval).
+
+    Resamples whole groups with replacement from each ``model.cluster_cols`` column, refits the GLM per
+    resample, and takes percentile intervals; the reported interval per coefficient is the conservative
+    envelope (widest ``ci_lo``/``ci_hi``) across the grouping columns. This supersedes the naive model
+    CIs, which are anti-conservative here because ``var_weights`` inflates the effective sample size and
+    the predictors are constant within species / location (pseudo-replication) --- so ``conf_int`` treats
+    ~60-90 independent clusters as hundreds of independent cells. Returns a frame indexed by parameter
+    with ``ci_lo``/``ci_hi`` (``NaN`` for a parameter that never appears across resamples).
+    """
+    rows = df[_num(df[target]).notna()].copy().reset_index(drop=True)
+    n_boot = config.cv.n_bootstrap if n_boot is None else n_boot
+    rng = np.random.default_rng(config.seed)
+    los, his = [], []
+    for group_col in config.model.cluster_cols:
+        if group_col not in rows.columns:
+            continue
+        groups = rows[group_col].astype(str).to_numpy()
+        uniq = np.unique(groups)
+        if len(uniq) < 2:
+            continue
+        idx = {g: np.flatnonzero(groups == g) for g in uniq}
+        draws = []
+        for _ in range(n_boot):
+            picked = rng.choice(uniq, size=len(uniq), replace=True)
+            sample = rows.iloc[np.concatenate([idx[g] for g in picked])]
+            try:
+                draws.append(_fit_params(sample, target, config))
+            except Exception:  # noqa: BLE001 - a singular resample is skipped, not fatal
+                continue
+        if draws:
+            drawn = pd.DataFrame(draws)
+            los.append(drawn.quantile(alpha / 2.0))
+            his.append(drawn.quantile(1.0 - alpha / 2.0))
+    if not los:
+        return pd.DataFrame(columns=["ci_lo", "ci_hi"])
+    # conservative envelope: widest interval across the grouping schemes
+    ci_lo = pd.concat(los, axis=1).min(axis=1)
+    ci_hi = pd.concat(his, axis=1).max(axis=1)
+    return pd.DataFrame({"ci_lo": ci_lo, "ci_hi": ci_hi})
+
+
 class TargetRegression:
     """Fit a support-weighted logit-link GLM for one bounded target (pDetA or pAssA)."""
 
@@ -160,12 +217,25 @@ class TargetRegression:
                 "std_err": result.bse,
                 "z": result.tvalues,
                 "p_value": result.pvalues,
-                "ci_lo": ci[0],
-                "ci_hi": ci[1],
+                "ci_lo_naive": ci[0],
+                "ci_hi_naive": ci[1],
             }
         )
+        # The reported ci_lo/ci_hi are the group-cluster-bootstrap interval (honest under
+        # pseudo-replication + var_weights); the naive model interval is kept alongside for contrast.
+        if self.config.model.cluster_ci:
+            clustered = group_bootstrap_cis(rows, self.target, self.config)
+            coef["ci_lo"] = clustered["ci_lo"].reindex(coef.index)
+            coef["ci_hi"] = clustered["ci_hi"].reindex(coef.index)
+            kind = "cluster-bootstrap"
+        else:
+            coef["ci_lo"], coef["ci_hi"] = ci[0], ci[1]
+            kind = "naive"
         coef.to_csv(models_dir / f"{self.target}_coef.csv")
-        print(f"{self.target}: n={int(result.nobs)}  pseudo-R2={_pseudo_r2(result):.3f}  ->  {pkl}")
+        print(
+            f"{self.target}: n={int(result.nobs)}  pseudo-R2={_pseudo_r2(result):.3f}  "
+            f"({kind} CIs)  ->  {pkl}"
+        )
         return pkl
 
 

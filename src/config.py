@@ -189,12 +189,20 @@ class ModelConfig(BaseModel):
         support_weight: Weight observations by support.
         support_col: Support column used for weighting and the covariate.
         log_support_covariate: Add ``log(n_frames)`` so "rare" is never mistaken for "far".
+        cluster_ci: Report group-cluster-bootstrap coefficient CIs (refit per resample) instead of the
+            naive model CIs. The naive CIs are anti-conservative here — ``var_weights`` inflates the
+            effective N and the predictors are constant within species/location (pseudo-replication) —
+            so the honest interval resamples whole groups. Naive CIs are still written alongside.
+        cluster_cols: Grouping columns bootstrapped over; the reported CI is the conservative envelope
+            across them (widest), since novelty predictors vary per species and scene ones per location.
     """
 
     family: str = "beta"
     support_weight: bool = True
     support_col: str = "n_frames"
     log_support_covariate: bool = True
+    cluster_ci: bool = True
+    cluster_cols: tuple[str, ...] = ("category_id", "location_id")
 
 
 class CVConfig(BaseModel):

@@ -68,22 +68,51 @@ def oos_predictions(
     return out
 
 
-def _summarise(cv: pd.DataFrame) -> pd.DataFrame:
-    """Per (scheme, target): OOS MAE vs the mean-predictor baseline MAE."""
+def _bootstrap_delta(delta: np.ndarray, groups: np.ndarray, n_boot: int, seed: int) -> dict:
+    """Paired group-bootstrap of ``mean(delta)``: resample whole groups -> 95% CI + one-sided ``p``.
+
+    ``delta`` is the per-cell ``|error_baseline| - |error_model|`` (positive => the model beats the
+    mean). Cells inside a held-out group are not independent, so resampling *whole groups* (not cells)
+    is what keeps the significance test honest. ``p`` is ``P(mean delta <= 0)`` across resamples.
+    """
+    uniq = np.unique(groups)
+    if len(uniq) < 2 or n_boot <= 0:
+        return {"delta_lo": float("nan"), "delta_hi": float("nan"), "p_value": float("nan"),
+                "significant": False}
+    idx = {g: np.flatnonzero(groups == g) for g in uniq}
+    rng = np.random.default_rng(seed)
+    boots = np.empty(n_boot)
+    for b in range(n_boot):
+        sel = np.concatenate([idx[g] for g in rng.choice(uniq, size=len(uniq), replace=True)])
+        boots[b] = delta[sel].mean()
+    lo, hi = (float(x) for x in np.percentile(boots, [2.5, 97.5]))
+    return {"delta_lo": lo, "delta_hi": hi, "p_value": float((boots <= 0).mean()),
+            "significant": bool(lo > 0)}
+
+
+def _summarise(cv: pd.DataFrame, config: Config | None = None) -> pd.DataFrame:
+    """Per (scheme, target): OOS MAE vs the mean baseline, with a paired group-bootstrap on the gain.
+
+    ``delta = baseline_mae - mae`` (>0 => the model beats the mean); its 95% CI and one-sided
+    ``p_value`` come from resampling whole held-out groups (a cell-level test would overstate
+    significance because cells within a group share a species/location). ``significant`` is the 5% call.
+    """
+    cfg = config or Config()
     done = cv[cv["predicted"].notna()]
     records = []
     for (scheme, target), grp in done.groupby(["group_scheme", "target"]):
         actual, predicted = grp["actual"].to_numpy(), grp["predicted"].to_numpy()
-        baseline = float(np.mean(np.abs(actual - actual.mean())))
-        records.append(
-            {
-                "group_scheme": scheme,
-                "target": target,
-                "n": len(grp),
-                "mae": float(np.mean(np.abs(actual - predicted))),
-                "baseline_mae": baseline,
-            }
-        )
+        e_model, e_base = np.abs(actual - predicted), np.abs(actual - actual.mean())
+        record = {
+            "group_scheme": scheme,
+            "target": target,
+            "n": len(grp),
+            "mae": float(e_model.mean()),
+            "baseline_mae": float(e_base.mean()),
+            "delta": float((e_base - e_model).mean()),
+        }
+        record |= _bootstrap_delta(e_base - e_model, grp["group"].to_numpy(), cfg.cv.n_bootstrap, cfg.seed)
+        records.append(record)
     return pd.DataFrame(records)
 
 
@@ -121,7 +150,7 @@ class GroupedCV:
             else pd.DataFrame(columns=[*_CELL_KEYS, "target", "group_scheme", "actual", "predicted"])
         )
         path = write_parquet(cv, self.config.paths.outputs_root / "validation" / "cv_results.parquet")
-        summary = _summarise(cv)
+        summary = _summarise(cv, self.config)
         if not summary.empty:
             print(summary.to_string(index=False))
         print(f"cv results -> {path} ({len(cv)} OOS rows)")
