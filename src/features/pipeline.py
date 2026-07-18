@@ -61,28 +61,39 @@ def embed_crops(
 ) -> dict[str, np.ndarray]:
     """Embed each item's crop (cache-first), returning ``{cache_key: vector}``.
 
-    Missing frames are batch-fetched per video; any frame/crop that cannot be produced is skipped.
+    Processed in chunks of ``features.embed_crop_chunk``: each chunk fetches its frames, decodes +
+    crops them, embeds, caches, then drops the crops before the next chunk. Peak RAM is therefore
+    bounded by the chunk size (not the number of items), so full sampling caps do not exhaust memory
+    even though the environment "crop" is a whole frame. Behaviour is unchanged — the result is
+    re-read from the cache — so chunking only affects memory, not the output.
     """
     misses = [item for item in items if cache.get(item[0]) is None]
-    by_record: dict[str, list[Item]] = defaultdict(list)
-    for item in misses:
-        by_record[item[1].video_id].append(item)
-    for group in by_record.values():
-        record = group[0][1]
-        ensure_frames([record.file_names[fi] for _, _, fi, _ in group], record.origin, config)
+    chunk = max(1, config.features.embed_crop_chunk)
+    for n_chunk, start in enumerate(range(0, len(misses), chunk)):
+        batch = misses[start : start + chunk]
+        by_record: dict[str, list[Item]] = defaultdict(list)
+        for item in batch:
+            by_record[item[1].video_id].append(item)
+        for group in by_record.values():
+            record = group[0][1]
+            ensure_frames([record.file_names[fi] for _, _, fi, _ in group], record.origin, config)
 
-    pending: list[tuple[str, Image.Image]] = []
-    for key, record, frame_index, crop_fn in misses:
-        frame = load_frame(record.file_names[frame_index], config)
-        if frame is None:
-            continue
-        crop = crop_fn(frame)
-        if crop is not None:
-            pending.append((key, crop))
-    if pending:
-        vectors = embedder.embed([crop for _, crop in pending])
-        for (key, _), vector in zip(pending, vectors, strict=True):
-            cache.put(key, vector)
+        pending: list[tuple[str, Image.Image]] = []
+        for key, record, frame_index, crop_fn in batch:
+            frame = load_frame(record.file_names[frame_index], config)
+            if frame is None:
+                continue
+            crop = crop_fn(frame)
+            if crop is not None:
+                pending.append((key, crop))
+        if pending:
+            vectors = embedder.embed([crop for _, crop in pending])
+            for (key, _), vector in zip(pending, vectors, strict=True):
+                cache.put(key, vector)
+        del pending  # release this chunk's decoded frames before the next one
+        if (n_chunk + 1) % 16 == 0:
+            cache.save()  # checkpoint so a long run is resumable, not lost on a crash
+
+    if misses:
         cache.save()
-
     return {item[0]: cache.get(item[0]) for item in items if cache.get(item[0]) is not None}

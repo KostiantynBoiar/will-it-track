@@ -143,6 +143,8 @@ class FeaturesConfig(BaseModel):
         max_masklets_per_species: Cap on masklets embedded per species (bounds the prototype cost).
         max_frames_per_location: Cap on masked-background frames embedded per location.
         embed_batch: Images per forward pass.
+        embed_crop_chunk: Crops loaded + embedded per chunk — bounds peak RAM (only this many decoded
+            frames are ever alive at once), independent of the sampling caps.
         embed_device: Torch device for embedding (``"mps"``/``"cuda"``/``"cpu"``; falls back to CPU).
         min_mask_pixels: Smallest mask (in pixels) that yields a usable animal crop.
         background_fill: How to neutralise the animal in the scene embedding (``"mean"``/``"zero"``).
@@ -168,6 +170,7 @@ class FeaturesConfig(BaseModel):
     max_masklets_per_species: int = 40
     max_frames_per_location: int = 200
     embed_batch: int = 32
+    embed_crop_chunk: int = 256
     embed_device: str = "mps"
     min_mask_pixels: int = 64
     background_fill: str = "mean"
