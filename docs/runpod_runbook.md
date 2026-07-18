@@ -29,10 +29,14 @@ export SAFARI_PATHS__OUTPUTS_ROOT=/workspace/outputs     # predictions + parquet
 cd /workspace
 git clone https://$GITHUB_PAT@github.com/KostiantynBoiar/will-it-track.git
 cd will-it-track
-pip -q install -r requirements-local.txt                 # torch 2.6 already present → not reinstalled
+pip -q install -r requirements-local.txt                 # torch already present → not reinstalled
 pip -q install -U "transformers>=5.0" accelerate         # ships Sam3VideoModel
+# transformers can pull a torch built for a CUDA newer than the pod driver → pin torch to the driver's
+# CUDA (12.8 here). If a run later dies with "NVIDIA driver too old", this is the fix:
+pip install --force-reinstall --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu128
 git clone https://github.com/facebookresearch/sam3 third_party/sam3   # the VEval scorer (not the model)
-pip -q install iopath                                    # lightweight scorer dep
+pip -q install iopath einops timm ftfy regex             # scorer + its (undeclared) model-import deps
+#   (Colab preinstalls these; a bare pod doesn't. If score.py later reports a missing module, pip-install it.)
 ```
 
 ## 3. Guard — assert the stack before any GPU work
@@ -44,7 +48,8 @@ If the import fails: `pip -q install -U "git+https://github.com/huggingface/tran
 
 ## 4. Fetch the gated annotations
 ```bash
-huggingface-cli login --token $HF_TOKEN   # (or rely on $HF_TOKEN alone)
+# $HF_TOKEN in the env is enough (acquire + from_pretrained both read it). Optional explicit login:
+hf auth login --token $HF_TOKEN            # note: `huggingface-cli` is deprecated → use `hf`
 python -m src.acquire --annotations        # ~0.9 GB → /workspace/data/annotations
 ```
 
