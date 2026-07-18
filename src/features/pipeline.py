@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from PIL import Image
@@ -62,13 +63,21 @@ def embed_crops(
     """Embed each item's crop (cache-first), returning ``{cache_key: vector}``.
 
     Processed in chunks of ``features.embed_crop_chunk``: each chunk fetches its frames, decodes +
-    crops them, embeds, caches, then drops the crops before the next chunk. Peak RAM is therefore
-    bounded by the chunk size (not the number of items), so full sampling caps do not exhaust memory
-    even though the environment "crop" is a whole frame. Behaviour is unchanged — the result is
-    re-read from the cache — so chunking only affects memory, not the output.
+    crops them (in parallel across ``features.embed_load_workers`` threads, since the path is I/O-bound
+    on frame reads not the GPU), embeds, caches, then drops the crops before the next chunk. Peak RAM is
+    bounded by the chunk size, so full sampling caps do not exhaust memory even though the environment
+    "crop" is a whole frame. Behaviour is unchanged — the result is re-read from the cache.
     """
     misses = [item for item in items if cache.get(item[0]) is None]
     chunk = max(1, config.features.embed_crop_chunk)
+    workers = max(1, config.features.embed_load_workers)
+
+    def _load_crop(item: Item) -> tuple[str, Image.Image] | None:
+        key, record, frame_index, crop_fn = item
+        frame = load_frame(record.file_names[frame_index], config)
+        crop = crop_fn(frame) if frame is not None else None
+        return (key, crop) if crop is not None else None
+
     for n_chunk, start in enumerate(range(0, len(misses), chunk)):
         batch = misses[start : start + chunk]
         by_record: dict[str, list[Item]] = defaultdict(list)
@@ -78,14 +87,12 @@ def embed_crops(
             record = group[0][1]
             ensure_frames([record.file_names[fi] for _, _, fi, _ in group], record.origin, config)
 
-        pending: list[tuple[str, Image.Image]] = []
-        for key, record, frame_index, crop_fn in batch:
-            frame = load_frame(record.file_names[frame_index], config)
-            if frame is None:
-                continue
-            crop = crop_fn(frame)
-            if crop is not None:
-                pending.append((key, crop))
+        if workers == 1:
+            loaded = [_load_crop(item) for item in batch]
+        else:
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                loaded = list(pool.map(_load_crop, batch))
+        pending: list[tuple[str, Image.Image]] = [c for c in loaded if c is not None]
         if pending:
             vectors = embedder.embed([crop for _, crop in pending])
             for (key, _), vector in zip(pending, vectors, strict=True):
