@@ -146,6 +146,27 @@ def test_predictive_line_writes_png(table) -> None:
     assert png.exists() and png.suffix == ".png"
 
 
+def test_report_export_writes_dissertation_artifacts(table) -> None:
+    """The exporter turns fitted outputs into results_summary.md + booktabs table fragments."""
+    from src.analysis.report import export
+
+    cfg, df, path = table
+    write_parquet(df, cfg.paths.outputs_root / "scores.parquet")  # exporter's Gate-1 source
+    for target in ("pDetA", "pAssA"):
+        TargetRegression(target, cfg).fit(path)
+    GroupedCV(cfg).run(path)
+
+    summary = export(cfg)
+    assert summary.exists()
+    text = summary.read_text()
+    assert "Gate 1" in text and "Gate 2" in text
+
+    tables = cfg.paths.outputs_root.parent / "report" / "dissertation" / "tables"
+    for frag in ("gate1_measurement.tex", "coefficients.tex", "cv_validation.tex"):
+        assert (tables / frag).exists()
+    assert "\\begin{table}" in (tables / "coefficients.tex").read_text()
+
+
 def test_leakage_firewall_rejects_overlap() -> None:
     """assemble refuses to build features when the held (location) axis is not disjoint."""
 

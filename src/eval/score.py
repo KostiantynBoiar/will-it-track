@@ -178,6 +178,9 @@ class Scorer:
             / f"{inf.prompt_mode}.json"
         )
         result = self._run_veval(pred_file, SAFARI(split, self.config).ann_path)
+        summary_path = self.config.paths.outputs_root / "veval_summary.json"
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(json.dumps(result.get("dataset_results", result), indent=2))
         df = self.aggregate(self._parse_veval(result), split)
         return write_parquet(df, self.config.paths.outputs_root / "scores.parquet")
 
