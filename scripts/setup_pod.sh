@@ -27,6 +27,12 @@ pip install --no-cache-dir --upgrade pip
 pip install --no-cache-dir torch torchvision --index-url "https://download.pytorch.org/whl/$CU"
 pip install --no-cache-dir -r "$here/requirements.txt"
 
+# vendored VEval scorer (facebookresearch/sam3) — src.eval.score runs it as a standalone script
+if [ ! -e "$here/third_party/sam3/sam3/eval/saco_veval_eval.py" ]; then
+  echo "==> cloning the VEval scorer into third_party/sam3"
+  git clone --depth 1 https://github.com/facebookresearch/sam3 "$here/third_party/sam3"
+fi
+
 python -c "import torch, transformers; print('torch', torch.__version__, torch.version.cuda,
       '| cuda', torch.cuda.is_available(), '| transformers', transformers.__version__)"
 echo "==> done. New sessions: source $VENV/bin/activate"
