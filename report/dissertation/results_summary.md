@@ -7,13 +7,13 @@
 ## Feature coverage (non-null / rows)
 n_rows=1447  taxonomic_distance=840  temporal_gap=32  visual_distance=1143  environment_distance=1435
 
-## Gate 2 --- fitted law (standardised coefficients)
-- pDetA: taxonomic_distance -0.362, temporal_gap -0.000, visual_distance -0.144, environment_distance +0.042, clutter -0.066, is_night_ir -0.405, log_support -0.216
-- pAssA: taxonomic_distance -0.368, temporal_gap -0.000, visual_distance -0.122, environment_distance +0.013, clutter -0.087, is_night_ir -0.462, log_support -0.224
+## Gate 2 --- fitted law (standardised coefficients, group-cluster-bootstrap 95% CI)
+- pDetA: taxonomic_distance -0.362 [-3.87,+0.09], visual_distance -0.144 [-0.50,+0.14], environment_distance +0.042 [-0.19,+0.24], clutter -0.066 [-0.38,+0.29], is_night_ir -0.405 [-0.94,+0.11], log_support -0.216 [-0.51,+0.17]
+- pAssA: taxonomic_distance -0.368 [-3.40,+0.08], visual_distance -0.122 [-0.49,+0.18], environment_distance +0.013 [-0.23,+0.21], clutter -0.087 [-0.41,+0.28], is_night_ir -0.462 [-1.02,+0.11], log_support -0.224 [-0.53,+0.18]
 
-## Gate 2 --- out-of-sample validation (MAE vs baseline)
-- location/pAssA: MAE 0.289 vs 0.295 (n=346) --- beats
-- location/pDetA: MAE 0.293 vs 0.298 (n=346) --- beats
-- species/pAssA: MAE 0.289 vs 0.295 (n=346) --- beats
-- species/pDetA: MAE 0.293 vs 0.298 (n=346) --- beats
+## Gate 2 --- out-of-sample validation (group-bootstrap significance test)
+- location/pAssA: dMAE +0.0067 [-0.0049, +0.0182] p=0.131 (n=346) --- n.s.
+- location/pDetA: dMAE +0.0041 [-0.0066, +0.0153] p=0.235 (n=346) --- n.s.
+- species/pAssA: dMAE +0.0062 [-0.0059, +0.0174] p=0.160 (n=346) --- n.s.
+- species/pDetA: dMAE +0.0042 [-0.0064, +0.0152] p=0.237 (n=346) --- n.s.
 
