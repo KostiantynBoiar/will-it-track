@@ -111,7 +111,19 @@ class InferenceHarness:
         if not frames or any(frame is None for frame in frames):
             masklets: list[Masklet] = []  # frames unavailable → no prediction (scored as a miss)
         else:
-            masklets = self.tracker.track(frames, self._prompt(record))
+            try:
+                masklets = self.tracker.track(frames, self._prompt(record))
+            except Exception as exc:  # noqa: BLE001 - one bad clip must not kill a multi-hour batch
+                # A pathological clip (e.g. an OOM on a very long video) is skipped, not fatal: it
+                # scores as a miss, the GPU cache is freed, and the run continues.
+                print(f"  ! skipped {record.video_id} ({record.species}): {type(exc).__name__}: {exc}")
+                masklets = []
+                try:
+                    import torch
+
+                    torch.cuda.empty_cache()
+                except Exception:  # noqa: BLE001 - no torch/GPU (CPU env) → nothing to free
+                    pass
         video_id, category_id = int(record.video_id), int(record.category_id)
         return [
             {

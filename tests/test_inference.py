@@ -79,6 +79,13 @@ def test_predict_video_hermetic(tmp_path: Path) -> None:
     empty = InferenceHarness(cfg, FakeTracker(cfg, masklets_per_call=0))._predict_video(record)
     assert empty == []  # hard-negative style: nothing found
 
+    class _BoomTracker:
+        def track(self, *_a, **_k):  # noqa: ANN002, ANN003, ANN201
+            raise RuntimeError("CUDA out of memory")
+
+    skipped = InferenceHarness(cfg, _BoomTracker())._predict_video(record)
+    assert skipped == []  # a crashing clip is skipped, not fatal — the batch continues
+
 
 def test_cap_per_species_samples_positives() -> None:
     """The stratified cap keeps <= N present videos per species and drops hard negatives."""
