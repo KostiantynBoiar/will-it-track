@@ -232,6 +232,108 @@ honest interval, and the taxonomic one is a known artifact. The one robust quali
 \textbf{night/IR footage lowers both} \pdeta{} and \passa{} (day $\to$ night: \pdeta{} $0.60\to0.51$,
 \passa{} $0.62\to0.52$), but even this is not individually significant once clustering is respected.
 
+\section{The evidence for the null (H0)}
+H0 is the hypothesis that \emph{distance explains little variance} --- that the four label-free distances
+carry almost no usable information about how well SAM~3 will track a new species in a new place. This is
+not a fallback we reached for; it is what six independent lines of evidence point to. Below, each line is
+stated, then explained in plain terms, then linked back to H0.
+
+\paragraph{How to read the numbers (a short primer).}
+A \emph{coefficient} is the slope of a fitted line: how much the score is predicted to change when a
+distance goes up by one standard deviation. A \emph{95\% confidence interval (CI)} is the range of slopes
+the data are consistent with; if that range \emph{includes zero}, we cannot rule out that the true effect
+is \emph{nothing}. A \emph{$p$-value} is the probability of seeing an effect at least this large if the
+truth were really zero --- small $p$ (below $0.05$) means ``unlikely to be a fluke''; large $p$ means
+``easily just noise''. \emph{Pseudo-$R^2$} is a 0--1 measure of how much of the variation the model
+explains (0 $=$ nothing, 1 $=$ everything). \emph{MAE} (mean absolute error) is the average size of the
+prediction mistakes; the \emph{baseline} is the MAE you get by ignoring the distances and just guessing the
+overall average score. \emph{Out-of-sample} means the model is judged on species/locations it never saw
+during fitting --- the only fair test of a predictor.
+
+\subsection{The six lines of evidence}
+\begin{enumerate}[leftmargin=1.6em,itemsep=6pt]
+  \item \textbf{The models explain almost none of the variation.}
+        The fitted models reach a pseudo-$R^2$ of only $\approx 0.055$ on the location split and
+        $\approx 0.03$--$0.04$ on the species hold-out (Table~\ref{tab:coefA} caption). In words: even
+        \emph{inside} the data it was fitted on, the model captures around 3--6\% of what makes one cell's
+        score differ from another's --- and most of even that little is carried by the night/IR flag and
+        the support covariate, not by the novelty/environment distances the thesis is about. A predictor
+        that explains 3--6\% of the variance is, for practical purposes, explaining nothing.
+
+  \item \textbf{Every distance's confidence interval includes zero.}
+        After honest inference (resampling whole species/locations --- see the confidence-interval issue
+        in the log), not one of the four distances has a coefficient we can distinguish from zero, on
+        either split or either target (Tables~\ref{tab:coefB} and~\ref{tab:coefA}). For example the
+        taxonomic slope on the species hold-out is $+0.026$ with a CI of $[-0.31, +0.31]$: the data are
+        equally consistent with a small positive effect, a small negative effect, and no effect at all.
+        When every interval straddles zero, the data are telling us they cannot pin down any direction ---
+        the signature of H0.
+
+  \item \textbf{Even the raw, un-modelled correlations are tiny.}
+        Before any modelling, the plain correlation between each distance and the score never exceeds
+        $|r| \le 0.17$, i.e.\ $r^2 \le 0.03$ (at most 3\% of variance shared). This matters because it
+        rules out the objection ``maybe the model is just badly specified'': the weakness is already there
+        in the simplest possible look at the data, not introduced by the GLM.
+
+  \item \textbf{The predictor fails its own out-of-sample test --- the decisive one.}
+        The whole point was a \emph{predictor}: distances in, a useful guess of the score out, for
+        species and places never seen. We tested exactly that with grouped cross-validation (hold out a
+        whole species or a whole location, fit on the rest, predict the held-out group). The distance
+        model does \textbf{not} significantly beat the trivial ``just guess the average'' baseline
+        (Table~\ref{tab:cv}): on the location split the gain is a mere $0.004$--$0.007$ MAE with
+        $p = 0.13$--$0.23$ (not significant), and on the species hold-out the gain is actually
+        \emph{negative} ($p = 0.74$--$0.79$) --- the distances make the out-of-sample guess slightly
+        \emph{worse} than ignoring them. A predictor that cannot beat ``guess the mean'' has no practical
+        value, and this is the single strongest piece of evidence because it is the deliverable failing
+        its actual job.
+
+  \item \textbf{The one strong-looking effect was an artifact that vanished under a cleaner design.}
+        On the location split the taxonomic distance looked important ($-0.36$). But that split makes
+        taxonomic novelty degenerate: almost all test species also occur in the reference set, so their
+        distance is $\approx 0$, and only $\sim$7 genuinely-unseen species sit above zero --- the ``$-0.36$''
+        was a fragile contrast driven by those few. When we re-ran with a proper \emph{graded} novelty
+        axis (the species hold-out, where each species is compared to the nearest \emph{other} species),
+        the taxonomic effect collapsed to $+0.03$/$+0.01$ (Table~\ref{tab:coefA}). An apparent signal that
+        evaporates the moment the design is fixed is exactly what you expect when there is no real effect.
+
+  \item \textbf{The null is consistent across two independent designs and both targets.}
+        We now have four independent looks --- \{location split, species split\} $\times$ \{detection,
+        association\} --- and all four give the same answer: no significant distance effect, no
+        out-of-sample gain. A genuine effect would tend to surface in at least one of them; four
+        consistent nulls, from two differently-constructed splits, make a coincidental miss unlikely and
+        strengthen the H0 reading.
+\end{enumerate}
+
+\subsection{What this does, and does not, establish}
+H0 here is a \emph{scoped} claim, and it is important to say exactly how far it reaches.
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item \textbf{It does establish:} these four label-free distances, at the \emph{per-cell} granularity,
+        on the two splits measured, do not predict SAM~3's detection or association to any degree a valid
+        test supports.
+  \item \textbf{It does not establish} that \emph{no} label-free signal exists anywhere. Three things are
+        untested and could still carry signal: (i) coarser aggregation (per-species or per-location
+        averages, which are far less noisy than single short clips); (ii) a \emph{familiarity proxy}
+        (separability in SAM~3's own feature space, rather than in DINOv2's); and (iii) the
+        false-positive / hallucination regime --- whether a novel-species prompt fires on an
+        \emph{absent} species --- which our present analysis, conditioned on the animal being present,
+        never touches.
+  \item \textbf{A residual qualitative pattern remains:} night/IR footage lowers both scores
+        (day $\to$ night: \pdeta{} $0.60 \to 0.51$, \passa{} $0.62 \to 0.52$). Environment therefore does
+        matter a little --- but through a simple day/night flag, not through the continuous scene-distance
+        the hypothesis proposed, and even this is not individually significant once clustering is respected.
+\end{itemize}
+
+\subsection{Why a null is still a result --- and where it points}
+A validated negative result on a genuinely new problem (the first before-running transfer predictor for a
+promptable video \emph{tracker}, split into detection vs association) is itself a contribution: it tells
+the field that the ``obvious'' label-free distances are not enough, and it does so with honest,
+cluster-aware statistics rather than an over-confident claim. It also \emph{redirects} the project. If
+transfer is not simply a function of how \emph{far} a new species/scene is, the sharper question becomes
+whether SAM~3 \emph{internally represents} the structure at all --- \textbf{representational probing}:
+instead of ``does distance predict the score?'', ask ``do SAM~3's own features linearly encode taxonomy,
+novelty, or scene type?''. That is a mechanism question, it reuses the same frozen model and data, and it
+is exactly the pivot H0 was written to motivate.
+
 \section{Issues encountered and how we solved them}
 This section is the engineering and statistics log. Each row is a real problem we hit and the fix applied.
 
