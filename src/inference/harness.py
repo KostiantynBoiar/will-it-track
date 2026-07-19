@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections import Counter
 from pathlib import Path
 
 from pycocotools import mask as coco_mask
@@ -36,6 +37,22 @@ def _bbox(rle: dict) -> list[float]:
 def _area(rle: dict) -> int:
     """Mask area (pixel count) for one RLE mask."""
     return int(coco_mask.area(_packed(rle)))
+
+
+def _cap_per_species(records: list[VideoRecord], cap: int) -> list[VideoRecord]:
+    """Up to ``cap`` present (positive) videos per species — a stratified sample for the H1 fit.
+
+    Hard negatives are dropped when sampling: they carry no masklet, so they add no positive cell to the
+    novelty fit; the hard-negative false-positive analysis is a separate pass over the full probe set.
+    """
+    seen: Counter[str] = Counter()
+    kept = []
+    for record in records:
+        if record.num_masklets <= 0 or seen[record.category_id] >= cap:
+            continue
+        seen[record.category_id] += 1
+        kept.append(record)
+    return kept
 
 
 class InferenceHarness:
@@ -121,6 +138,8 @@ class InferenceHarness:
         out_dir = self._out_dir(split)
         out_dir.mkdir(parents=True, exist_ok=True)
         records = SAFARI(split, self.config).records()
+        if self.config.inference.max_videos_per_species:
+            records = _cap_per_species(records, self.config.inference.max_videos_per_species)
         if limit is not None:
             records = records[:limit]
 
@@ -146,8 +165,14 @@ def main() -> None:
     ap.add_argument("--config", default=None, help="optional YAML config")
     ap.add_argument("--split", default="test", choices=("train", "test"))
     ap.add_argument("--limit", type=int, default=None, help="cap probes for a subset smoke test")
+    ap.add_argument(
+        "--per-species", type=int, default=None, help="cap present videos per species (stratified sample)"
+    )
     args = ap.parse_args()
-    InferenceHarness(Config.load(args.config)).run(args.split, args.limit)
+    cfg = Config.load(args.config)
+    if args.per_species is not None:
+        cfg.inference.max_videos_per_species = args.per_species
+    InferenceHarness(cfg).run(args.split, args.limit)
 
 
 if __name__ == "__main__":

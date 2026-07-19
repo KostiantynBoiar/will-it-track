@@ -106,6 +106,9 @@ class InferenceConfig(BaseModel):
         score_threshold: Minimum confidence to keep a predicted masklet; ``0.0`` writes raw scores so
             VEval (not the harness) owns the operating point (its own ``prob_thresh`` decides HOTA).
         predictions_subdir: Where per-video prediction JSONs are written, under ``paths.outputs_root``.
+        max_videos_per_species: Cap on present (positive) videos scored per species — a stratified
+            sample so the huge train split (~31k probes) yields the species hold-out at feasible cost;
+            ``None`` runs every probe. Hard negatives are skipped when capping (positives-only H1 fit).
     """
 
     sam3_model: str = "facebook/sam3"
@@ -115,6 +118,7 @@ class InferenceConfig(BaseModel):
     batch_frames: int = 16
     score_threshold: float = 0.0
     predictions_subdir: str = "predictions"
+    max_videos_per_species: int | None = None
 
 
 class EvalConfig(BaseModel):

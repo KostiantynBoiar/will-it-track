@@ -79,10 +79,18 @@ def _locations(records: list[VideoRecord]) -> list[str]:
     return sorted({r.location_id for r in records if _is_real(r.location_id)})
 
 
-def build_species_partition(config: Config | None = None) -> Partition:
-    """Split A — leave-one-species-out over the pooled present set."""
+def build_species_partition(
+    config: Config | None = None, origins: tuple[str, ...] = ("train", "test")
+) -> Partition:
+    """Split A — leave-one-species-out over the present set drawn from ``origins``.
+
+    ``origins`` restricts the species pool and hence the reference prototypes. The default pools train and
+    test (the full novelty axis, which needs both splits scored). ``("test",)`` gives a self-contained
+    test-only hold-out whose distances reuse the already-embedded test crops --- no train inference or new
+    embedding --- so it is the cheap first look at H1 before the (capped) train run lands.
+    """
     cfg = config or Config()
-    records = _present(pooled_records(cfg))
+    records = _present([r for r in pooled_records(cfg) if r.origin in set(origins)])
     species = sorted({r.category_id for r in records})
     locations = _locations(records)
     return Partition(
@@ -94,7 +102,7 @@ def build_species_partition(config: Config | None = None) -> Partition:
         reference_locations=locations,
         probe_locations=locations,
         reference_years=_years(records),
-        probe_origins=["train", "test"],
+        probe_origins=list(origins),
     )
 
 
@@ -146,13 +154,14 @@ def probe_records(partition: Partition, config: Config | None = None) -> list[Vi
 def reference_records(partition: Partition, config: Config | None = None) -> list[VideoRecord]:
     """Pooled records on the partition's reference side (present species only).
 
-    Split A (``held_axis="species"``) draws from both origins — all present species (leave-one-species-out
-    is applied later at prototype selection, not here). Split B (``held_axis="location"``) draws only from
-    ``train`` (the seen locations).
+    Split A (``held_axis="species"``) draws from the partition's own ``probe_origins`` — all present
+    species of those origins (leave-one-species-out is applied later at prototype selection, not here), so
+    a test-only species hold-out keeps its reference on the already-embedded test crops. Split B
+    (``held_axis="location"``) draws only from ``train`` (the seen locations).
     """
     cfg = config or Config()
     ref_species = set(partition.reference_species)
-    origins = {"train", "test"} if partition.held_axis == "species" else {"train"}
+    origins = set(partition.probe_origins) if partition.held_axis == "species" else {"train"}
     return [
         r
         for r in _present(pooled_records(cfg))

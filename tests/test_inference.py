@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -13,7 +14,7 @@ from pycocotools import mask as coco_mask
 from src.config import Config
 from src.dataset import SAFARI, VideoRecord
 from src.eval.score import Scorer
-from src.inference.harness import InferenceHarness, _bbox
+from src.inference.harness import InferenceHarness, _bbox, _cap_per_species
 from src.inference.sam3_tracker import FakeTracker, encode_rle
 from src.io import read_parquet, write_parquet
 
@@ -77,6 +78,35 @@ def test_predict_video_hermetic(tmp_path: Path) -> None:
 
     empty = InferenceHarness(cfg, FakeTracker(cfg, masklets_per_call=0))._predict_video(record)
     assert empty == []  # hard-negative style: nothing found
+
+
+def test_cap_per_species_samples_positives() -> None:
+    """The stratified cap keeps <= N present videos per species and drops hard negatives."""
+
+    def rec(vid: str, cid: str, masklets: int) -> VideoRecord:
+        return VideoRecord(
+            video_id=vid,
+            file_names=[f"{vid}/0.jpg"],
+            category_id=cid,
+            species=f"sp{cid}",
+            noun_phrase=f"sp{cid}",
+            location_id="L0",
+            creation_datetime="2020",
+            origin="train",
+            num_masklets=masklets,
+            is_hard_negative=masklets == 0,
+        )
+
+    records = (
+        [rec(f"a{i}", "1", 1) for i in range(5)]  # 5 positives for species 1
+        + [rec(f"b{i}", "2", 1) for i in range(2)]  # 2 positives for species 2
+        + [rec(f"n{i}", "1", 0) for i in range(3)]  # 3 hard negatives for species 1
+    )
+    kept = _cap_per_species(records, cap=3)
+    by_species = Counter(r.category_id for r in kept)
+    assert by_species["1"] == 3  # capped at 3
+    assert by_species["2"] == 2  # fewer than the cap -> all kept
+    assert all(r.num_masklets > 0 for r in kept)  # hard negatives dropped
 
 
 def test_io_parquet_roundtrip(tmp_path: Path) -> None:

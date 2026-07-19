@@ -26,7 +26,7 @@ from src.features.taxonomic import TaxonomicDistance
 from src.features.temporal import TemporalGap
 from src.features.visual import VisualDistance
 from src.io import read_parquet, write_parquet
-from src.splits import Partition, build_location_partition
+from src.splits import Partition, build_location_partition, build_species_partition
 
 _CELL_KEYS = ["category_id", "species", "location_id", "time"]
 _ENV_COLS = ["environment_distance", "is_night_ir", "clutter", "achromatic_fraction"]
@@ -102,14 +102,19 @@ class FeatureAssembler:
             if overlap:
                 raise ValueError(f"species leakage: {len(overlap)} probe species in the reference")
 
-    def assemble(self) -> Path:
-        """Build and write ``outputs/features.parquet``.
+    def assemble(self, partition: Partition | None = None) -> Path:
+        """Build and write ``outputs/features.parquet`` for ``partition`` (location split by default).
+
+        Args:
+            partition: The experiment partition; defaults to the location hold-out (Split B). Pass a
+                species hold-out (Split A) to build the novelty-axis table instead — write it under a
+                distinct ``outputs_root`` to keep both experiments' artefacts side by side.
 
         Returns:
             Path to the written ``features.parquet``.
         """
         scores = read_parquet(self.config.paths.outputs_root / "scores.parquet")
-        partition = build_location_partition(self.config)
+        partition = partition or build_location_partition(self.config)
         self._assert_no_leakage(partition)
 
         merged = merge_features(
@@ -129,8 +134,18 @@ def main() -> None:
     """CLI entry point."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default=None, help="optional YAML config")
+    ap.add_argument("--partition", choices=("location", "species"), default="location")
+    ap.add_argument(
+        "--origins", nargs="*", default=None, help="restrict the species-pool origins, e.g. --origins test"
+    )
     args = ap.parse_args()
-    FeatureAssembler(Config.load(args.config)).assemble()
+    cfg = Config.load(args.config)
+    if args.partition == "species":
+        origins = tuple(args.origins) if args.origins else ("train", "test")
+        partition = build_species_partition(cfg, origins=origins)
+    else:
+        partition = build_location_partition(cfg)
+    FeatureAssembler(cfg).assemble(partition)
 
 
 if __name__ == "__main__":
