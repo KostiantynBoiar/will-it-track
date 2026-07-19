@@ -1,0 +1,359 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\pdeta}{\textsf{pDetA}}
+\newcommand{\passa}{\textsf{pAssA}}
+\newcommand{\phota}{\textsf{pHOTA}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\title{\textbf{Predicting Zero-Shot Video-Tracker Transfer:\\ Methods, Results, and Engineering Log}}
+\author{Progress report --- ``will-it-track''}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent We are testing whether the zero-shot tracking performance of a frozen promptable
+video model (SAM~3) on an \emph{unseen} species or place can be predicted \emph{before running it},
+from four label-free ``distances'' (taxonomic, visual, environment, temporal), and whether the two
+halves of tracking --- \emph{finding} the animal (\pdeta{}) and \emph{following} it (\passa{}) --- are
+governed by different factors. This document records, in plain language, exactly what has been built and
+run so far, what the results say, and every practical and statistical problem we hit together with the
+fix we applied. The headline so far is an \emph{honest null}: on the two splits tested, the distances do
+not predict SAM~3's per-cell detection/association to a degree any valid test supports. This is a
+legitimate scientific result, and it points clearly at the next experiment (a powered species hold-out),
+which is running now.
+\end{abstract}
+
+\section{Aim and hypotheses}
+Conservation teams point promptable trackers at new species and new camera-trap sites constantly, but
+nobody can say in advance whether the model is trustworthy for a given animal in a given place. We try to
+fill that gap with a \emph{reliability estimator}: given only label-free distances, predict \pdeta{} and
+\passa{} with honest confidence intervals. The guiding hypotheses are:
+\begin{description}[leftmargin=2.2em,itemsep=2pt]
+  \item[H1 (detection).] \pdeta{} falls with \textbf{species novelty} (taxonomic + visual distance).
+  \item[H2 (association).] \passa{} falls with \textbf{environment difficulty} (scene distance, day/night/IR,
+        clutter), largely regardless of species.
+  \item[H0 (null).] Distance explains little variance --- \emph{still a valid result}, and one that would
+        redirect the project toward representational probing.
+\end{description}
+The goal is explicitly \textbf{not} to make the tracker score higher; it is to \emph{predict} and
+\emph{explain} its transfer.
+
+\section{Data}
+We use \textbf{SA-FARI} (Meta $\times$ Conservation X Labs, 2025), the largest open multi-animal tracking
+dataset: 11{,}609 camera-trap videos, 99 species with a full 7-level taxonomy, 741 locations on 4
+continents, and per-video timestamps. Annotations are on 6\,fps frames (mean $\approx$85 frames per clip).
+Crucially, SAM~3 is \textbf{frozen and zero-shot} on all of SA-FARI, so the train/test split is only our
+own reference anchor for measuring distances --- not anything the model learned.
+
+\section{Method}
+The pipeline has five stages; each is a small, config-driven module.
+
+\subsection{Inference}
+A frozen SAM~3 promptable tracker is run over every probe of a split. For each video we give a text prompt
+(the species name, e.g.\ \texttt{"impala"}) and the model segments and tracks every matching animal across
+the clip. Predictions are written one JSON per video, so the run is \emph{resumable}. Hard negatives
+(a query for an absent species) are kept --- they should return nothing.
+
+\subsection{Scoring}
+We score with the \emph{official} SA-Co / VEval evaluator (never re-implemented). The promptable HOTA
+score decomposes cleanly into the two parts we analyse separately:
+\[
+  \phota{} \;=\; \sqrt{\pdeta{} \times \passa{}}, \qquad
+  \pdeta{} = \text{did it find the animals?}, \quad
+  \passa{} = \text{did it keep each identity over time?}
+\]
+Scores are recorded per \textbf{cell} --- a (species, location, time) group --- together with the
+\emph{support} behind each score (number of frames, masklets, videos).
+
+\subsection{The four label-free distances}
+Every distance is computable \emph{without any label of the target species}, which is what makes a
+before-running prediction possible.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lYl}
+\toprule
+Distance & What it measures & Granularity \\
+\midrule
+Taxonomic   & Tree distance (Kingdom$\to$Species) to the nearest reference species & per species \\
+Visual      & $1-\cos$ between DINOv2 embeddings of the \emph{mask-cropped animal} and the nearest
+              reference species' prototype & per species \\
+Environment & $1-\cos$ between DINOv2 embeddings of the \emph{masked-background scene} and the nearest
+              reference location's prototype; plus a night/IR flag and a clutter score & per location \\
+Temporal    & Gap (in years) between the probe footage and the reference footage & per cell \\
+\bottomrule
+\end{tabularx}
+\caption{The four distances. Visual and environment reuse a shared, cache-first embedding pipeline.}
+\end{table}
+
+\subsection{The two experiments (splits)}
+\begin{description}[leftmargin=1.4em,itemsep=3pt]
+  \item[Split B --- location hold-out (secondary, tests H2).] Reference $=$ official train split,
+        probe $=$ test split. Camera sites are unseen; species are largely shared, so the taxonomic
+        distance is $\approx 0$ and the environment/temporal distances vary. This is the ``does the scene
+        matter?'' experiment.
+  \item[Split A --- species hold-out (primary, tests H1).] Leave-\emph{one}-species-out over the pooled
+        present set: each probe species' distance is to the nearest \emph{other} species, which makes
+        taxonomic novelty a genuine \emph{graded} axis. This is the ``does novelty matter?'' experiment.
+\end{description}
+
+\subsection{Modelling}
+For each target (\pdeta{}, \passa{}) we fit a support-weighted logit-link GLM (a fractional-logit model
+on the bounded score), with the four distances plus the scene covariates and a $\log(\text{support})$
+covariate so that ``rare'' is never mistaken for ``far''. Predictors are standardised. We then:
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item report \textbf{group-cluster-bootstrap} confidence intervals (refit while resampling whole
+        species / locations) --- see the confidence-interval issue below;
+  \item run \textbf{grouped cross-validation} (leave-one-species-out and leave-one-location-out) and test
+        the out-of-sample gain over a mean predictor with a \textbf{paired group-bootstrap} $p$-value;
+  \item partition variance across factors (dominance analysis) and check collinearity (VIF).
+\end{itemize}
+
+\section{Results so far}
+
+\subsection{Gate 1 --- measurement (is SAM~3 behaving sensibly?)}
+Zero-shot SAM~3 on the SA-FARI test split reproduces the published ballpark. The dataset-level (micro)
+mask \phota{} is $\approx 0.65$ with a real detection--association gap. Table~\ref{tab:gate1} reports the
+per-cell (macro) support-weighted means we feed to the models; these are lower than the micro number
+because 78\% of cells are single-object clips where \passa{}$\approx$\pdeta{} (finding and following
+coincide when there is only one animal).
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Metric (mask, per-cell macro mean) & Value \\
+\midrule
+\pdeta{} & 0.527 \\
+\passa{} & 0.546 \\
+\phota{} & 0.533 \\
+\midrule
+Cells scored & 346 of 1447 \\
+\bottomrule
+\end{tabular}
+\caption{Gate 1 measurement on the test split. The 1101 unscored cells are hard negatives (species
+absent, no ground-truth track), correctly excluded from the HOTA fit and reserved for a separate
+false-positive analysis.}
+\label{tab:gate1}
+\end{table}
+
+\subsection{Gate 2 --- location split (Split B): a null}
+After correcting the inference (the confidence-interval issue below), \textbf{every distance coefficient's confidence
+interval spans zero}, and the out-of-sample gain over a mean predictor is \textbf{not significant} on
+either cross-validation scheme (Tables~\ref{tab:coefB}--\ref{tab:cv}). The large-looking taxonomic
+coefficient ($-0.36$) is a fragile artifact of this split (see the novelty-axis issue below), not a graded
+effect.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Factor & \pdeta{} coef.\ [95\% CI] & \passa{} coef.\ [95\% CI] \\
+\midrule
+Taxonomic distance   & $-0.362$ $[-3.87,\,0.09]$ & $-0.368$ $[-3.40,\,0.08]$ \\
+Visual distance      & $-0.144$ $[-0.50,\,0.14]$ & $-0.122$ $[-0.49,\,0.18]$ \\
+Environment distance & $+0.042$ $[-0.19,\,0.24]$ & $+0.013$ $[-0.23,\,0.21]$ \\
+Clutter              & $-0.066$ $[-0.38,\,0.29]$ & $-0.087$ $[-0.41,\,0.28]$ \\
+Night / IR           & $-0.405$ $[-0.94,\,0.11]$ & $-0.462$ $[-1.02,\,0.11]$ \\
+$\log(\text{support})$ & $-0.216$ $[-0.51,\,0.17]$ & $-0.224$ $[-0.53,\,0.18]$ \\
+\bottomrule
+\end{tabular}
+\caption{Split B (location) standardised coefficients with group-cluster-bootstrap CIs. Every distance
+spans zero. The temporal gap is omitted: it is constant on this split and carries no information.}
+\label{tab:coefB}
+\end{table}
+
+\subsection{Gate 2 --- species hold-out (Split A, preview): a cleaner null}
+Because the location split cannot properly test novelty, we ran the species hold-out (leave-one-species-out)
+on the already-scored test species --- a free preview that needs no new inference. With a \emph{graded}
+novelty axis, the taxonomic effect \textbf{collapses to essentially zero} (Table~\ref{tab:coefA}),
+confirming that the location split's $-0.36$ was an artifact. The out-of-sample gain is again not
+significant --- indeed slightly \emph{negative} (the distance model is no better than, or marginally worse
+than, predicting the mean).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Factor & \pdeta{} coef.\ [95\% CI] & \passa{} coef.\ [95\% CI] \\
+\midrule
+Taxonomic distance   & $+0.026$ $[-0.31,\,0.31]$ & $+0.008$ $[-0.33,\,0.31]$ \\
+Visual distance      & $+0.120$ $[-0.23,\,0.38]$ & $+0.135$ $[-0.23,\,0.40]$ \\
+Environment distance & $-0.025$ $[-0.30,\,0.21]$ & $-0.046$ $[-0.33,\,0.19]$ \\
+Clutter              & $-0.106$ $[-0.37,\,0.21]$ & $-0.135$ $[-0.41,\,0.20]$ \\
+Night / IR           & $-0.394$ $[-0.99,\,0.09]$ & $-0.466$ $[-1.09,\,0.06]$ \\
+$\log(\text{support})$ & $-0.188$ $[-0.49,\,0.19]$ & $-0.193$ $[-0.51,\,0.21]$ \\
+\bottomrule
+\end{tabular}
+\caption{Split A (species hold-out, test-species pool) standardised coefficients. With a graded novelty
+axis the taxonomic and visual effects are $\approx 0$ and span zero. pseudo-$R^2$ is 0.033 / 0.039.}
+\label{tab:coefA}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lllrrr}
+\toprule
+Split & Hold-out & Target & $\Delta$MAE & 95\% CI & $p$ \\
+\midrule
+Location (B) & location & \passa{} & $+0.007$ & $[-0.005,\,0.018]$ & 0.13 \\
+Location (B) & location & \pdeta{} & $+0.004$ & $[-0.007,\,0.015]$ & 0.23 \\
+Species (A)  & species  & \passa{} & $-0.003$ & $[-0.013,\,0.006]$ & 0.74 \\
+Species (A)  & species  & \pdeta{} & $-0.004$ & $[-0.013,\,0.005]$ & 0.79 \\
+\bottomrule
+\end{tabular}
+\caption{Out-of-sample gain over a mean predictor ($\Delta$MAE $>0$ means the model is better), with a
+paired group-bootstrap CI and one-sided $p$. \textbf{No row is significant} on either split.}
+\label{tab:cv}
+\end{table}
+
+\subsection{What the results mean (honestly)}
+On both splits tested, the label-free distances do \textbf{not} predict SAM~3's per-cell detection or
+association to a degree any valid, group-clustered test supports. This is \textbf{H0-leaning}. It is not
+yet ``H0 confirmed for the whole thesis'': the species hold-out preview uses only the 83 test species, and
+the powered version (adding a sample of train species) is running now. The two \emph{large-looking}
+effects that survive as point estimates --- night/IR and (on Split B) taxonomic --- do not survive an
+honest interval, and the taxonomic one is a known artifact. The one robust qualitative signal is that
+\textbf{night/IR footage lowers both} \pdeta{} and \passa{} (day $\to$ night: \pdeta{} $0.60\to0.51$,
+\passa{} $0.62\to0.52$), but even this is not individually significant once clustering is respected.
+
+\section{Issues encountered and how we solved them}
+This section is the engineering and statistics log. Each row is a real problem we hit and the fix applied.
+
+\subsection{Engineering / infrastructure}
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{4.3cm}Y}
+\toprule
+Issue & Solution applied \\
+\midrule
+Feature assembly ran out of memory at full sampling caps (all cropped frames held in RAM at once on a
+$\sim$58\,GB container). &
+Rewrote the embedding step to work in \emph{chunks}: load $\to$ embed $\to$ cache $\to$ free, so peak RAM
+is bounded by one chunk regardless of the caps. RSS stayed at $\sim$7\,GB. \\
+\addlinespace
+Embedding was I/O-bound at $\sim$5 crops/s (the GPU sat idle while single-threaded frame reads from a
+network filesystem blocked). &
+Parallelised frame load/crop with a thread pool ($\sim$32 workers); the GPU is now the bottleneck. \\
+\addlinespace
+The official scorer failed on a fresh pod (its import-time dependencies were missing). &
+Hardened the pod setup to clone the scorer and install its undeclared deps
+(\texttt{iopath, einops, timm, ftfy, regex}). \\
+\addlinespace
+PyTorch pulled a CUDA build newer than the pod's driver; and \texttt{pip} was OOM-killed installing torch
+(the temp dir was RAM-backed). &
+Pin torch to the driver's CUDA; move \texttt{TMPDIR} onto persistent disk and install with
+\texttt{-{}-no-cache-dir}. \\
+\addlinespace
+The full train-split inference is $\sim$31{,}000 probes $\approx$ \textbf{10 days} of GPU time --- far too
+expensive for one experiment. &
+Added a \emph{per-species cap} (a stratified sample of $\sim$30 positive videos per species, $\approx$1500
+probes $\approx$6\,h) that still gives a graded novelty axis. \\
+\addlinespace
+A single pathological clip crashed SAM~3's forward pass (a likely CUDA out-of-memory on a long video) and
+killed the entire multi-hour batch. &
+Wrapped per-video inference in a guard: a crashing clip is \emph{skipped} (scored as a miss), the GPU
+cache is freed, and the batch continues. \\
+\addlinespace
+Long clips could exhaust GPU memory during video preprocessing. &
+Keep SAM~3 video preprocessing on the CPU (raw storage only), running the model itself on the GPU. \\
+\addlinespace
+The proxy SSH to the pod allows no \texttt{scp} and needs a pseudo-terminal. &
+Transfer files by \texttt{tar}$+$\texttt{base64} over the terminal and decode locally; run the analysis
+parquets locally where possible. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Statistical / scientific}
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{4.3cm}Y}
+\toprule
+Issue & Solution applied (or proposed) \\
+\midrule
+\textbf{Over-precise confidence intervals.} Weighting each cell by its frame count
+inflated the effective sample $\sim$85$\times$ and shrank every standard error $\sim$9$\times$; on top of
+that, predictors are constant within a species/location (pseudo-replication), so 346 cells are really only
+$\sim$60--92 independent groups. The naive intervals looked ``significant'' when they were not. &
+Replaced the naive intervals with a \textbf{group-cluster-bootstrap}: resample whole species / locations,
+refit, take percentile intervals. Every distance CI then spans zero. \emph{Next:} also report
+cluster-robust (sandwich) SEs as a cross-check. \\
+\addlinespace
+\textbf{No significance test on the cross-validation gain.} A $+0.005$ MAE edge over the baseline was being
+read as ``beats baseline'' with no test. &
+Added a \textbf{paired group-bootstrap} on the CV gain (resample whole held-out groups) $\to$ a CI and
+one-sided $p$. All gains are non-significant. \\
+\addlinespace
+\textbf{Degenerate temporal feature.} On the location split the temporal gap is present for only 32/346
+cells and constant among them --- an all-zero column after standardising. &
+Drop zero-variance predictors automatically. Temporal distance is therefore \emph{untested} (not falsified)
+on this split; it needs a time-based split to test. \\
+\addlinespace
+\textbf{Novelty axis was degenerate on Split B.} With the train split as reference,
+the taxonomic distance is $\approx 0$ for shared species and $>0$ for only $\sim$7 truly-unseen ones, so
+the ``$-0.36$'' coefficient was a fragile 7-species spike-at-zero, not a graded effect. &
+Run \textbf{Split A} (leave-one-species-out), where novelty is graded. The taxonomic effect then collapses
+to $\approx 0$ --- confirming the artifact. \\
+\addlinespace
+\textbf{Environment sign-flip.} The continuous scene distance has a weak \emph{negative} raw correlation
+but flips to $\approx 0$/positive in the fit --- a suppression symptom of its collinearity with the
+night/IR flag (both are per-location, from the same background). &
+Flagged; VIF currently covers only the four distances. \emph{Next:} add night/IR and clutter to the VIF
+check and refit environment with/without night/IR to show the confound explicitly. \\
+\addlinespace
+\textbf{Detection-vs-association is under-identified.} 78\% of cells are single-object, so \passa{}$\approx$
+\pdeta{} and the two regressions are near-duplicates --- the project's core decomposition cannot be tested
+here. &
+\emph{Next:} a targeted analysis on the $\sim$22\% multi-object cells, where association carries information
+independent of detection (flagged exploratory, low power). \\
+\addlinespace
+\textbf{Hard negatives excluded from the fit.} The detection model is fit on animal-present cells only
+(recall-given-present), so the false-positive / hallucination regime is not yet covered. &
+\emph{Next:} a separate false-positive-rate-vs-novelty analysis that reintroduces the 1101 hard negatives. \\
+\addlinespace
+\textbf{Scope of the novelty claim.} ``Distance to the SA-FARI train reference'' is not distance to SAM~3's
+true (unknown) pretraining corpus. &
+Scope every claim to the train split, and report a \emph{familiarity proxy} (separability in SAM~3's own
+feature space) alongside. \emph{Next:} implement the proxy (currently deferred). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Current status and next steps}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item \textbf{Done and validated:} the full measurement + modelling pipeline; the location split (Split B,
+        null); the species hold-out preview (Split A on test species, cleaner null); honest clustered
+        inference throughout.
+  \item \textbf{Running now:} the \emph{powered} species hold-out --- a capped ($\sim$30 videos/species)
+        SAM~3 pass over the train split ($\sim$1500 probes, $\sim$6\,h), which will add species and cells to
+        tighten the H1 test.
+  \item \textbf{Then, in priority order:} (i) refit Split A with the pooled train+test species; (ii) a
+        multi-object-only association analysis; (iii) the hard-negative false-positive analysis;
+        (iv) the familiarity proxy; (v) if the powered test confirms the null, pivot the thesis toward
+        \emph{representational probing} (does SAM~3 encode taxonomy?), which H0 explicitly motivates.
+\end{itemize}
+
+\paragraph{Bottom line.} The engineering works end-to-end and the statistics are now honest. The current,
+carefully-tested answer is that simple label-free distances do not predict this tracker's zero-shot
+transfer on the splits measured so far --- a clean, publishable negative result that sharpens the next
+question rather than a failure.
+
+\end{document}
