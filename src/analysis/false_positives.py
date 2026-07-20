@@ -119,10 +119,15 @@ def summarise(df: pd.DataFrame, config: Config, threshold: float) -> dict:
     )
     tercile = df.dropna(subset=["taxonomic_distance"]).copy()
     by_tercile = {}
-    if len(tercile) >= 3 and tercile["taxonomic_distance"].nunique() >= 3:
-        tercile["bin"] = pd.qcut(tercile["taxonomic_distance"], 3, labels=["near", "mid", "far"],
-                                 duplicates="drop")
-        by_tercile = {str(k): round(float(v), 4) for k, v in tercile.groupby("bin")["fp"].mean().items()}
+    if len(tercile) >= 3 and tercile["taxonomic_distance"].nunique() >= 2:
+        # Auto-label the surviving bins: the taxonomic distance is discrete (integer tree steps), so
+        # qcut with duplicates="drop" may collapse to fewer than three bins -- fixed labels would then
+        # mismatch the bin count. Interval labels adapt to however many terciles survive.
+        tercile["bin"] = pd.qcut(tercile["taxonomic_distance"], 3, duplicates="drop")
+        by_tercile = {
+            str(k): round(float(v), 4)
+            for k, v in tercile.groupby("bin", observed=True)["fp"].mean().items()
+        }
     return {
         "split": config.experiment,
         "threshold": threshold,

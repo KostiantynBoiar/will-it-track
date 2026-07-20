@@ -99,5 +99,6 @@ def test_summarise_detects_rising_fp_with_novelty() -> None:
     out = summarise(df, Config(), threshold=0.5)
     assert out["n_species"] == 8
     assert 0.0 <= out["overall_fp_rate"] <= 1.0
-    assert set(out["fp_rate_by_taxonomic_tercile"]) <= {"near", "mid", "far"}
+    tercile = out["fp_rate_by_taxonomic_tercile"]
+    assert isinstance(tercile, dict) and tercile and all(isinstance(k, str) for k in tercile)
     assert out["fp_vs_taxonomic"]["pearson_r"] > 0  # hallucination rises with novelty
