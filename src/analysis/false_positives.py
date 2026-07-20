@@ -136,6 +136,49 @@ def _partial_corr_over_species(
             "n_species": int(len(data)), "significant": bool(lo > 0 or hi < 0)}
 
 
+def _wls_line(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> tuple[float, float]:
+    """Weighted least-squares line ``y ~ x`` -> (slope, intercept)."""
+    if w.sum() <= 0:
+        return 0.0, float(np.mean(y)) if len(y) else 0.0
+    mx, my = np.average(x, weights=w), np.average(y, weights=w)
+    var = np.average((x - mx) ** 2, weights=w)
+    slope = np.average((x - mx) * (y - my), weights=w) / var if var > 0 else 0.0
+    return float(slope), float(my - slope * mx)
+
+
+def fp_predictor_cv(species: pd.DataFrame, config: Config, predictor: str = "visual_distance") -> dict:
+    """Leave-one-species-out validation: predict a held-out species' FP rate from ``predictor``.
+
+    Each fold fits a support-weighted line on the other species and predicts the held-out one; the gain over
+    a mean-predictor baseline is tested with a species bootstrap. This is what earns the ``predictor'' claim
+    (per the decision rule) for the hallucination-risk signal, beyond the in-sample correlation.
+    """
+    data = species[["fp_rate", predictor, "n"]].dropna().reset_index(drop=True)
+    n = len(data)
+    nan = {"mae": float("nan"), "baseline_mae": float("nan"), "delta": float("nan"),
+           "ci_lo": float("nan"), "ci_hi": float("nan"), "p_value": float("nan"),
+           "significant": False, "n_species": int(n)}
+    if n < 5 or data[predictor].std() == 0:
+        return nan
+    x, y, w = (data[c].to_numpy(float) for c in (predictor, "fp_rate", "n"))
+    pred, base = np.empty(n), np.empty(n)
+    for i in range(n):
+        tr = np.arange(n) != i
+        slope, intercept = _wls_line(x[tr], y[tr], w[tr])
+        pred[i] = intercept + slope * x[i]
+        base[i] = np.average(y[tr], weights=w[tr])  # leave-one-out mean baseline
+    delta = np.abs(y - base) - np.abs(y - pred)  # >0 => the distance predictor beats the mean
+    rng = np.random.default_rng(config.seed)
+    boots = np.array([np.average(delta[s], weights=w[s])
+                      for s in (rng.choice(n, n) for _ in range(config.cv.n_bootstrap))])
+    lo, hi = (float(v) for v in np.percentile(boots, [2.5, 97.5]))
+    return {"mae": float(np.average(np.abs(y - pred), weights=w)),
+            "baseline_mae": float(np.average(np.abs(y - base), weights=w)),
+            "delta": float(np.average(delta, weights=w)),
+            "ci_lo": lo, "ci_hi": hi, "p_value": float((boots <= 0).mean()),
+            "significant": bool(lo > 0), "n_species": int(n)}
+
+
 def summarise(df: pd.DataFrame, config: Config, threshold: float) -> dict:
     """Overall FP rate, a taxonomic-tercile breakdown, and species-level FP-rate<->distance correlations."""
     agg = {
@@ -170,6 +213,8 @@ def summarise(df: pd.DataFrame, config: Config, threshold: float) -> dict:
         "fp_rate_by_taxonomic_tercile": by_tercile,
         "fp_vs_taxonomic": _corr_over_species(species, "taxonomic_distance", seed, n_boot),
         "fp_vs_visual": _corr_over_species(species, "visual_distance", seed, n_boot),
+        # leave-species-out validation: does visual distance predict a held-out species' FP rate?
+        "fp_predictor_oos": fp_predictor_cv(species, config, "visual_distance"),
     }
     if "log_area" in species.columns:  # the size-confound checks on the visual FP effect
         out["fp_vs_size"] = _corr_over_species(species, "log_area", seed, n_boot)

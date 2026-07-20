@@ -106,3 +106,7 @@ def test_summarise_detects_rising_fp_with_novelty() -> None:
     # the size-confound checks are present when log_area is available
     assert "fp_vs_size" in out and "fp_vs_visual_size_controlled" in out
     assert -1.0 <= out["fp_vs_visual_size_controlled"]["partial_r"] <= 1.0
+    # the leave-species-out validation of the FP predictor is reported
+    oos = out["fp_predictor_oos"]
+    assert {"mae", "baseline_mae", "delta", "p_value", "significant"} <= set(oos)
+    assert oos["n_species"] == 8 and 0.0 <= oos["p_value"] <= 1.0
