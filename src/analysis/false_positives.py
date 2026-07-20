@@ -24,6 +24,7 @@ import pandas as pd
 
 from src.config import Config
 from src.dataset import SAFARI
+from src.features.size import SizeFeature
 from src.features.taxonomic import TaxonomicDistance
 from src.features.visual import VisualDistance
 from src.inference.harness import probe_filename
@@ -50,6 +51,7 @@ def fp_table(split: str, config: Config, threshold: float) -> pd.DataFrame:
     partition = base.model_copy(update={"probe_species": sorted({r.category_id for r in records})})
     taxonomic = TaxonomicDistance(config).compute(partition)
     visual = VisualDistance(config).compute(partition)
+    size = SizeFeature(config).compute(partition)  # log_area, to test the visual/size confound on FPs too
 
     rows = []
     for record in records:
@@ -69,6 +71,7 @@ def fp_table(split: str, config: Config, threshold: float) -> pd.DataFrame:
                 "fp": int(max_score >= threshold),
                 "taxonomic_distance": float(taxonomic.get(record.category_id, float("nan"))),
                 "visual_distance": float(visual.get(record.category_id, float("nan"))),
+                "log_area": float(size.get(record.category_id, float("nan"))),
             }
         )
     return pd.DataFrame(rows)
@@ -104,19 +107,47 @@ def _corr_over_species(species: pd.DataFrame, dist_col: str, seed: int, n_boot: 
             "n_species": int(len(data)), "significant": bool(lo > 0 or hi < 0)}
 
 
+def _partial_corr_over_species(
+    species: pd.DataFrame, x_col: str, z_col: str, seed: int, n_boot: int
+) -> dict:
+    """Support-weighted partial correlation of per-species FP rate with ``x_col`` controlling ``z_col``.
+
+    Uses the standard partial-correlation identity on the three weighted pairwise correlations, with a
+    species bootstrap CI. If the visual FP effect is really a size artefact, controlling ``log_area`` here
+    shrinks it toward zero (mirroring the size-controlled coefficient ablation).
+    """
+    data = species[["fp_rate", x_col, z_col, "n"]].dropna()
+    if len(data) < 4 or data[x_col].std() == 0 or data[z_col].std() == 0:
+        return {"partial_r": float("nan"), "ci_lo": float("nan"), "ci_hi": float("nan"),
+                "n_species": int(len(data)), "significant": False}
+
+    def partial(frame: pd.DataFrame) -> float:
+        w = frame["n"].to_numpy(float)
+        fp, x, z = (frame[c].to_numpy(float) for c in ("fp_rate", x_col, z_col))
+        r_fx, r_fz, r_xz = (_weighted_pearson(a, b, w) for a, b in ((fp, x), (fp, z), (x, z)))
+        denom = np.sqrt(max(0.0, (1 - r_fz**2) * (1 - r_xz**2)))
+        return (r_fx - r_fz * r_xz) / denom if denom > 0 else float("nan")
+
+    rng = np.random.default_rng(seed)
+    idx = np.arange(len(data))
+    boots = [r for _ in range(n_boot) if np.isfinite(r := partial(data.iloc[rng.choice(idx, len(idx))]))]
+    lo, hi = (float(v) for v in np.percentile(boots, [2.5, 97.5])) if boots else (float("nan"), float("nan"))
+    return {"partial_r": partial(data), "ci_lo": lo, "ci_hi": hi,
+            "n_species": int(len(data)), "significant": bool(lo > 0 or hi < 0)}
+
+
 def summarise(df: pd.DataFrame, config: Config, threshold: float) -> dict:
     """Overall FP rate, a taxonomic-tercile breakdown, and species-level FP-rate<->distance correlations."""
-    species = (
-        df.groupby("category_id")
-        .agg(
-            species=("species", "first"),
-            fp_rate=("fp", "mean"),
-            n=("fp", "size"),
-            taxonomic_distance=("taxonomic_distance", "first"),
-            visual_distance=("visual_distance", "first"),
-        )
-        .reset_index()
-    )
+    agg = {
+        "species": ("species", "first"),
+        "fp_rate": ("fp", "mean"),
+        "n": ("fp", "size"),
+        "taxonomic_distance": ("taxonomic_distance", "first"),
+        "visual_distance": ("visual_distance", "first"),
+    }
+    if "log_area" in df.columns:
+        agg["log_area"] = ("log_area", "first")
+    species = df.groupby("category_id").agg(**agg).reset_index()
     tercile = df.dropna(subset=["taxonomic_distance"]).copy()
     by_tercile = {}
     if len(tercile) >= 3 and tercile["taxonomic_distance"].nunique() >= 2:
@@ -128,7 +159,8 @@ def summarise(df: pd.DataFrame, config: Config, threshold: float) -> dict:
             str(k): round(float(v), 4)
             for k, v in tercile.groupby("bin", observed=True)["fp"].mean().items()
         }
-    return {
+    seed, n_boot = config.seed, config.cv.n_bootstrap
+    out = {
         "split": config.experiment,
         "threshold": threshold,
         "n_probes": int(len(df)),
@@ -136,9 +168,15 @@ def summarise(df: pd.DataFrame, config: Config, threshold: float) -> dict:
         "overall_fp_rate": round(float(df["fp"].mean()), 4) if len(df) else float("nan"),
         "fp_rate_at_any_prediction": round(float((df["n_pred"] > 0).mean()), 4) if len(df) else float("nan"),
         "fp_rate_by_taxonomic_tercile": by_tercile,
-        "fp_vs_taxonomic": _corr_over_species(species, "taxonomic_distance", config.seed, config.cv.n_bootstrap),
-        "fp_vs_visual": _corr_over_species(species, "visual_distance", config.seed, config.cv.n_bootstrap),
+        "fp_vs_taxonomic": _corr_over_species(species, "taxonomic_distance", seed, n_boot),
+        "fp_vs_visual": _corr_over_species(species, "visual_distance", seed, n_boot),
     }
+    if "log_area" in species.columns:  # the size-confound checks on the visual FP effect
+        out["fp_vs_size"] = _corr_over_species(species, "log_area", seed, n_boot)
+        out["fp_vs_visual_size_controlled"] = _partial_corr_over_species(
+            species, "visual_distance", "log_area", seed, n_boot
+        )
+    return out
 
 
 def analyse(split: str = "test", config: Config | None = None, threshold: float = 0.5) -> Path:

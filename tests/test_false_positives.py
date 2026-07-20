@@ -93,7 +93,8 @@ def test_summarise_detects_rising_fp_with_novelty() -> None:
             rows.append({
                 "video_id": f"{s}_{j}", "category_id": str(s), "species": f"sp{s}", "location_id": "L",
                 "n_pred": 1, "max_score": 1.0,
-                "fp": int(rng.random() < p), "taxonomic_distance": tax, "visual_distance": float("nan"),
+                "fp": int(rng.random() < p), "taxonomic_distance": tax,
+                "visual_distance": 0.1 * s, "log_area": float((3 * s) % 8),  # not collinear with visual
             })
     df = pd.DataFrame(rows)
     out = summarise(df, Config(), threshold=0.5)
@@ -102,3 +103,6 @@ def test_summarise_detects_rising_fp_with_novelty() -> None:
     tercile = out["fp_rate_by_taxonomic_tercile"]
     assert isinstance(tercile, dict) and tercile and all(isinstance(k, str) for k in tercile)
     assert out["fp_vs_taxonomic"]["pearson_r"] > 0  # hallucination rises with novelty
+    # the size-confound checks are present when log_area is available
+    assert "fp_vs_size" in out and "fp_vs_visual_size_controlled" in out
+    assert -1.0 <= out["fp_vs_visual_size_controlled"]["partial_r"] <= 1.0
