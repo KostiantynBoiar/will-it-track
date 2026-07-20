@@ -29,9 +29,10 @@ halves of tracking --- \emph{finding} the animal (\pdeta{}) and \emph{following}
 governed by different factors. This document records, in plain language, exactly what has been built and
 run so far, what the results say, and every practical and statistical problem we hit together with the
 fix we applied. The headline so far is an \emph{honest null}: on the two splits tested, the distances do
-not predict SAM~3's per-cell detection/association to a degree any valid test supports. This is a
-legitimate scientific result, and it points clearly at the next experiment (a powered species hold-out),
-which is running now.
+not predict SAM~3's per-cell detection/association to a degree any valid test supports. The powered species
+hold-out (99 species, 1025 cells) confirmed this null and, tellingly, traced the one wrong-signed
+``significant'' effect to an animal-size confound rather than novelty. This is a legitimate scientific
+result that sharpens the next question.
 \end{abstract}
 
 \section{Aim and hypotheses}
@@ -176,13 +177,20 @@ spans zero. The temporal gap is omitted: it is constant on this split and carrie
 \label{tab:coefB}
 \end{table}
 
-\subsection{Gate 2 --- species hold-out (Split A, preview): a cleaner null}
-Because the location split cannot properly test novelty, we ran the species hold-out (leave-one-species-out)
-on the already-scored test species --- a free preview that needs no new inference. With a \emph{graded}
-novelty axis, the taxonomic effect \textbf{collapses to essentially zero} (Table~\ref{tab:coefA}),
-confirming that the location split's $-0.36$ was an artifact. The out-of-sample gain is again not
-significant --- indeed slightly \emph{negative} (the distance model is no better than, or marginally worse
-than, predicting the mean).
+\subsection{Gate 2 --- species hold-out (Split A, powered): a null, and a size confound}
+The primary novelty test --- leave-one-species-out over the \emph{pooled} train+test species (99 species,
+1025 scored cells, after a capped SAM~3 pass over the train split) --- is in Table~\ref{tab:coefA}. The
+out-of-sample gain is again \textbf{not significant} on any hold-out (indeed slightly negative: species
+\pdeta{} $\Delta$MAE $-0.004$, $p=0.74$). With the extra power one coefficient does reach significance ---
+but it is \emph{visual distance}, and \textbf{positive} (\pdeta{} $+0.369$ $[+0.11, +0.67]$): visually
+\emph{novel} species are tracked \emph{better}, the opposite of H1. That is the fingerprint of a
+\textbf{confound}. Raw correlations show animal size ($\log$-area) is the strongest single correlate of the
+score (\pdeta{} $r=0.30$), and that visually-distinctive species are larger
+(visual~$\leftrightarrow$~$\log$-area $r=0.22$); taxonomic novelty is flat ($r\approx0.00$). Add a size
+covariate and the visual coefficient collapses to $+0.221$ $[-0.006, +0.431]$ (\pdeta{}, CI now spanning
+zero) / $+0.148$ $[-0.067, +0.356]$ (\passa{}), while size itself becomes the significant driver
+($\log$-area $+0.274$ $[+0.04, +0.51]$ / $+0.240$ $[+0.03, +0.45]$). So ``visual novelty helps'' was really
+``bigger animals are easier to segment''. \textbf{Novelty does not predict transfer, even powered.}
 
 \begin{table}[h]
 \centering
@@ -191,16 +199,17 @@ than, predicting the mean).
 \toprule
 Factor & \pdeta{} coef.\ [95\% CI] & \passa{} coef.\ [95\% CI] \\
 \midrule
-Taxonomic distance   & $+0.026$ $[-0.31,\,0.31]$ & $+0.008$ $[-0.33,\,0.31]$ \\
-Visual distance      & $+0.120$ $[-0.23,\,0.38]$ & $+0.135$ $[-0.23,\,0.40]$ \\
-Environment distance & $-0.025$ $[-0.30,\,0.21]$ & $-0.046$ $[-0.33,\,0.19]$ \\
-Clutter              & $-0.106$ $[-0.37,\,0.21]$ & $-0.135$ $[-0.41,\,0.20]$ \\
-Night / IR           & $-0.394$ $[-0.99,\,0.09]$ & $-0.466$ $[-1.09,\,0.06]$ \\
-$\log(\text{support})$ & $-0.188$ $[-0.49,\,0.19]$ & $-0.193$ $[-0.51,\,0.21]$ \\
+Taxonomic distance   & $+0.202$ $[-0.09,\,0.43]$ & $+0.209$ $[-0.06,\,0.42]$ \\
+Visual distance      & $+0.369$ $[+0.11,\,0.67]$ & $+0.271$ $[+0.04,\,0.54]$ \\
+Environment distance & $+0.043$ $[-0.15,\,0.17]$ & $+0.023$ $[-0.15,\,0.13]$ \\
+Clutter              & $-0.284$ $[-0.52,\,0.02]$ & $-0.230$ $[-0.46,\,0.06]$ \\
+Night / IR           & $-0.286$ $[-0.77,\,0.22]$ & $-0.439$ $[-0.92,\,0.06]$ \\
+$\log(\text{support})$ & $-0.020$ $[-0.14,\,0.16]$ & $+0.051$ $[-0.06,\,0.23]$ \\
 \bottomrule
 \end{tabular}
-\caption{Split A (species hold-out, test-species pool) standardised coefficients. With a graded novelty
-axis the taxonomic and visual effects are $\approx 0$ and span zero. pseudo-$R^2$ is 0.033 / 0.039.}
+\caption{Split A (species hold-out, pooled train+test: 99 species, 1025 cells) standardised coefficients
+with group-cluster-bootstrap CIs. Only \emph{visual distance} excludes zero, and with the wrong (positive)
+sign --- an animal-size confound: controlling for size collapses it to $+0.22$ with a CI spanning zero.}
 \label{tab:coefA}
 \end{table}
 
@@ -223,12 +232,11 @@ paired group-bootstrap CI and one-sided $p$. \textbf{No row is significant} on e
 \end{table}
 
 \subsection{What the results mean (honestly)}
-On both splits tested, the label-free distances do \textbf{not} predict SAM~3's per-cell detection or
-association to a degree any valid, group-clustered test supports. This is \textbf{H0-leaning}. It is not
-yet ``H0 confirmed for the whole thesis'': the species hold-out preview uses only the 83 test species, and
-the powered version (adding a sample of train species) is running now. The two \emph{large-looking}
-effects that survive as point estimates --- night/IR and (on Split B) taxonomic --- do not survive an
-honest interval, and the taxonomic one is a known artifact. The one robust qualitative signal is that
+On both the location split \emph{and} the powered species hold-out (99 species, 1025 cells), the label-free
+distances do \textbf{not} predict SAM~3's per-cell detection or association to a degree any valid,
+group-clustered test supports. This is \textbf{H0}. The one effect that reaches significance under power ---
+visual distance --- has the \emph{wrong} sign and dissolves into an animal-size confound (previous
+subsection); taxonomic novelty is flat throughout. The only robust qualitative signal is that
 \textbf{night/IR footage lowers both} \pdeta{} and \passa{} (day $\to$ night: \pdeta{} $0.60\to0.51$,
 \passa{} $0.62\to0.52$), but even this is not individually significant once clustering is respected.
 
@@ -287,14 +295,15 @@ during fitting --- the only fair test of a predictor.
         value, and this is the single strongest piece of evidence because it is the deliverable failing
         its actual job.
 
-  \item \textbf{The one strong-looking effect was an artifact that vanished under a cleaner design.}
-        On the location split the taxonomic distance looked important ($-0.36$). But that split makes
-        taxonomic novelty degenerate: almost all test species also occur in the reference set, so their
-        distance is $\approx 0$, and only $\sim$7 genuinely-unseen species sit above zero --- the ``$-0.36$''
-        was a fragile contrast driven by those few. When we re-ran with a proper \emph{graded} novelty
-        axis (the species hold-out, where each species is compared to the nearest \emph{other} species),
-        the taxonomic effect collapsed to $+0.03$/$+0.01$ (Table~\ref{tab:coefA}). An apparent signal that
-        evaporates the moment the design is fixed is exactly what you expect when there is no real effect.
+  \item \textbf{The strong-looking effects are artifacts that vanish under scrutiny.}
+        On the location split the taxonomic distance looked important ($-0.36$), but that split makes
+        novelty degenerate --- almost all test species also occur in the reference set, so only $\sim$7
+        genuinely-unseen species sit above zero and the ``$-0.36$'' was a fragile contrast driven by those
+        few. On the graded species axis it becomes $+0.20$ with a CI spanning zero (Table~\ref{tab:coefA})
+        --- no graded novelty effect. The one coefficient that \emph{does} reach significance under power,
+        visual distance, has the wrong (positive) sign and dissolves into an animal-size confound once size
+        is controlled ($+0.37 \to +0.22$, CI spanning zero). Every apparent signal evaporates when the
+        design or a confounder is fixed --- exactly what you expect when there is no real effect.
 
   \item \textbf{The null is consistent across two independent designs and both targets.}
         We now have four independent looks --- \{location split, species split\} $\times$ \{detection,
@@ -372,6 +381,11 @@ A single pathological clip crashed SAM~3's forward pass (a likely CUDA out-of-me
 killed the entire multi-hour batch. &
 Wrapped per-video inference in a guard: a crashing clip is \emph{skipped} (scored as a miss), the GPU
 cache is freed, and the batch continues. \\
+\addlinespace
+Scoring the train predictions was OOM-killed: the evaluator loads the \emph{entire} train ground-truth
+(all $\sim$31k videos, 0.9\,GB) to score our $\sim$1500 probes. &
+Trim the ground-truth to just the predicted videos before the evaluator sees it --- it never needs the
+rest --- keeping its memory at test-split levels. \\
 \addlinespace
 Long clips could exhaust GPU memory during video preprocessing. &
 Keep SAM~3 video preprocessing on the CPU (raw storage only), running the model itself on the GPU. \\

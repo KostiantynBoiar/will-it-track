@@ -21,9 +21,29 @@ association.
 
 \section{Out-of-sample validation}
 % TODO: leave-species-out and leave-location-out; MAE/RMSE + calibration; the predictive-line figures.
-% This is the headline: a validated predictor, not a within-sample fit.
+% The headline is a NULL: no hold-out beats a mean predictor at a significant margin (see also Split A).
 Table~\ref{tab:cv} reports whole-group hold-out error against a mean-predictor baseline.
 \IfFileExists{tables/cv_validation.tex}{\input{tables/cv_validation}}{}
+
+\section{Species hold-out (H1): novelty and the size confound}
+The primary novelty test --- leave-one-species-out over the pooled train+test species (99 species,
+1025 scored cells) --- is in Tables~\ref{tab:gate1_species}--\ref{tab:cv_species}. Out-of-sample
+prediction is not significant on any hold-out (Table~\ref{tab:cv_species}). The only coefficient whose CI
+excludes zero, \emph{visual distance} (Table~\ref{tab:coefficients_species}), is positive --- the wrong
+sign for H1 --- and is a \textbf{confound}: visually-distinctive species are larger
+(visual~$\leftrightarrow$~$\log$-area $r=0.22$) and larger animals score higher
+($\log$-area~$\leftrightarrow$~pDetA $r=0.30$, the strongest raw correlate of the score). Adding an animal-size
+covariate shrinks the visual coefficient from $+0.37$ to $+0.22$ (CI now spanning zero) while size itself
+is the significant driver, so ``visual novelty helps'' was really ``bigger animals are easier''. Taxonomic
+novelty is flat ($r\approx0.00$). Novelty does not predict transfer.
+\IfFileExists{tables/gate1_measurement_species.tex}{\input{tables/gate1_measurement_species}}{}
+\IfFileExists{tables/coefficients_species.tex}{\input{tables/coefficients_species}}{}
+\IfFileExists{tables/cv_validation_species.tex}{\input{tables/cv_validation_species}}{}
+
+\section{False positives / hallucination}
+% TODO: on hard negatives, does the false-positive rate rise with novelty? Needs the hard-negative pass
+% (`python -m src.analysis.false_positives --split test`), which requires inferring the test hard negatives.
+\IfFileExists{tables/false_positives.tex}{\input{tables/false_positives}}{}
 
 \section{Ablations and robustness}
 % TODO: drop-one-factor; DINOv2 vs CLIP; mask-cropped vs whole-frame; species vs generic prompt; +/- support covariate.
