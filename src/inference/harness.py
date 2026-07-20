@@ -39,6 +39,16 @@ def _area(rle: dict) -> int:
     return int(coco_mask.area(_packed(rle)))
 
 
+def probe_filename(video_id: str, category_id: str) -> str:
+    """Per-probe prediction filename, keyed by ``(video, species)``.
+
+    One video is queried with several species prompts (its own species plus hard-negative species), and
+    each prompt yields a different prediction; keying by ``video_id`` alone would collide, storing only one
+    probe per video (which silently drops every hard negative).
+    """
+    return f"{video_id}_{category_id}.json"
+
+
 def _cap_per_species(records: list[VideoRecord], cap: int) -> list[VideoRecord]:
     """Up to ``cap`` present (positive) videos per species — a stratified sample for the H1 fit.
 
@@ -157,7 +167,7 @@ class InferenceHarness:
 
         desc = f"SAM 3 {split}/{self.config.inference.prompt_mode}"
         for record in tqdm(records, desc=desc, unit="probe"):
-            path = out_dir / f"{record.video_id}.json"
+            path = out_dir / probe_filename(record.video_id, record.category_id)
             if path.exists():
                 continue  # resumable: already predicted
             path.write_text(json.dumps(self._predict_video(record)))

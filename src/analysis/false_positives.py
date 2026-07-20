@@ -26,6 +26,7 @@ from src.config import Config
 from src.dataset import SAFARI
 from src.features.taxonomic import TaxonomicDistance
 from src.features.visual import VisualDistance
+from src.inference.harness import probe_filename
 from src.io import write_parquet
 from src.splits import build_species_partition
 
@@ -52,7 +53,7 @@ def fp_table(split: str, config: Config, threshold: float) -> pd.DataFrame:
 
     rows = []
     for record in records:
-        path = pred_dir / f"{record.video_id}.json"
+        path = pred_dir / probe_filename(record.video_id, record.category_id)
         if not path.exists():
             continue  # not inferred (e.g. a sampled subset) — omit rather than count as a rejection
         scores = [float(entry.get("score", 0.0)) for entry in json.loads(path.read_text())]

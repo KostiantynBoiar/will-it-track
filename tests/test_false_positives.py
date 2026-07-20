@@ -71,9 +71,9 @@ def test_fp_table_reads_predictions(tmp_path, monkeypatch) -> None:
 
     pdir = tmp_path / cfg.inference.predictions_subdir / "test" / cfg.inference.prompt_mode
     pdir.mkdir(parents=True)
-    (pdir / "v1.json").write_text(json.dumps([{"score": 0.9}]))  # hallucination
-    (pdir / "v2.json").write_text(json.dumps([]))  # correct rejection
-    # v3.json intentionally absent -> omitted
+    (pdir / "v1_1.json").write_text(json.dumps([{"score": 0.9}]))  # (video, species) key; hallucination
+    (pdir / "v2_1.json").write_text(json.dumps([]))  # correct rejection
+    # v3's file intentionally absent -> omitted
 
     df = fp_table("test", cfg, threshold=0.5).set_index("video_id")
     assert set(df.index) == {"v1", "v2"}  # v3 omitted (no prediction file)
