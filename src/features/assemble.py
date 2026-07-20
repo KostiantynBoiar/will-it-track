@@ -22,6 +22,7 @@ import pandas as pd
 
 from src.config import Config
 from src.features.environment import EnvironmentDistance
+from src.features.size import SizeFeature
 from src.features.taxonomic import TaxonomicDistance
 from src.features.temporal import TemporalGap
 from src.features.visual import VisualDistance
@@ -39,6 +40,7 @@ def merge_features(
     visual: pd.Series,
     temporal: pd.Series,
     environment: pd.DataFrame,
+    size: pd.Series | None = None,
     familiarity: pd.Series | None = None,
 ) -> pd.DataFrame:
     """Broadcast the distance objects onto the per-cell ``scores`` grid → the merged modelling table.
@@ -49,6 +51,7 @@ def merge_features(
         visual: ``visual_distance`` indexed by ``category_id``.
         temporal: ``temporal_gap`` with a ``(category_id, species, location_id, time)`` MultiIndex.
         environment: Per-``location_id`` frame (``environment_distance`` + covariates).
+        size: Optional ``log_area`` per ``category_id`` --- the size covariate (``NaN`` column when omitted).
         familiarity: Optional ``familiarity_proxy`` per ``category_id`` (``NaN`` column when omitted).
 
     Returns:
@@ -60,6 +63,7 @@ def merge_features(
 
     df["taxonomic_distance"] = df["category_id"].map(taxonomic)
     df["visual_distance"] = df["category_id"].map(visual)
+    df["log_area"] = df["category_id"].map(size) if size is not None else np.nan
 
     temporal_df = temporal.reset_index()
     for key in _CELL_KEYS:
@@ -123,6 +127,7 @@ class FeatureAssembler:
             visual=VisualDistance(self.config).compute(partition),
             temporal=TemporalGap(self.config).compute(partition),
             environment=EnvironmentDistance(self.config).compute(partition),
+            size=SizeFeature(self.config).compute(partition),
         )
         path = write_parquet(merged, self.config.paths.outputs_root / "features.parquet")
         covered = int(merged["environment_distance"].notna().sum())

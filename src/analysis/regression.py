@@ -60,7 +60,10 @@ class DesignBuilder:
         carries no information and only makes the design rank-deficient (e.g. ``temporal_gap`` on the
         location split, which is present for a handful of cells and identical among them).
         """
-        continuous = [c for c in (*DISTANCE_COLS, *_CONT_COVARIATES) if c in df.columns]
+        candidates = (*DISTANCE_COLS, *_CONT_COVARIATES)
+        if self.config.model.control_size:
+            candidates = (*candidates, "log_area")  # confound ablation: control for animal size
+        continuous = [c for c in candidates if c in df.columns]
         self.cont_ = []
         self.stats_ = {}
         for col in continuous:

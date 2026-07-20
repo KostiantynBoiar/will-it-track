@@ -133,6 +133,19 @@ def test_cluster_bootstrap_ci_is_wider_than_naive(table) -> None:
     assert clust_w[common].mean() >= naive_w[common].mean()
 
 
+def test_control_size_toggles_log_area_covariate(table) -> None:
+    """log_area enters the design only when model.control_size is on (the confound ablation)."""
+    from src.analysis.regression import DesignBuilder
+
+    cfg, df, _path = table
+    df = df.copy()
+    df["log_area"] = np.linspace(1.0, 5.0, len(df))  # a real, varying size column
+
+    assert "log_area" not in DesignBuilder(cfg).fit(df).feature_names  # off by default
+    cfg.model.control_size = True
+    assert "log_area" in DesignBuilder(cfg).fit(df).feature_names  # on -> controlled for
+
+
 def test_variance_partition_finds_the_driver(table) -> None:
     """Dominance analysis puts the true driver on top with finite, non-degenerate VIF."""
     cfg, _df, _path = table

@@ -199,6 +199,9 @@ class ModelConfig(BaseModel):
             so the honest interval resamples whole groups. Naive CIs are still written alongside.
         cluster_cols: Grouping columns bootstrapped over; the reported CI is the conservative envelope
             across them (widest), since novelty predictors vary per species and scene ones per location.
+        control_size: Add ``log_area`` (mean GT mask-area per species) as a nuisance covariate. Off by
+            default so committed fits are unchanged; turned on for the confound ablation that tests whether
+            the (wrong-signed) visual-distance effect is really an animal-size artefact.
     """
 
     family: str = "beta"
@@ -207,6 +210,7 @@ class ModelConfig(BaseModel):
     log_support_covariate: bool = True
     cluster_ci: bool = True
     cluster_cols: tuple[str, ...] = ("category_id", "location_id")
+    control_size: bool = False
 
 
 class CVConfig(BaseModel):
@@ -238,6 +242,9 @@ class Config(BaseSettings):
         model: Regression options.
         cv: Cross-validation + bootstrap options.
         seed: Random seed.
+        experiment: Experiment tag for the exporter's output filenames (``"location"`` keeps the
+            unsuffixed names; e.g. ``"species"`` writes ``coefficients_species.tex``), so two experiments'
+            artefacts sit side by side without clobbering. Overridable via ``SAFARI_EXPERIMENT``.
     """
 
     model_config = SettingsConfigDict(
@@ -254,6 +261,7 @@ class Config(BaseSettings):
     model: ModelConfig = Field(default_factory=ModelConfig)
     cv: CVConfig = Field(default_factory=CVConfig)
     seed: int = 0
+    experiment: str = "location"
 
     @classmethod
     def load(cls, path: str | Path | None = None) -> Config:
