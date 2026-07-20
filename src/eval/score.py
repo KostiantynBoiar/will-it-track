@@ -168,16 +168,35 @@ class Scorer:
             per_probe[key] = {m: _first_present(entry, keys) for m, keys in _METRIC_KEYS.items()}
         return per_probe
 
+    def _scored_gt(self, split: str, pred_dir: Path) -> Path:
+        """A ground-truth file trimmed to the videos we actually predicted.
+
+        VEval only scores the probes it is given, but it loads the *entire* GT into memory first; the
+        full train GT (all ~31k videos, ~0.9 GB on disk) OOM-kills the evaluator. We only ever predict a
+        capped sample, so we hand VEval a GT restricted to those video ids --- keeping its footprint in the
+        same range as the (small) test split. Written next to the outputs; harmless for test (keeps all).
+        """
+        pred_ids = {p.stem for p in pred_dir.glob("*.json")}
+        data = SAFARI(split, self.config)._load()
+        trimmed = dict(data)
+        trimmed["videos"] = [v for v in data.get("videos", []) if str(v["id"]) in pred_ids]
+        trimmed["annotations"] = [
+            a for a in data.get("annotations", []) if str(a["video_id"]) in pred_ids
+        ]
+        if data.get("video_np_pairs"):
+            trimmed["video_np_pairs"] = [
+                p for p in data["video_np_pairs"] if str(p["video_id"]) in pred_ids
+            ]
+        out = self.config.paths.outputs_root / f"{split}_scored_gt.json"
+        out.write_text(json.dumps(trimmed))
+        return out
+
     def score(self, split: str = "test") -> Path:
         """Score the harness predictions and write ``outputs/scores.parquet``; return its path."""
         inf = self.config.inference
-        pred_file = (
-            self.config.paths.outputs_root
-            / inf.predictions_subdir
-            / split
-            / f"{inf.prompt_mode}.json"
-        )
-        result = self._run_veval(pred_file, SAFARI(split, self.config).ann_path)
+        pred_dir = self.config.paths.outputs_root / inf.predictions_subdir / split / inf.prompt_mode
+        pred_file = pred_dir.with_suffix(".json")
+        result = self._run_veval(pred_file, self._scored_gt(split, pred_dir))
         summary_path = self.config.paths.outputs_root / "veval_summary.json"
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         summary_path.write_text(json.dumps(result.get("dataset_results", result), indent=2))
