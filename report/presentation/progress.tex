@@ -97,10 +97,30 @@
   \end{enumerate}
 \end{frame}
 
-% ------------------------------------------------------------ the null (chart)
+% ------------------------------------------------------------ what the pipeline sees (figure)
+\begin{frame}{What the pipeline sees --- a real frame}
+  \centering
+  \begin{columns}[c]
+    \begin{column}{0.31\textwidth}\centering
+      \includegraphics[width=\linewidth]{../dissertation/figures/feat_overlay.png}\\[2pt]{\scriptsize frame $+$ ground-truth mask}
+    \end{column}
+    \begin{column}{0.31\textwidth}\centering
+      \includegraphics[width=\linewidth]{../dissertation/figures/feat_animal.png}\\[2pt]{\scriptsize \textbf{visual}: the animal alone}
+    \end{column}
+    \begin{column}{0.31\textwidth}\centering
+      \includegraphics[width=\linewidth]{../dissertation/figures/feat_background.png}\\[2pt]{\scriptsize \textbf{environment}: animal erased}
+    \end{column}
+  \end{columns}
+  \vspace{0.5em}
+  {\footnotesize The distances are built from label-free crops of a real camera-trap frame (a collared
+  peccary): the animal's appearance (\emph{visual}), the scene with the animal erased (\emph{environment}),
+  plus its place on the tree of life and its timestamp. \textbf{No SAM\,3 is used to build them.}}
+\end{frame}
+
+% ------------------------------------------------------------ the null (table + figure)
 \begin{frame}{The main result: the distances predict \emph{nothing}}
-  \begin{columns}[T]
-    \begin{column}{0.52\textwidth}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
       \centering
       \footnotesize
       \begin{tabular}{lcc}
@@ -112,16 +132,12 @@
         $+$ animal size    & $0.281$ & \ck\ a little \\
         \bottomrule
       \end{tabular}\\[8pt]
-      {\scriptsize out-of-sample error $\cdot$ held-out species / places \\ (lower is better)}
+      {\scriptsize out-of-sample error, held-out species / places (lower is better)}
     \end{column}
-    \begin{column}{0.48\textwidth}
-      \begin{itemize}\footnotesize
-        \item Hide a species (or a place) and predict it from the distances $\to$ \textbf{no better than
-              simply guessing the average}.
-        \item Every distance's effect is \textbf{statistically indistinguishable from zero}, on \emph{both}
-              hold-out schemes.
-        \item The only thing that moves the needle at all is \textbf{animal size} --- and only a little.
-      \end{itemize}
+    \begin{column}{0.54\textwidth}
+      \centering
+      \includegraphics[width=0.9\linewidth]{../dissertation/figures/res_pred_vs_actual.pdf}\\[-1pt]
+      {\scriptsize predictions collapse onto the \emph{mean}, not the diagonal}
     \end{column}
   \end{columns}
 \end{frame}
@@ -202,6 +218,36 @@
   \end{block}
 \end{frame}
 
+% ------------------------------------------------------------ ablations / variance
+\begin{frame}{The null holds under scrutiny}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \footnotesize \textbf{Drop any one distance} --- the fit and the (null) out-of-sample gain barely move.
+      Only \textbf{adding animal size} changes anything.
+      \vspace{2pt}
+      \begin{table}\scriptsize
+      \begin{tabular}{lcc}
+        \toprule
+        Model & pseudo-$R^2$ & beats guess? \\
+        \midrule
+        all four distances & $0.055$        & \no\ no \\
+        drop any one       & $0.04$--$0.06$ & \no\ no \\
+        $+$ animal size    & $0.119$        & \ck\ yes \\
+        \bottomrule
+      \end{tabular}
+      \end{table}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}\footnotesize
+        \item The four distances together explain only $\approx\textbf{3\%}$ of the variance.
+        \item No factor dominates, and every collinearity score is $\approx1$ --- so it is \textbf{not}
+              collinearity hiding a real effect.
+        \item The null is not an artefact of one factor or one modelling choice.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
 % ------------------------------------------------------------ two extras
 \begin{frame}{Two other things we checked}
   \begin{block}{Hallucinations (animal absent)}
@@ -238,16 +284,17 @@
   \begin{block}{Done \& validated}
     \centering\footnotesize
     Measurement \ck\;\; four distances \ck\;\; modelling $+$ out-of-sample validation \ck\;\;
-    difficulty pivot \ck\;\; write-up drafted \ck
+    difficulty pivot \ck\;\; false positives \ck\;\; ablations \& variance \ck\;\; write-up \ck
   \end{block}
   \vspace{0.5em}
   \begin{itemize}\footnotesize
-    \item \textcolor{burnt}{\textbf{Writing up}} --- results and discussion now reflect the negative result
-          and its explanation.
+    \item \textbf{Write-up:} results, discussion, and figures now reflect the negative result and its
+          explanation; the dissertation builds end-to-end.
+    \item \textcolor{burnt}{\textbf{In progress:}} three robustness re-runs (a different visual encoder,
+          whole-frame crops, a generic prompt) --- awaiting a GPU; the null is expected to hold.
     \item \textbf{Honest limitation:} distances are to the \emph{dataset's} training split, not SAM\,3's true
-          (undisclosed) training data --- a proxy for that is a possible future angle.
-    \item \textbf{Possible next direction:} probe whether SAM\,3's own internal features already ``know'' a
-          species.
+          (undisclosed) training data. \textbf{Open direction:} probe whether SAM\,3's own features
+          ``know'' a species.
   \end{itemize}
   \vspace{0.3em}
   \centering\small\color{navy}\textbf{Thank you --- questions welcome.}
