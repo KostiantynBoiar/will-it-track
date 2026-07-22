@@ -27,6 +27,10 @@ from src.io import read_parquet
 
 # The four label-free distances (the factors of interest) + the scene covariates.
 DISTANCE_COLS = ("taxonomic_distance", "temporal_gap", "visual_distance", "environment_distance")
+# After-running ATC-style detection-confidence predictors (SAM 3's own outputs; see features/confidence.py).
+# A distinct sub-question from the before-running distances — registered as first-class predictors so the
+# GLM, the group-cluster-bootstrap CIs and the grouped CV validate them at the exact same bar.
+CONFIDENCE_COLS = ("conf_atc_coverage", "conf_mean_score", "conf_median_score", "conf_frame_coverage")
 _CONT_COVARIATES = ("clutter",)
 _BINARY_COVARIATES = ("is_night_ir",)
 TARGETS = ("pDetA", "pAssA")
@@ -60,9 +64,11 @@ class DesignBuilder:
         carries no information and only makes the design rank-deficient (e.g. ``temporal_gap`` on the
         location split, which is present for a handful of cells and identical among them).
         """
-        candidates = (*DISTANCE_COLS, *_CONT_COVARIATES)
+        candidates = (*DISTANCE_COLS, *CONFIDENCE_COLS, *_CONT_COVARIATES)
         if self.config.model.control_size:
             candidates = (*candidates, "log_area")  # confound ablation: control for animal size
+        # Only columns actually present are used, so a confidence-only table (distances absent) fits the
+        # isolated ATC model, and the standing distances-only table is unaffected (confidence cols absent).
         continuous = [c for c in candidates if c in df.columns]
         self.cont_ = []
         self.stats_ = {}

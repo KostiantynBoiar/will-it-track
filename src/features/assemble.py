@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 from src.config import Config
+from src.features.confidence import CONF_COLS, ConfidenceFeature
 from src.features.environment import EnvironmentDistance
 from src.features.size import SizeFeature
 from src.features.taxonomic import TaxonomicDistance
@@ -42,6 +43,7 @@ def merge_features(
     environment: pd.DataFrame,
     size: pd.Series | None = None,
     familiarity: pd.Series | None = None,
+    confidence: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Broadcast the distance objects onto the per-cell ``scores`` grid → the merged modelling table.
 
@@ -53,6 +55,8 @@ def merge_features(
         environment: Per-``location_id`` frame (``environment_distance`` + covariates).
         size: Optional ``log_area`` per ``category_id`` --- the size covariate (``NaN`` column when omitted).
         familiarity: Optional ``familiarity_proxy`` per ``category_id`` (``NaN`` column when omitted).
+        confidence: Optional per-cell ATC-style confidence block (``(category_id, species, location_id,
+            time)`` MultiIndex, the ``conf_*`` columns) --- ``NaN`` columns when omitted.
 
     Returns:
         One row per input cell, with the four distance columns + covariates joined on.
@@ -69,6 +73,15 @@ def merge_features(
     for key in _CELL_KEYS:
         temporal_df[key] = temporal_df[key].astype(str)
     df = df.merge(temporal_df, on=_CELL_KEYS, how="left")
+
+    if confidence is not None and not confidence.empty:
+        conf_df = confidence.reset_index()
+        for key in _CELL_KEYS:
+            conf_df[key] = conf_df[key].astype(str)
+        df = df.merge(conf_df, on=_CELL_KEYS, how="left")
+    else:
+        for col in CONF_COLS:
+            df[col] = np.nan
 
     env_df = environment.reset_index()
     env_df["location_id"] = env_df["location_id"].astype(str)
@@ -121,6 +134,10 @@ class FeatureAssembler:
         partition = partition or build_location_partition(self.config)
         self._assert_no_leakage(partition)
 
+        # ATC calibration anchor: the reference (seen) mean pDetA. The loaded scores.parquet is the
+        # reference/train scoring in the committed location build, so its mean pDetA is that anchor.
+        ref_pdeta = float(pd.to_numeric(scores.get("pDetA"), errors="coerce").mean())
+
         merged = merge_features(
             scores,
             taxonomic=TaxonomicDistance(self.config).compute(partition),
@@ -128,6 +145,7 @@ class FeatureAssembler:
             temporal=TemporalGap(self.config).compute(partition),
             environment=EnvironmentDistance(self.config).compute(partition),
             size=SizeFeature(self.config).compute(partition),
+            confidence=ConfidenceFeature(self.config).compute(partition, reference_pdeta=ref_pdeta),
         )
         path = write_parquet(merged, self.config.paths.outputs_root / "features.parquet")
         covered = int(merged["environment_distance"].notna().sum())
