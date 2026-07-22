@@ -17,3 +17,20 @@ n_rows=1447  taxonomic_distance=840  temporal_gap=32  visual_distance=1143  envi
 - species/pAssA: dMAE +0.0062 [-0.0059, +0.0174] p=0.160 (n=346) --- n.s.
 - species/pDetA: dMAE +0.0042 [-0.0064, +0.0152] p=0.237 (n=346) --- n.s.
 
+## Difficulty / size-decomposition (detection)
+- verdict: MISLEADING at face value — the difficulty models clear the bar, but the nested decomposition shows the gain is the SIZE covariate (log_area), NOT low-light/clutter/night-IR difficulty.
+- The apparent difficulty 'validation' is the SIZE effect: log_area alone carries the whole OOS gain, while low-light alone does NOT validate — low-light/clutter/night-IR add ~nothing over size.
+- log_support_only: location dMAE 0.0018 p=0.291, species dMAE 0.0005 p=0.432
+- log_area_only: location dMAE 0.0172 p=0.001, species dMAE 0.0152 p=0.014
+- lowlight_only_no_size: location dMAE 0.0044 p=0.123, species dMAE 0.0031 p=0.233
+- lowlight_plus_size: location dMAE 0.0202 p=0.0, species dMAE 0.0174 p=0.011
+
+## Detection precision --- false positives (hallucination)
+- overall FP rate 0.098 on 1486 hard negatives (113 species)
+- fp vs visual r=-0.333 (size-controlled partial -0.375)
+- leave-species-out OOS gain +0.0080 p=0.053 --- n.s. (a correlate, not a predictor)
+
+## Variance partition (unique R^2 + VIF, detection)
+
+## Factor ablation (detection)
+
