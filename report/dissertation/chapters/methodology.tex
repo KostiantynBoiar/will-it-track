@@ -1,6 +1,37 @@
 \chapter{Data and Methodology}
 \label{ch:methodology}
 
+% ============================================================================================
+% SCAFFOLD NOTE (delete before submission). This chapter is structured for an *empirical-science*
+% study (measure -> featurise -> design -> model -> test), NOT a build-and-train project. The
+% intellectual weight is in Sections~\ref{sec:meth-model}-\ref{sec:meth-fp}. Kept prose is a
+% starting fill; each `% NOTE:` line says what to write or expand. A pipeline figure at the top of
+% Section~\ref{sec:meth-design} (measure -> distances -> split -> GLM -> hypothesis test) helps a lot.
+% ============================================================================================
+
+\section{Research design and evaluation criteria}
+\label{sec:meth-design}
+% NOTE: This section (new) frames the whole study and states the DECISION RULE up front, so that a
+% null is a principled outcome measured against a pre-stated bar rather than a failed experiment.
+This work is a predictive-modelling study: we ask whether label-free \emph{distances} measurable in
+advance ($X$) predict a frozen tracker's zero-shot performance ($Y=$ \texttt{pDetA}/\texttt{pAssA}), and
+which factors govern that transfer for \emph{finding} versus \emph{following} an animal. Because the
+target is a bounded score and the observations are grouped by species and location, the analysis is a
+weighted regression with group-aware, out-of-sample validation rather than a tuned tracker.
+
+\paragraph{Definition of success and the decision rule.}
+% NOTE: state this BEFORE any results appear. This is the single most important paragraph for making
+% H0 read as a result. Adjust wording to taste but keep both criteria (interval + out-of-sample).
+The intended deliverable is a \emph{validated, out-of-sample} predictor of \texttt{pDetA}/\texttt{pAssA}
+from label-free distances, with honest confidence intervals. A distance is taken to predict transfer only
+if it satisfies \textbf{both} criteria: (i) its coefficient's group-cluster-bootstrap 95\% confidence
+interval excludes zero, \emph{and} (ii) the grouped cross-validated model beats a mean-predictor baseline
+by a margin that is significant under a paired group-bootstrap. \textbf{H1} (detection $\leftarrow$
+species novelty) and \textbf{H2} (association $\leftarrow$ environment difficulty) are supported only when
+their respective distances meet this bar on the split that isolates them; if neither does under these
+deliberately powerful tests, we conclude \textbf{H0} --- distance explains little variance --- which is
+itself a valid result and motivates the representational-probing direction of Chapter~\ref{ch:discussion}.
+
 \section{Dataset, splits, and the analysis unit}
 \label{sec:meth-data}
 We use SA-FARI~\cite{safari} throughout. In the released \texttt{\_ext} annotations, a probe is a
@@ -17,24 +48,59 @@ cell, so it cannot test species novelty. Because SAM\,3 is frozen and zero-shot 
 only defines our \emph{reference distribution}, so we are free to repartition the same videos. We therefore
 use two near-orthogonal experiments and run inference only once (scoring is per-video and split-agnostic):
 \begin{description}[leftmargin=1.6em,style=nextline]
-  \item[Split A --- species hold-out (primary).] The pooled species are partitioned into a reference set and
-    a held-out set, stratified by taxonomic group so held-out species span a range of novelty. Species-distance
-    varies while the environment stays largely familiar (held-out species recur at reference locations),
-    isolating H1. Distances use a \emph{leave-species-out} reference and it is validated by leave-species-out
-    cross-validation.
+  \item[Split A --- species hold-out (primary).] Pooled species are partitioned by a \emph{leave-one-species-out}
+    view, so a held-out species' distance is to the nearest \emph{other} species; species-distance varies while
+    the environment stays largely familiar, isolating H1. Validated by leave-species-out cross-validation.
   \item[Split B --- location hold-out (secondary).] The official train/test split, whose unseen locations
     isolate H2 and whose benchmark comparability carries the Phase-1 score-sanity check.
 \end{description}
-Split A is a \emph{constructed} hold-out --- legitimate because the model is frozen, and reported as such;
-we cross-check aggregate scores against Split B, which is benchmark-comparable.
+Split A is a \emph{constructed} hold-out --- legitimate because the model is frozen, and reported as such.
+% NOTE: report the actual scale you ended up with (probes, unique videos, scored cells, species covered
+% by each split, hard-negative counts). Cite the numbers you already have (e.g. 1025 scored cells / 99
+% species pooled for Split A; 346 scored / 1101 hard-negative cells for Split B).
 
 \section{Measuring transfer}
 \label{sec:meth-measure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[>=Latex, every node/.style={font=\scriptsize},
+  b/.style={draw, rounded corners, align=center, inner sep=3pt, minimum height=0.8cm},
+  d/.style={b, fill=black!5}, m/.style={b, fill=blue!12},
+  f/.style={b, fill=green!16}, g/.style={b, fill=orange!20}]
+  \node[d, text width=1.7cm] (vid) {SA-FARI videos};
+  \node[m, text width=2.0cm, right=0.6cm of vid] (sam) {frozen SAM\,3 $\to$ VEval};
+  \node[d, text width=2.0cm, right=0.6cm of sam] (y) {per-cell \texttt{pDetA} / \texttt{pAssA} ($Y$)};
+  \node[f, text width=3.4cm, below=1.0cm of sam] (dist)
+    {four label-free distances (taxonomic, visual, environment, temporal) vs the \textbf{frozen reference} ($X$)};
+  \node[g, text width=2.1cm, right=1.1cm of y, yshift=-0.8cm] (glm) {support-weighted logit GLM};
+  \node[g, text width=2.1cm, below=0.5cm of glm] (cv) {out-of-sample validation (species / location)};
+  \node[d, text width=1.5cm, right=0.8cm of glm, yshift=-0.55cm] (res) {\textbf{result:} H0};
+  \draw[->] (vid) -- (sam);   \draw[->] (sam) -- (y);
+  \draw[->] (vid.south) |- (dist.west);
+  \draw[->] (y.east)   -| ([xshift=-1pt]glm.north);
+  \draw[->] (dist.east) -| ([xshift=-1pt]glm.south);
+  \draw[->] (glm) -- (cv);
+  \draw[->] (glm.east) -| ([xshift=-1pt]res.north);
+  \draw[->] (cv.east)  -| ([xshift=-1pt]res.south);
+\end{tikzpicture}
+\caption[The measurement-and-modelling pipeline]{The pipeline. \emph{Top:} frozen SAM\,3 is run over the
+videos and scored by the official evaluator into per-cell detection/association scores (the target $Y$).
+\emph{Bottom:} four label-free distances are computed from the videos and ground-truth masks against a frozen
+reference set (the predictors $X$). A support-weighted logit GLM relates $X$ to $Y$ and is validated out of
+sample by holding out whole species and whole locations; SAM\,3 is never trained.}
+\label{fig:pipeline}
+\end{figure}
+
 SAM\,3~\cite{sam3} is run frozen over the probe videos (species-specific prompts as the primary condition,
 a generic ``animal'' prompt for robustness) and scored with the official \texttt{VEval} evaluator --- the
 metric is never re-implemented --- giving per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA}~\cite{hota}
 with their support. A single inference pass over the union of Split~A and Split~B probes serves both
-experiments.
+experiments; predictions are stored per (video, prompt) so that the several species-prompts issued on one
+video do not collide.
+% NOTE: (a) one paragraph on the harness (resumable, per-video, no training); (b) note the macro (per-cell
+% support-weighted mean) vs micro (dataset-level VEval) aggregation, and that Gate-1 numbers are the macro
+% positives-only mean -- so they are lower than the published micro pHOTA and must be labelled as such.
 
 \section{The frozen reference (leakage firewall)}
 \label{sec:meth-reference}
@@ -42,44 +108,127 @@ For each split the reference (``seen'') species, locations, and taxonomy are fro
 then computed against that reference only, so no probe information can enter a feature --- verified by a unit
 test that swaps the reference and checks the distances move as expected. We assert the axis that is genuinely
 disjoint (location for Split~B; the held-out species for Split~A) and \emph{report} any residual species
-overlap honestly rather than asserting it away. On Split~A, distances use a leave-species-out view of the
-reference, so a held-out species' distance is to the nearest \emph{other} reference species.
+overlap honestly rather than asserting it away.
 
 \section{Label-free distance features}
 \label{sec:meth-features}
-All four distances (plus a proxy) are label-free for the target and computed against the frozen reference.
+All distances are label-free for the target and computed against the frozen reference.
 \subsection{Taxonomic distance}
 Lowest-common-ancestor tree steps from the probe's species to the nearest reference species (shared genus
 $=1$, family $=2$, order $=3$, \dots); the leave-species-out reference keeps this non-trivial for shared
 species.
 \subsection{Visual distance}
 Cosine distance between DINOv2~\cite{dinov2} embeddings of the \emph{ground-truth-mask-cropped} animal and
-the nearest reference-species prototype, with a Fr\'echet/MMD variant and a CLIP~\cite{clip} encoder as
-robustness checks. Using the dataset's ground-truth masks means this feature needs no SAM\,3.
+the nearest reference-species prototype, with a CLIP~\cite{clip} encoder as a robustness check. Using the
+dataset's ground-truth masks means this feature needs no SAM\,3.
 \subsection{Environment distance}
 Embedding distance between the animal-masked-out background scene and the nearest reference location, plus an
-interpretable day/night--infrared flag derived from colour statistics.
+interpretable day/night--infrared flag and a clutter score derived from colour statistics.
+
+\begin{figure}[htbp]
+\centering
+\begin{minipage}[b]{0.32\textwidth}\centering
+  \includegraphics[width=\linewidth]{figures/feat_overlay.png}\\[2pt]{\footnotesize (a) frame $+$ ground-truth mask}
+\end{minipage}\hfill
+\begin{minipage}[b]{0.32\textwidth}\centering
+  \includegraphics[width=\linewidth]{figures/feat_animal.png}\\[2pt]{\footnotesize (b) \emph{visual}: mask-cropped animal}
+\end{minipage}\hfill
+\begin{minipage}[b]{0.32\textwidth}\centering
+  \includegraphics[width=\linewidth]{figures/feat_background.png}\\[2pt]{\footnotesize (c) \emph{environment}: animal erased}
+\end{minipage}
+\caption[The image-based distances in action]{The two image-based distances on a real camera-trap frame (a
+collared peccary). \textbf{(a)} the frame with its ground-truth mask (orange); \textbf{(b)} the mask-cropped
+animal that the \emph{visual} distance fingerprints (background zeroed); \textbf{(c)} the same frame with the
+animal mean-inpainted, which the \emph{environment} distance fingerprints. The visible timestamp drives the
+\emph{temporal} gap. None of these features runs SAM\,3.}
+\label{fig:features}
+\end{figure}
+
 \subsection{Temporal gap}
 The minimum absolute year gap between a cell's footage and the nearest reference footage.
+% NOTE: flag that temporal is inert on the location split (present for few cells, constant among them) and
+% is therefore reported as untested rather than as a tested null.
+\subsection{Animal size (confound control)}
+% NOTE: new. Mean log ground-truth mask area per species. NOT a hypothesis variable -- a nuisance covariate
+% used to test whether the (wrong-signed) visual effect is really a size artefact (Section~\ref{sec:meth-model}).
+Mean log ground-truth mask area per species, included as a nuisance covariate to separate genuine visual
+novelty from the fact that visually-distinctive species tend to be large and thus easier to segment.
 \subsection{SAM\,3 familiarity proxy}
+% NOTE: DEFERRED in the current work -- either drop this subsection or keep it and state in Limitations that
+% it was not implemented. Do not present deferred features as if they were run.
 Separability of the target species in SAM\,3's own feature space --- a hedge against the unknown true
-pretraining set, reported alongside the other distances rather than treated as ground truth.
+pretraining set. \emph{(Planned robustness check; see Limitations.)}
 
-\section{Modelling the law}
+\section{Statistical modelling and hypothesis testing}
 \label{sec:meth-model}
+% NOTE: this is the analytical core and where the H0 methodology lives. Expand each paragraph below.
+\subsection{Per-target regression}
 Each bounded target (\texttt{pDetA}, \texttt{pAssA}) is modelled \emph{separately} with a support-weighted
-beta / logit-link regression that includes a $\log(n_\text{frames})$ covariate, so that ``rare'' is never
-mistaken for ``far''. Variance is attributed to each factor by dominance/commonality analysis with a VIF
-collinearity check --- not by four univariate fits --- and the headline contrast (does detection load on
-species novelty and association on environment?) is quantified across the two targets. The fitted models are
-validated \emph{out of sample} by holding out whole groups: leave-species-out on Split~A and
-leave-location-out on Split~B, with bootstrap confidence intervals reported wherever a point estimate
-appears. The validated models are wrapped into the reliability estimator: four distances in, predicted
-\texttt{pDetA}/\texttt{pAssA} with an interval out.
+logit-link (fractional-logit) regression over the standardised distances plus the scene covariates and a
+$\log(n_\text{frames})$ covariate, so that ``rare'' is never mistaken for ``far''. Detection and association
+are analysed apart because their decomposition is the intellectual core of the project.
 
-\section{Reproducibility and constraints}
+\subsection{Honest, group-aware inference}
+% NOTE: this paragraph turns your engineering rigor into a methods strength. Keep the WHY (why naive CIs lie).
+Naive model confidence intervals are invalid here for two reasons: support-weighting by frame count inflates
+the effective sample size, and the distances are constant within a species or a location, so the hundreds of
+cells are really only tens of independent groups (pseudo-replication). We therefore report
+\emph{group-cluster-bootstrap} intervals --- resampling whole species and whole locations, refitting, and
+taking percentile intervals --- as the honest confidence interval for every coefficient.
+
+\subsection{Out-of-sample validation and the significance test}
+The fitted models are validated \emph{out of sample} by holding out whole groups (leave-species-out on
+Split~A, leave-location-out on Split~B) and predicting the held-out group. The out-of-sample gain over a
+mean-predictor baseline is tested with a \emph{paired group-bootstrap} that resamples whole held-out groups,
+yielding a confidence interval and a one-sided $p$-value on the gain --- the criterion~(ii) of
+Section~\ref{sec:meth-design}.
+
+\subsection{Variance attribution and confound control}
+Variance is attributed to each factor by dominance/commonality analysis with a VIF collinearity check --- not
+by four univariate fits --- and raw correlations are reported as a model-free cross-check. Where a distance
+reaches significance, we refit with the animal-size covariate to test whether the effect is a size confound
+rather than novelty.
+
+\subsection{The intrinsic-difficulty pivot and the nested decomposition}
+Because the sole apparent effect proved to be a size confound, we ask a complementary question: is transfer
+governed by the intrinsic \emph{difficulty} of the target imagery rather than its \emph{novelty}? We promote
+the label-free scene properties already measured for the environment axis --- low-light/IR
+(\texttt{achromatic\_fraction}), clutter, and the night/IR flag --- from nuisance covariates to predictors of
+interest, and test them against the same out-of-sample bar. To separate a genuine difficulty effect from the
+size confound, we fit a \emph{nested} sequence of models --- support only; size only; difficulty only (no
+size); difficulty plus size --- and compare their out-of-sample gains, so that any apparent difficulty effect
+that is really size is exposed as such (Chapter~\ref{ch:results}, Table~\ref{tab:difficulty}). We also report
+each scene property's \emph{cell-level} correlation alongside its location-level value, because aggregation
+inflates correlations (the ecological-correlation fallacy).
+
+\paragraph{Detecting a signal, not asserting its absence.}
+% NOTE: pre-empts the "your null is just low power" objection. Keep it.
+These tests are demonstrably able to detect a real effect: the animal-size covariate not only has an interval
+excluding zero but \emph{validates out of sample} at the same whole-group hold-out bar the distances fail
+(Chapter~\ref{ch:results}), and the estimation and cross-validation machinery is unit-tested to recover
+planted effects on synthetic data. A null under a test that fires for size is therefore evidence of
+\emph{absence of signal}, not of \emph{absence of power}.
+
+\section{Detection precision: false positives on hard negatives}
+\label{sec:meth-fp}
+% NOTE: new section. The pDetA fit conditions on the animal being present (recall-given-present); this is the
+% precision counterpart. Fill in once the hard-negative pass has scored (still running at time of writing).
+The \texttt{pDetA} model conditions on the animal being present, so it measures recall-given-present, not
+hallucination. On hard negatives (the queried species is absent) a correct run returns no masklet; we read
+the prediction directly, flag any returned masklet above a score threshold as a false positive, attach each
+species' taxonomic and visual distance, and test --- at the species level, to avoid pseudo-replication ---
+whether the hallucination rate rises with novelty.
+
+\section{Reproducibility, implementation, and constraints}
 \label{sec:meth-repro}
 The model is frozen and scored by the official evaluator; the seen set is frozen before any distance is
-computed; hard negatives are retained; and all inference is single-GPU and inference-only. Every reported
-number is regenerated from the repository, and the split definitions, seeds, and reference sets are persisted
-so both experiments are reproducible end to end.
+computed; hard negatives are retained; and all inference is single-GPU and inference-only. The pipeline is
+config-driven (every constraint is a toggle, so an ablation flips config, not code) and covered by hermetic
+tests; every reported number is regenerated from the repository, and split definitions, seeds, and reference
+sets are persisted so both experiments are reproducible end to end.
+% NOTE: point to an appendix that lists the engineering challenges and their fixes (memory-lean assembly,
+% per-(video,prompt) prediction keying, ground-truth trimming for scoring, the size-confound control) --
+% each framed as a validity safeguard. Your progress-report issues table is ready-made for this.
+
+% NOTE (optional): a short Section~\ref{sec:meth-summary} "Summary" mirroring the exemplar's 3.6, restating
+% the pipeline in three sentences, reads well before Chapter~\ref{ch:results}.

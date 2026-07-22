@@ -1,8 +1,197 @@
-\chapter{Reproducibility}
-\label{app:reproducibility}
-% TODO: repo link, environment (Python 3.11, .venv), how to regenerate outputs from cache, config (SAFARI_* env vars),
-% the frozen reference (data/reference/), and the exact SA-FARI + SAM 3 versions used.
+% ============================================================================================
+% Appendices. Formulas (App.~A) and pseudocode (App.~B) are transcribed faithfully from the
+% source (src/features/*, src/analysis/*); App.~C holds supplementary tables. Numbers that are
+% still pending (the false-positive verdict) are marked TODO.
+% ============================================================================================
 
-\chapter{Supplementary Results}
+\chapter{Mathematical definitions}
+\label{app:formulas}
+This appendix collects the exact definitions used in Chapter~\ref{ch:methodology}. The tracking metric is
+computed by the official evaluator and never re-implemented; the distances and the statistical procedures
+are ours and are stated here as they appear in the code.
+
+\section{The promptable-tracking metric}
+\label{app:metric}
+Promptable HOTA decomposes, at each localisation threshold $\alpha$, into a detection and an association
+term~\cite{hota}:
+\begin{equation}
+  \mathrm{HOTA}_\alpha \;=\; \sqrt{\mathrm{DetA}_\alpha \cdot \mathrm{AssA}_\alpha},
+  \qquad
+  \mathrm{pHOTA} \;=\; \frac{1}{|\mathcal{A}|}\sum_{\alpha\in\mathcal{A}} \mathrm{HOTA}_\alpha ,
+\end{equation}
+with $\mathcal{A}=\{0.05,0.10,\dots,0.95\}$. We analyse the two components separately as the targets
+$\texttt{pDetA}=\mathrm{DetA}$ (did it \emph{find} the animals?) and $\texttt{pAssA}=\mathrm{AssA}$ (did it
+\emph{keep} each identity?), both bounded in $[0,1]$. Scores are computed per cell by the vendored
+\texttt{VEval} evaluator.
+
+\section{Label-free distances}
+\label{app:distances}
+Let the frozen reference be the ``seen'' set of a split; every distance below is computed against that
+reference only.
+
+\paragraph{Taxonomic distance.}
+Write each species' seven-level path $\pi(s)=(\text{kingdom},\dots,\text{species})$, defined only for species
+with a complete taxonomy. Let $\mathrm{shared}(a,b)$ be the length of the longest common \emph{non-empty}
+prefix of two paths. The tree-step distance and the nearest-reference distance are
+\begin{equation}
+  \tau(a,b)=L-\mathrm{shared}(a,b)\;\;(L=7),
+  \qquad
+  d_{\mathrm{tax}}(s)=\min_{s'\in\mathcal{R},\,s'\neq s}\tau\big(\pi(s),\pi(s')\big),
+\end{equation}
+where the exclusion $s'\neq s$ is the leave-one-species-out rule (Split~A). Shared genus gives $\tau=1$,
+family $2$, order $3$, fully disjoint $7$; species without a full taxonomy take $d_{\mathrm{tax}}=\textsc{nan}$.
+
+\paragraph{Prototype and nearest cosine distance.}
+Given a set of $\ell_2$-normalised embeddings $\{v_i\}_{i=1}^{N}$, the prototype and the distance from a query
+$v$ to a set of prototypes $\{p_j\}$ (optionally excluding an index $e$) are
+\begin{equation}
+  p=\frac{\bar v}{\max(\lVert \bar v\rVert_2,\,10^{-12})},\quad \bar v=\tfrac1N\textstyle\sum_i v_i,
+  \qquad
+  d(v)=1-\max_{j\neq e}\, v^{\!\top}p_j .
+\end{equation}
+Because $v$ and each $p_j$ are unit-norm, $v^{\!\top}p_j$ is the cosine similarity, so $d\in[0,2]$.
+
+\paragraph{Visual and environment distance.}
+Both use DINOv2 embeddings. The \emph{visual} distance embeds the ground-truth-mask-cropped animal (the
+background is zeroed before cropping), forms one prototype per species, and sets $d_{\mathrm{vis}}(s)$ to the
+nearest \emph{other} species' prototype. The \emph{environment} distance embeds the animal-masked-out
+background (the animal union is replaced by the mean colour of the remaining pixels), forms one prototype per
+location, and sets $d_{\mathrm{env}}(\ell)$ to the nearest other location. Two interpretable scene covariates
+accompany the environment distance:
+\begin{align}
+  \text{achromatic}(f) &= \Big[\; \overline{\max_c f_c - \min_c f_c} \;<\; \tau_{\mathrm{ir}}\;\Big],\quad \tau_{\mathrm{ir}}=12,\\
+  \mathrm{is\_night\_ir}(\ell) &= \big[\; \overline{\text{achromatic}(f)} > 0.5 \;\big],\qquad
+  \mathrm{clutter}(\ell) = \overline{\operatorname{Var}\!\big(\nabla^2 f\big)},
+\end{align}
+where the bar denotes a mean over a location's frames, $\max_c-\min_c$ is the per-pixel channel spread, and
+$\nabla^2$ is the four-neighbour Laplacian on the greyscale background.
+
+\paragraph{Temporal gap and animal size.}
+For a cell with footage year $y$ and reference years $\mathcal{Y}$, and for the size covariate,
+\begin{equation}
+  d_{\mathrm{temp}}=\min_{r\in\mathcal{Y}}|y-r|,
+  \qquad
+  \mathrm{log\_area}(s)=\ln\!\big(1+\overline{\mathrm{area}(s)}\big),
+\end{equation}
+where $\overline{\mathrm{area}(s)}$ is the mean ground-truth mask pixel-count over sampled masklets of species
+$s$. Size is a \emph{nuisance} covariate, not a hypothesis variable.
+
+\section{Model and statistics}
+\label{app:stats}
+\paragraph{Support-weighted fractional-logit GLM.}
+Each bounded target $y\in[0,1]$ is modelled with a Binomial (logit-link) GLM
+\begin{equation}
+  \operatorname{logit}\mathbb{E}[y]=x^{\!\top}\beta,\qquad \text{fit with variance weights } w=n_{\mathrm{frames}},
+\end{equation}
+where the design $x$ standardises each continuous predictor $z=(x-\mu)/\sigma$ (missing values imputed to the
+training mean $\mu$, zero-variance columns dropped), adds $\log_{\mathrm{support}}$, the standardised
+$\ln(1+n_{\mathrm{frames}})$, passes binary $\mathrm{is\_night\_ir}$ through, and adds an intercept.
+Standardisation statistics are learned on training rows only.
+
+\paragraph{Explained deviance and the cross-validation gain.}
+Fit quality is the McFadden pseudo-$R^2$, and per-cell out-of-sample gain over a mean predictor is
+\begin{equation}
+  R^2_{\mathrm{McF}}=1-\frac{D}{D_0},
+  \qquad
+  \delta_i=\underbrace{|y_i-\bar y|}_{\text{baseline error}}-\underbrace{|y_i-\hat y_i|}_{\text{model error}},
+\end{equation}
+with $D,D_0$ the model and null (intercept-only) deviances; $\delta_i>0$ means the distance model beats
+``guess the mean'' on cell $i$.
+
+\paragraph{Weighted Pearson correlation.}
+For the species-level false-positive analysis, with weights $w$ (per-species probe counts),
+\begin{equation}
+  r_w=\frac{\sum_i w_i (x_i-\bar x_w)(y_i-\bar y_w)}
+           {\sqrt{\sum_i w_i (x_i-\bar x_w)^2}\,\sqrt{\sum_i w_i (y_i-\bar y_w)^2}},
+  \qquad \bar x_w=\frac{\sum_i w_i x_i}{\sum_i w_i}.
+\end{equation}
+
+
+\chapter{Algorithms}
+\label{app:algorithms}
+Pseudocode for the four non-obvious procedures. The two bootstraps differ deliberately: the
+cross-validation gain (Alg.~\ref{alg:cvsig}) is tested \emph{one-sided} (does the model beat the mean?),
+whereas the false-positive correlation (Alg.~\ref{alg:fp}) is tested \emph{two-sided} (does hallucination
+change with novelty, in either direction?).
+
+\begin{algorithm}
+\caption{Memory-lean, cache-first crop embedding (\texttt{embed\_crops}).}
+\label{alg:embed}
+\KwIn{items $(\text{key},\text{record},\text{frame},\text{crop\_fn})$; embedding cache; embedder; chunk size $C$, workers $W$}
+\KwOut{$\{\text{key}\mapsto\text{embedding}\}$}
+$\mathit{misses}\gets[\,\text{item}: \text{cache.get(item.key)}=\varnothing\,]$\;
+\For{each contiguous chunk $B$ of $C$ items in $\mathit{misses}$}{
+  group $B$ by video; \textbf{for} each video \textbf{do} \texttt{ensure\_frames}(missing frames)\;
+  $\mathit{loaded}\gets$ map \texttt{load\_frame}$\to$\texttt{crop\_fn} over $B$ using $W$ threads\;
+  $\mathit{pending}\gets[(k,c)\in\mathit{loaded}: c\neq\varnothing]$\;
+  \If{$\mathit{pending}\neq\varnothing$}{
+    $\mathit{vecs}\gets$ embedder.embed(crops of $\mathit{pending}$)\;
+    \textbf{for} $(k,\_),v$ \textbf{in} $\mathit{pending},\mathit{vecs}$ \textbf{do} cache.put$(k,v)$\;
+  }
+  free $\mathit{pending}$ \tcp*{bound peak RAM to one chunk}
+  \textbf{every 16 chunks:} cache.save() \tcp*{resumable checkpoint}
+}
+\textbf{if} $\mathit{misses}\neq\varnothing$ \textbf{then} cache.save()\;
+\Return $\{\text{item.key}\mapsto\text{cache.get(item.key)}\}$ for all items\;
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Group-cluster-bootstrap coefficient CIs (\texttt{group\_bootstrap\_cis}).}
+\label{alg:clusterci}
+\KwIn{scored cells; target; grouping columns $\mathcal{G}=(\texttt{category\_id},\texttt{location\_id})$; resamples $B$; level $\alpha=0.05$}
+\KwOut{per-coefficient interval $[\mathrm{ci\_lo},\mathrm{ci\_hi}]$}
+\ForEach{grouping column $g\in\mathcal{G}$ present in the data}{
+  $U\gets$ unique groups of $g$; \textbf{if} $|U|<2$ \textbf{then} skip\;
+  \For{$b\gets1$ \KwTo $B$}{
+    draw $|U|$ groups from $U$ \emph{with replacement}; sample $\gets$ all rows of the drawn groups\;
+    refit the GLM on sample; record its coefficient vector \tcp*{skip a singular resample}
+  }
+  $\mathrm{lo}_g\gets$ percentile $\tfrac{\alpha}{2}$, $\;\mathrm{hi}_g\gets$ percentile $1-\tfrac{\alpha}{2}$, per coefficient\;
+}
+\Return conservative envelope $\mathrm{ci\_lo}=\min_g \mathrm{lo}_g,\;\;\mathrm{ci\_hi}=\max_g \mathrm{hi}_g$\;
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Paired group-bootstrap cross-validation significance (\texttt{oos\_predictions} + \texttt{\_bootstrap\_delta}).}
+\label{alg:cvsig}
+\KwIn{scored cells; target; group column (species or location); resamples $B$}
+\KwOut{$\Delta$MAE, its 95\% CI, and one-sided $p$}
+\tcc{Leave-one-group-out out-of-sample prediction}
+\ForEach{held-out group}{
+  refit the GLM on the other groups (own standardisation); predict the held-out cells \tcp*{assert train/test groups disjoint}
+}
+$\delta_i\gets |y_i-\bar y|-|y_i-\hat y_i|$ for every predicted cell\;
+\tcc{Group bootstrap of the mean gain}
+\For{$b\gets1$ \KwTo $B$}{
+  draw whole groups with replacement; $\;\mathit{boot}_b\gets \operatorname{mean}\big(\delta \text{ over the drawn cells}\big)$\;
+}
+$\mathrm{CI}\gets$ percentiles $[2.5,97.5]$ of $\mathit{boot}$;\quad $p\gets \Pr(\mathit{boot}\le 0)$;\quad significant $\Leftrightarrow \mathrm{CI\_lo}>0$\;
+\Return $\Delta\mathrm{MAE}=\operatorname{mean}(\delta),\ \mathrm{CI},\ p$\;
+\end{algorithm}
+
+\begin{algorithm}
+\caption{False-positive / hallucination analysis (\texttt{false\_positives}).}
+\label{alg:fp}
+\KwIn{split; score threshold $t$; resamples $B$}
+\KwOut{overall FP rate; per-species FP rate vs.\ novelty with a bootstrap CI}
+$\mathcal{H}\gets$ hard-negative probes (queried species absent)\;
+build a partition whose probe species are the hard-negative species; compute $d_{\mathrm{tax}},d_{\mathrm{vis}}$ for them\;
+\ForEach{probe $(\text{video},\text{species})\in\mathcal{H}$ with a prediction file}{
+  $\mathrm{fp}\gets[\,\max_k \text{score}_k \ge t\,]$ \tcp*{a masklet returned for an absent species = a hallucination}
+  attach $d_{\mathrm{tax}},d_{\mathrm{vis}}$ of the species\;
+}
+aggregate to per-species FP rate; $\;r\gets$ weighted-Pearson(FP rate, distance)\;
+\For{$b\gets1$ \KwTo $B$}{ resample species with replacement; recompute $r$ \;}
+$\mathrm{CI}\gets$ percentiles $[2.5,97.5]$; significant $\Leftrightarrow$ CI excludes $0$ (two-sided)\;
+\Return overall FP rate, taxonomic-tercile breakdown, $r$ and CI for taxonomic and visual novelty\;
+\end{algorithm}
+
+
+\chapter{Supplementary results}
 \label{app:supplementary}
-% TODO: full per-species / per-location tables, additional figures, ablation details.
+% NOTE: drop extended tables here as they are generated (report.py can emit tagged fragments). The
+% primary tables live in Chapter~\ref{ch:results}: Split~B in Table~\ref{tab:coefficients}, Split~A in
+% Table~\ref{tab:coefficients_species}.
+\IfFileExists{tables/coefficients_naive_vs_clustered.tex}{\input{tables/coefficients_naive_vs_clustered}}{}
+\IfFileExists{tables/correlations.tex}{\input{tables/correlations}}{}
+% The false-positive/hallucination table (Table~\ref{tab:fp}) now lives in Chapter~\ref{ch:results}, §4.6.

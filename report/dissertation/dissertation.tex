@@ -18,6 +18,8 @@
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage[section]{placeins} % keep each table/float inside the section that references it
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
 \usepackage{enumitem}
 \usepackage{caption}
 \usepackage[dvipsnames]{xcolor}
@@ -77,15 +79,20 @@ institution.
 % -------------------------------------------------------------- abstract
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-% TODO: 150--250 words once results exist. Draft:
 Promptable trackers such as SAM\,3 segment and track any named animal in a video with no training on
 that species, yet no rule tells a practitioner \emph{in advance} whether the model is reliable for a
-given animal in a given place. This dissertation builds and validates a \emph{predictive} rule for
-that reliability on the SA-FARI benchmark, whose splits are disjoint by species and location. We
-measure SAM\,3's zero-shot promptable-tracking accuracy with the official evaluator, decompose it into
-detection (\texttt{pDetA}) and association (\texttt{pAssA}), and test whether each can be predicted
-from four label-free distances (taxonomic, visual, environment, temporal). \emph{[TODO: headline
-result + validated out-of-sample performance.]}
+given animal in a given place. This dissertation asks whether such a rule exists. On the SA-FARI
+benchmark, whose splits are disjoint by species and location, we measure SAM\,3's zero-shot
+promptable-tracking accuracy with the official evaluator, decompose it into detection (\texttt{pDetA})
+and association (\texttt{pAssA}), and test whether each is predicted, \emph{before running the model}
+and without any target label, by four distances (taxonomic, visual, environment, temporal). Under a
+deliberately powerful test --- whole-species and whole-location hold-out with group-cluster-bootstrap
+significance --- \textbf{it is not}: no distance beats a mean-predictor baseline out of sample, and the
+one apparent effect is an animal-size confound. A follow-up pivot to intrinsic scene difficulty
+(low-light, clutter) collapses to the same size effect, and the decomposition shows association carries
+almost no signal distinct from detection. The contribution is thus a rigorous, decomposed \emph{negative}
+result --- the first for a promptable video tracker --- validated by a test shown to detect the one real
+signal (object size) when it is present.
 
 % -------------------------------------------------------------- acknowledgements
 \chapter*{Acknowledgements}

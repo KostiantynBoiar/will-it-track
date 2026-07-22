@@ -2,14 +2,47 @@
 \label{ch:discussion}
 
 \section{Interpretation}
-% TODO: do H1 (detection<-species novelty) and H2 (association<-environment) hold? What the decomposition means.
+% TODO: expand.
+Neither hypothesis is supported. H1 (detection falls with species novelty) and H2 (association falls with
+environment difficulty) both fail the pre-registered bar: no label-free distance beats a mean predictor out of
+sample, and the one coefficient that reached significance --- visual distance, with the wrong sign --- is an
+animal-size artefact. The follow-up intrinsic-difficulty pivot fares no better: low-light, clutter and night/IR
+predict detection only by proxying animal size, which alone carries the out-of-sample gain. So the honest
+reading is H0: transfer is \emph{not} distance-driven, and the only label-free property that predicts detection
+is object size --- the very quantity introduced as a nuisance control.
 
-\section{A deployment reliability estimator}
-% TODO: how the fitted law answers "will it work here?" for a new (species, place), with intervals.
+The detection--association decomposition, the intellectual core of the design, has a second, quieter finding:
+association is a near-degenerate target on this data. Because most cells contain a single object,
+\texttt{pAssA} tracks \texttt{pDetA} almost exactly, leaving little identity-specific variance for any feature
+to predict. The decomposition is therefore honestly a detection story; we report the association null with
+those divergence figures as its explanation rather than as a separate failed search.
+
+\section{Why label-free distances do not yield a deployment estimator}
+% TODO: expand.
+The field problem that motivated this work --- telling a practitioner, before spending compute, whether SAM\,3
+is trustworthy for a new (species, place) --- is not solved by label-free distances. That is a negative but
+useful answer: the intuition that ``far-from-training implies unreliable'' does not hold for a promptable video
+tracker, so a deployment gate cannot be built from taxonomic, visual, environmental or temporal distance to a
+reference set alone. The one predictive label-free signal, animal size, is too coarse and too obvious to serve
+as such a gate. What the negative result does establish is a rigorous baseline: any future before-running
+estimator must clear the same whole-group hold-out bar that these well-motivated distances failed.
 
 \section{Limitations and threats to validity}
-% TODO: single dataset/backbone; SAM 3's unknown pretraining corpus (the familiarity-proxy hedge);
-% collinearity of distances; cell-count/support; the H0 pivot to representational probing.
+% TODO: expand.
+Three limitations bound the claim. First, distances are measured against the SA-FARI train split, \emph{not}
+SAM\,3's true pretraining corpus (Meta's SA-Co), which is undisclosed; the null is scoped to
+distance-from-SA-FARI, and a coverage-anchored proxy for the real corpus remains untested (the deferred
+familiarity proxy is one such hedge). Second, the analysis is a single dataset and a single frozen backbone.
+Third, the effective sample is tens of independent species/locations, not hundreds of cells --- which is why
+inference is group-clustered throughout, and why aggregate correlations (e.g. the location-level night/IR
+effect) are reported alongside their much weaker cell-level values to avoid the ecological-correlation fallacy.
+The open branch this work does not pursue is representational probing --- whether SAM\,3's own features encode
+the species.
 
 \section{Ethical considerations}
-% TODO: conservation/camera-trap data (anonymised locations); non-commercial licence; responsible-deployment framing.
+% TODO: expand.
+The data are anonymised camera-trap footage released under a non-commercial licence; location identifiers are
+already anonymised in SA-FARI. The negative result carries a responsible-deployment message: because label-free
+distance does \emph{not} reliably flag when SAM\,3 will fail, conservation teams should not treat
+low-distance-from-training as a safety guarantee, and reliability should be checked with labelled spot-audits
+rather than assumed.

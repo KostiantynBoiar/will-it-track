@@ -2,10 +2,26 @@
 \label{ch:conclusion}
 
 \section{Summary of findings}
-% TODO: restate the answer to the RQ and the two-predictor decomposition, with the validated OOS result.
+% TODO: expand.
+We asked whether SAM\,3's zero-shot promptable-tracking accuracy on an unseen (species, place) can be
+predicted, before running the model and without target labels, from four label-free distances --- separately
+for detection and association. Under a deliberately powerful out-of-sample test the answer is no: no distance
+beats a mean-predictor baseline on either a species or a location hold-out, the one apparent effect is an
+animal-size confound, and a follow-up intrinsic-difficulty pivot collapses to the same size effect. Only object
+size predicts detection, modestly, and it is the nuisance the analysis controls for. Association carries almost
+no signal distinct from detection. The result is a rigorous, decomposed null.
 
 \section{Contributions}
-% TODO: the first predictable-transfer study for a promptable video tracker + the deployment reliability estimator.
+% TODO: expand.
+To our knowledge this is the first study to test, out of sample, whether a \emph{promptable video tracker's}
+zero-shot transfer is predictable from label-free, before-running signals, and the first to decompose that
+question into detection and association. Its contribution is the honest negative answer and its explanation:
+transfer is not distance-driven; the apparent signals reduce to an animal-size confound; and the test is shown
+to detect that one real signal when present, so the null reflects an absence of signal, not of power.
 
 \section{Future work}
-% TODO: more datasets/backbones; occlusion/behaviour extensions; representational probing (the H0 branch).
+% TODO: expand.
+Two directions remain open. First, representational probing --- whether the target species is separable in
+SAM\,3's own feature space --- as a hedge against the unknown pretraining corpus. Second, broadening beyond a
+single dataset and backbone, and to targets with richer association structure (crowded, multi-object scenes)
+where the detection--association decomposition would have more to distinguish.

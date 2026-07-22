@@ -23,8 +23,10 @@ factors govern that transfer --- separately for \emph{finding} the animal and \e
   \item[H2 (association)] \texttt{pAssA} falls with environment difficulty (scene, day/night/IR,
     clutter, camera motion).
 \end{description}
-Failing to reject H0 would itself be an informative result, motivating a pivot from distance-based
-prediction to representational probing (does SAM\,3 encode taxonomy?).
+Failing to reject H0 is itself an informative result --- and, as Chapter~\ref{ch:results} shows, it is
+what we find: neither a novelty distance nor a follow-up \emph{intrinsic-difficulty} pivot predicts
+transfer beyond a trivial animal-size effect. Representational probing (does SAM\,3 encode taxonomy?)
+remains the open branch for future work.
 
 \section{Contributions}
 % TODO: finalise once results exist.
@@ -34,10 +36,15 @@ into \textbf{detection} (\texttt{pDetA}) and \textbf{association} (\texttt{pAssA
 from label-free performance prediction for classifiers, which estimates a single scalar from the model's own
 outputs on the target~\cite{aotl,agl,atc}, and from the very recent static-image detector/segmenter
 estimators~\cite{pcr,rca}; and from camera-trap shift studies, which measure but do not forecast per-site
-reliability~\cite{terra,panaf,jeon}. Concretely we deliver: (i) a validated, out-of-sample reliability
-estimator for SAM\,3 over SA-FARI; (ii) the detection-versus-association decomposition, tested on two
-near-orthogonal splits --- a constructed species hold-out (novelty) and the official location hold-out
-(environment); and (iii) an honest accounting of when distance \emph{fails} to predict transfer (H0).
+reliability~\cite{terra,panaf,jeon}. Concretely we deliver: (i) a rigorous, out-of-sample \emph{negative}
+result --- under a deliberately powerful test (whole-species and whole-location hold-out with
+group-cluster-bootstrap significance), label-free before-running distances do \emph{not} predict SAM\,3's
+transfer; (ii) the detection-versus-association decomposition, tested on two near-orthogonal splits --- a
+constructed species hold-out (novelty) and the official location hold-out (environment); and (iii) a
+\emph{hardened} account of \emph{why} it fails: a follow-up intrinsic-difficulty pivot collapses to the same
+animal-size confound, so the only label-free property that predicts detection is object size --- the very
+nuisance the analysis controls for --- and that positive control confirms the test detects signal when it
+exists.
 
 \section{Dissertation outline}
 % TODO: update page/chapter cross-references as chapters are written.

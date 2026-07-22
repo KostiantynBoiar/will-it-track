@@ -103,6 +103,8 @@ and, very recently, for static detectors and segmenters~\cite{pcr,rca}; camera-t
 documented, but not forecast, location-driven degradation~\cite{terra,wilds,panaf,jeon}. No prior work
 predicts, \emph{before running the model} and from label-free distances, the zero-shot transfer of a
 \textbf{promptable video tracker}, and none separates that prediction into \textbf{detection} and
-\textbf{association}. Filling exactly that gap --- a validated, out-of-sample reliability estimator for
-SAM\,3 over SA-FARI's species-\allowbreak by-\allowbreak place-\allowbreak by-\allowbreak time structure, decomposed into
-\texttt{pDetA} and \texttt{pAssA} --- is the contribution of this dissertation.
+\textbf{association}. Asking that question rigorously --- an out-of-sample test, over SA-FARI's
+species-\allowbreak by-\allowbreak place-\allowbreak by-\allowbreak time structure, of whether label-free distances
+predict SAM\,3's transfer, decomposed into \texttt{pDetA} and \texttt{pAssA} --- is the contribution of this
+dissertation. As Chapter~\ref{ch:results} reports, the honest answer is negative: transfer is not
+distance-driven.

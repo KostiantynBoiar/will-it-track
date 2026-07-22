@@ -15,15 +15,55 @@ support-weighted per-cell aggregate is in Table~\ref{tab:gate1}.
 Table~\ref{tab:coefficients} gives the standardised logit-GLM coefficients for detection and
 association.
 \IfFileExists{tables/coefficients.tex}{\input{tables/coefficients}}{}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.86\textwidth]{figures/res_forest.pdf}
+\caption[Coefficient forest plot]{Standardised GLM coefficients with group-cluster-bootstrap 95\% CIs, for
+detection (\texttt{pDetA}) and association (\texttt{pAssA}). \emph{Every distance's interval crosses zero}
+(grey) --- none is distinguishable from no effect.}
+\label{fig:forest}
+\end{figure}
 
-\section{Variance partitioning and the decomposition test}
-% TODO: unique/shared R^2 per factor; VIF; the detection<-novelty / association<-environment contrast.
+\section{Variance partitioning and the intrinsic-difficulty decomposition}
+A dominance (LMG/Shapley) analysis confirms the distances carry almost nothing: together the four explain only
+$\approx 3\%$ of the variance in detection, no single factor dominates, and every VIF is $\approx 1$
+(Table~\ref{tab:variance}) --- so the null is not an artefact of collinearity masking a real effect.
+\IfFileExists{tables/variance.tex}{\input{tables/variance}}{}
+Because the one apparent effect (visual
+distance, below) turned out to be an animal-size confound, we pivot the hypothesis from \emph{novelty} to
+intrinsic \emph{difficulty}: we promote the label-free scene properties --- low-light/IR
+(\texttt{achromatic\_fraction}), clutter, and the night/IR flag, each computed per location from the frames
+with no SAM\,3 run and no target label --- from nuisance covariates to predictors of interest, and test them
+at the same bar. Table~\ref{tab:difficulty} decomposes the outcome. Taken \emph{with} an animal-size covariate
+each difficulty signal \emph{appears} to validate (leave-species-out and leave-location-out
+$\Delta\mathrm{MAE}\approx+0.017$, both significant), but a nested decomposition shows the gain is entirely
+the size covariate: $\log$-area \emph{alone} carries it ($\Delta\mathrm{MAE}=+0.017$, $p=0.001/0.014$), while
+low-light \emph{alone} does \emph{not} validate ($p=0.12/0.23$) and adds only $\approx+0.002$ over size. The
+low-light effect is also far weaker than it first looks: the location-level night/IR--\texttt{pDetA}
+correlation of $r=-0.377$ is an aggregation artefact (the ecological-correlation fallacy) --- at the cell level
+it is only $-0.13$, and clutter's cell-level correlation is $0.00$. The intrinsic-difficulty pivot is
+therefore \textbf{also null}: the only label-free property that predicts detection is animal size.
+\IfFileExists{tables/difficulty.tex}{\input{tables/difficulty}}{}
 
 \section{Out-of-sample validation}
-% TODO: leave-species-out and leave-location-out; MAE/RMSE + calibration; the predictive-line figures.
-% The headline is a NULL: no hold-out beats a mean predictor at a significant margin (see also Split A).
-Table~\ref{tab:cv} reports whole-group hold-out error against a mean-predictor baseline.
+% TODO: predictive-line figures.
+Table~\ref{tab:cv} reports whole-group hold-out error against a mean-predictor baseline. This is the headline
+result and it is a \textbf{null}: on both the location and the species schemes, and for both targets, no
+distance model beats simply predicting the mean --- every $\Delta\mathrm{MAE}$ is within noise of zero and no
+gain is significant under the paired group-bootstrap. \textbf{This is not an underpowered test.} The same GLM
+and grouped cross-validation, on the same cells, \emph{do} detect a real signal when one exists: animal size
+($\log$-area) validates out of sample at the identical bar ($\Delta\mathrm{MAE}=+0.017$, $p<0.017$ on both
+schemes; Table~\ref{tab:difficulty}). A test that fires for size yet stays flat for the distances is evidence
+of a genuine \emph{absence} of before-running label-free signal, not of low power.
 \IfFileExists{tables/cv_validation.tex}{\input{tables/cv_validation}}{}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.52\textwidth]{figures/res_pred_vs_actual.pdf}
+\caption[Out-of-sample predicted vs actual]{Out-of-sample predictions vs the truth for detection
+(\texttt{pDetA}), on held-out species and locations. The predictions collapse onto the mean baseline (orange)
+instead of tracking the diagonal (dashed) --- the distances carry no out-of-sample predictive power.}
+\label{fig:predvsactual}
+\end{figure}
 
 \section{Species hold-out (H1): novelty and the size confound}
 The primary novelty test --- leave-one-species-out over the pooled train+test species (99 species,
@@ -39,11 +79,39 @@ novelty is flat ($r\approx0.00$). Novelty does not predict transfer.
 \IfFileExists{tables/gate1_measurement_species.tex}{\input{tables/gate1_measurement_species}}{}
 \IfFileExists{tables/coefficients_species.tex}{\input{tables/coefficients_species}}{}
 \IfFileExists{tables/cv_validation_species.tex}{\input{tables/cv_validation_species}}{}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.52\textwidth]{figures/res_size_confound.pdf}
+\caption[The size confound]{The one label-free property that predicts detection: animal size. Per-cell
+\texttt{pDetA} rises with the log ground-truth mask area ($r=+0.31$) --- the confound behind the apparent
+visual-distance effect.}
+\label{fig:size}
+\end{figure}
 
 \section{False positives / hallucination}
-% TODO: on hard negatives, does the false-positive rate rise with novelty? Needs the hard-negative pass
-% (`python -m src.analysis.false_positives --split test`), which requires inferring the test hard negatives.
+The detection score conditions on the animal being present, so it measures recall, not hallucination. The
+$1486$ \emph{hard negatives} (queries for absent species) ask the complementary question, and are the
+closest the study comes to a validated before-running signal. SAM\,3 returns a masklet anyway about
+$\mathbf{9.8\%}$ of the time. This hallucination rate does \emph{not} rise with taxonomic novelty
+($r\approx+0.06$, n.s.); it \emph{falls} with visual distinctiveness ($r\approx-0.33$), and this survives an
+animal-size control (partial $-0.37$) --- a genuine, size-independent, label-free correlate, though its
+direction (``distinctive $=$ safer'') is the \emph{opposite} of ``novelty hurts''. Crucially it is a
+\textbf{correlate, not a predictor}: predicting a held-out species' hallucination rate from visual distance
+beats a mean baseline by only $+0.008$~MAE and \emph{just misses} out-of-sample significance ($p=0.053$;
+Table~\ref{tab:fp}). Even the study's best signal does not clear the bar.
 \IfFileExists{tables/false_positives.tex}{\input{tables/false_positives}}{}
 
 \section{Ablations and robustness}
-% TODO: drop-one-factor; DINOv2 vs CLIP; mask-cropped vs whole-frame; species vs generic prompt; +/- support covariate.
+\paragraph{Factor ablation.} Refitting detection with each distance dropped in turn barely moves the fit or
+the (null) out-of-sample gain (Table~\ref{tab:ablation}): no single distance carries signal. The only design
+that changes anything is adding the animal-size covariate, which alone lifts the out-of-sample gain to
+significance ($\Delta\mathrm{MAE}\approx+0.02$, $p\!\le\!0.02$) --- again consistent with size being the sole
+real correlate. Removing the support covariate does not rescue a distance effect either. The variance
+partition (Table~\ref{tab:variance}) tells the same story from the other direction.
+\IfFileExists{tables/ablations.tex}{\input{tables/ablations}}{}
+
+\paragraph{Design robustness (future work).} Three further checks --- a CLIP rather than DINOv2 visual
+encoder, whole-frame rather than mask-cropped visual embeddings, and a generic ``animal'' rather than a
+species-specific prompt --- each require a fresh GPU inference or embedding pass and are left for future work.
+Given that the null is flat across the factor ablation, the variance partition, both hold-out schemes, and the
+intrinsic-difficulty pivot, a change of encoder, crop, or prompt is unlikely to overturn it.
