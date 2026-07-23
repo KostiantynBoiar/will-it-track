@@ -266,38 +266,4 @@
   \end{block}
 \end{frame}
 
-% ------------------------------------------------------------ why it matters
-\begin{frame}{Why a negative result is a real contribution}
-  \begin{itemize}
-    \item \textbf{First of its kind:} no one has asked this for a promptable video \emph{tracker}, or split it
-          into detection vs association --- novel regardless of the answer.
-    \item \textbf{Useful for practitioners:} ``far-from-training'' does \emph{not} mean ``unreliable,'' so
-          conservation teams should \textbf{not} trust distance-from-training as a safety check ---
-          spot-audit with a few labels instead.
-    \item \textbf{Stronger than a weak positive:} a robust null from a demonstrably powerful test is more
-          defensible than a borderline effect scraped past a threshold.
-  \end{itemize}
-\end{frame}
-
-% ------------------------------------------------------------ status / next
-\begin{frame}{Where we are, and what's next}
-  \begin{block}{Done \& validated}
-    \centering\footnotesize
-    Measurement \ck\;\; four distances \ck\;\; modelling $+$ out-of-sample validation \ck\;\;
-    difficulty pivot \ck\;\; false positives \ck\;\; ablations \& variance \ck\;\; write-up \ck
-  \end{block}
-  \vspace{0.5em}
-  \begin{itemize}\footnotesize
-    \item \textbf{Write-up:} results, discussion, and figures now reflect the negative result and its
-          explanation; the dissertation builds end-to-end.
-    \item \textcolor{burnt}{\textbf{In progress:}} three robustness re-runs (a different visual encoder,
-          whole-frame crops, a generic prompt) --- awaiting a GPU; the null is expected to hold.
-    \item \textbf{Honest limitation:} distances are to the \emph{dataset's} training split, not SAM\,3's true
-          (undisclosed) training data. \textbf{Open direction:} probe whether SAM\,3's own features
-          ``know'' a species.
-  \end{itemize}
-  \vspace{0.3em}
-  \centering\small\color{navy}\textbf{Thank you --- questions welcome.}
-\end{frame}
-
 \end{document}
