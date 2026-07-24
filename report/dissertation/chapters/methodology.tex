@@ -102,6 +102,21 @@ video do not collide.
 % support-weighted mean) vs micro (dataset-level VEval) aggregation, and that Gate-1 numbers are the macro
 % positives-only mean -- so they are lower than the published micro pHOTA and must be labelled as such.
 
+\paragraph{No retraining; validity of the frozen protocol.} It bears stating plainly, as it is easily
+misread: \textbf{SAM\,3 is never retrained or fine-tuned in this work.} The single object we fit is the small
+support-weighted logistic regression that maps the label-free distances $X$ onto the observed scores $Y$; the
+tracker itself is the public checkpoint, run once, its weights untouched. Reusing that one inference across
+both splits is therefore sound rather than a leak: because the model is frozen, a cell's score does not depend
+on which reference partition we later overlay to compute its distances. This also fixes the benchmark's status
+here. SA-FARI is a held-out, \emph{zero-shot} benchmark for the released SAM\,3: the SAM\,3
+report~\cite{sam3} does not list SA-FARI among its training sources, and the SA-FARI paper~\cite{safari}
+reports the released checkpoint zero-shot (the $\approx\!0.65$ mask-\texttt{pHOTA} ballpark we reproduce at
+Gate~1) \emph{alongside} separately fine-tuned rows whose gain we deliberately forgo. We can therefore verify
+non-membership at the \emph{dataset} level; we cannot verify it frame-by-frame, since SAM\,3's full
+pretraining corpus is undisclosed. We do not claim otherwise: every distance is measured against the SA-FARI
+\emph{train reference}, not against SAM\,3's true (unknown) pretraining distribution, and the familiarity
+proxy (Section~\ref{sec:meth-features}, planned) is the hedge for exactly this gap.
+
 \section{The frozen reference (leakage firewall)}
 \label{sec:meth-reference}
 For each split the reference (``seen'') species, locations, and taxonomy are frozen once; every distance is

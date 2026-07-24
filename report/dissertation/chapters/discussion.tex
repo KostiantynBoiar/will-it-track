@@ -17,6 +17,26 @@ association is a near-degenerate target on this data. Because most cells contain
 to predict. The decomposition is therefore honestly a detection story; we report the association null with
 those divergence figures as its explanation rather than as a separate failed search.
 
+\section{Relation to prior label-free evaluation}
+\label{sec:disc-related}
+The null sits against a literature of \emph{positive} results, and two axes separate every one of those results
+from ours --- which is why the disagreement is only apparent. The first axis is the \textbf{signal}. Accuracy-
+and Agreement-on-the-Line~\cite{aotl,agl}, ATC~\cite{atc} and AutoEval~\cite{autoeval} all read the model's
+\emph{own behaviour on the target} --- its confidence, its agreement across a model pair, or (for AutoEval) a
+feature-distribution distance computed after passing the target images through the network. Those are
+\emph{after-running} estimators. We instead forecast from \emph{external}, label-free distances known
+\emph{before} a single frame is processed --- the strictly harder, and for a practitioner deciding whether to
+spend compute, the more useful regime. The second axis is the \textbf{output}. Every predecessor targets a
+\emph{scalar} classifier accuracy~\cite{aotl,agl,atc,autoeval} or the quality of a \emph{static}
+detector/segmenter~\cite{pcr,rca}; none concerns identity maintained over time, and none is decomposed. Ours is
+the first study to ask the question of a promptable \emph{video tracker}, split into detection
+(\texttt{pDetA}) and association (\texttt{pAssA}). AutoEval~\cite{autoeval} is the closest methodological
+cousin --- it, too, regresses a performance score on a distributional feature distance --- and it is precisely
+the recipe whose strong classifier-level correlation does \emph{not} reproduce once the distance is measured
+before running and the target is a tracker. Our result therefore does not contradict these positives; it
+extends the question to a regime where the label-free-distance shortcut stops working, and reports honestly
+that it does.
+
 \section{Why label-free distances do not yield a deployment estimator}
 % TODO: expand.
 The field problem that motivated this work --- telling a practitioner, before spending compute, whether SAM\,3
@@ -32,8 +52,13 @@ estimator must clear the same whole-group hold-out bar that these well-motivated
 Three limitations bound the claim. First, distances are measured against the SA-FARI train split, \emph{not}
 SAM\,3's true pretraining corpus (Meta's SA-Co), which is undisclosed; the null is scoped to
 distance-from-SA-FARI, and a coverage-anchored proxy for the real corpus remains untested (the deferred
-familiarity proxy is one such hedge). Second, the analysis is a single dataset and a single frozen backbone.
-Third, the effective sample is tens of independent species/locations, not hundreds of cells --- which is why
+familiarity proxy is one such hedge). Second, the analysis is a single dataset and a single frozen backbone,
+and --- since one inference pass is reused across both splits --- the species and location experiments are two
+overlays on the \emph{same} scored cells, not independent replications; they give near-orthogonal but not
+statistically independent evidence. A genuinely independent test of the null therefore requires re-running the
+whole pipeline on a \emph{different} tracking dataset (for example a mask-native subset of BURST, or the
+camera-trap MammAlps), which we leave to future work. Third, the effective sample is tens of independent
+species/locations, not hundreds of cells --- which is why
 inference is group-clustered throughout, and why aggregate correlations (e.g. the location-level night/IR
 effect) are reported alongside their much weaker cell-level values to avoid the ecological-correlation fallacy.
 The open branch this work does not pursue is representational probing --- whether SAM\,3's own features encode

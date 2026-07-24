@@ -81,10 +81,9 @@ into a predictor.
 
 \section{The SA-FARI benchmark}
 \label{sec:bg-safari}
-SA-FARI~\cite{safari} is a large open multi-animal camera-trap tracking dataset (thousands of densely
-annotated videos across roughly $80$ annotated species with a seven-level taxonomy, hundreds of locations on
-four continents, and per-video timestamps), released with SAM\,3 and scored by the official \texttt{VEval}
-evaluator. It ships with abundant \emph{hard negatives} --- prompts for absent species that must return
+SA-FARI~\cite{safari} is a large open multi-animal camera-trap tracking dataset ($11{,}609$ densely
+annotated videos spanning $99$ species with a seven-level taxonomy, $741$ locations on four continents, and
+per-video timestamps), released with SAM\,3 and scored by the official \texttt{VEval} evaluator. It ships with abundant \emph{hard negatives} --- prompts for absent species that must return
 nothing --- which we keep, as they drive the false-positive side of detection. Two properties of the shipped
 split shape our design and merit a precise statement. Inspection of the released annotations shows the
 train/test split is disjoint by \textbf{location} (test camera sites are unseen) but that its \emph{species
