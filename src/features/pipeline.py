@@ -57,6 +57,83 @@ def nearest_distance(
     return 1.0 - max(float(vector @ proto) for proto in candidates)
 
 
+def gaussian_stats(vectors: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Mean vector and covariance matrix of a stack of embeddings ``(n, d)`` (cov = ``0`` if ``n < 2``)."""
+    x = np.asarray(vectors, dtype=np.float64)
+    mu = x.mean(axis=0)
+    cov = np.cov(x, rowvar=False) if x.shape[0] > 1 else np.zeros((x.shape[1], x.shape[1]))
+    return mu, np.atleast_2d(cov)
+
+
+def frechet_distance(
+    mu1: np.ndarray, cov1: np.ndarray, mu2: np.ndarray, cov2: np.ndarray, eps: float = 1e-6
+) -> float:
+    """Fréchet (FID-style) distance between Gaussians ``N(mu1,cov1)`` and ``N(mu2,cov2)``.
+
+    ``||mu1-mu2||^2 + Tr(cov1 + cov2 - 2(cov1 cov2)^{1/2})`` via ``scipy.linalg.sqrtm``; a small ``eps*I``
+    is added before the matrix square root for numerical stability (rank-deficient per-species covariances),
+    and any imaginary residue from ``sqrtm`` is dropped. AutoEval's distributional feature distance.
+    """
+    from scipy.linalg import sqrtm
+
+    diff = np.asarray(mu1, dtype=np.float64) - np.asarray(mu2, dtype=np.float64)
+    offset = np.eye(cov1.shape[0]) * eps
+    covmean = sqrtm((cov1 + offset) @ (cov2 + offset))
+    if np.iscomplexobj(covmean):
+        covmean = covmean.real
+    return float(diff @ diff + np.trace(cov1) + np.trace(cov2) - 2.0 * np.trace(covmean))
+
+
+def _sq_dists(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Pairwise squared Euclidean distances between rows of ``a`` and ``b`` (clamped ``>= 0``)."""
+    aa = np.sum(a * a, axis=1)[:, None]
+    bb = np.sum(b * b, axis=1)[None, :]
+    return np.maximum(aa + bb - 2.0 * a @ b.T, 0.0)
+
+
+def mmd_rbf(x: np.ndarray, y: np.ndarray, *, gamma: float | None = None,
+            max_samples: int = 512, seed: int = 0) -> float:
+    """Biased RBF-kernel MMD^2 between two embedding sets (median-heuristic bandwidth, subsampled)."""
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    rng = np.random.default_rng(seed)
+    if x.shape[0] > max_samples:
+        x = x[rng.choice(x.shape[0], max_samples, replace=False)]
+    if y.shape[0] > max_samples:
+        y = y[rng.choice(y.shape[0], max_samples, replace=False)]
+    if gamma is None:
+        pooled = np.vstack([x, y])
+        med = float(np.median(_sq_dists(pooled, pooled)))
+        gamma = 1.0 / (2.0 * med + 1e-12)
+    kxx = np.exp(-gamma * _sq_dists(x, x))
+    kyy = np.exp(-gamma * _sq_dists(y, y))
+    kxy = np.exp(-gamma * _sq_dists(x, y))
+    return float(kxx.mean() + kyy.mean() - 2.0 * kxy.mean())
+
+
+def distributional_distance(
+    target: np.ndarray, reference: np.ndarray, variant: str, *, seed: int = 0, ref_cap: int = 4000
+) -> float:
+    """``frechet``/``mmd`` distance from a target species' embedding set to the pooled reference set.
+
+    ``NaN`` if either set has fewer than two vectors. The reference pool is deterministically subsampled to
+    ``ref_cap`` to bound the covariance/kernel cost. This is the distributional analogue of the
+    nearest-prototype cosine distance — the whole target distribution against the whole reference.
+    """
+    target = np.asarray(target, dtype=np.float64)
+    reference = np.asarray(reference, dtype=np.float64)
+    if target.shape[0] < 2 or reference.shape[0] < 2:
+        return float("nan")
+    if reference.shape[0] > ref_cap:
+        rng = np.random.default_rng(seed)
+        reference = reference[rng.choice(reference.shape[0], ref_cap, replace=False)]
+    if variant == "frechet":
+        return frechet_distance(*gaussian_stats(target), *gaussian_stats(reference))
+    if variant == "mmd":
+        return mmd_rbf(target, reference, seed=seed)
+    raise ValueError(f"unknown distance_variant {variant!r} (expected 'frechet' or 'mmd')")
+
+
 def embed_crops(
     items: list[Item], config: Config, embedder: Embedder, cache: EmbeddingCache
 ) -> dict[str, np.ndarray]:

@@ -3,6 +3,10 @@
 DINOv2 fingerprints of mask-cropped animals are averaged into a per-species prototype; the distance is
 the cosine gap to the nearest *other* species' prototype (leave-one-species-out on the species split).
 NaN where a species yields no usable crops. Uses ground-truth masks — no SAM 3.
+
+``features.distance_variant`` selects how the gap is measured: ``nearest_prototype`` (default, above) or a
+distributional ``frechet``/``mmd`` distance between the target species' whole embedding set and the pooled
+reference set (the AutoEval recipe; a robustness variant that never collapses the species to one prototype).
 """
 
 from __future__ import annotations
@@ -19,6 +23,7 @@ from src.features.embed import Embedder, EmbeddingCache
 from src.features.frames import animal_crop, sample_frame_indices
 from src.features.pipeline import (
     CropFn,
+    distributional_distance,
     embed_crops,
     nearest_distance,
     prototype,
@@ -47,10 +52,10 @@ class VisualDistance:
         self.encoder = self.config.features.visual_encoder
         self.safari = safari_by_origin(self.config)
 
-    def _prototypes(
+    def _vectors_by_species(
         self, records: list[VideoRecord], embedder: Embedder, cache: EmbeddingCache
-    ) -> dict[str, np.ndarray]:
-        """One prototype per species (``category_id``) from its mask-cropped animal embeddings."""
+    ) -> dict[str, list[np.ndarray]]:
+        """Per-species (``category_id``) list of mask-cropped animal embeddings."""
         feat = self.config.features
         items = []
         keys_by_species: dict[str, list[str]] = defaultdict(list)
@@ -79,15 +84,33 @@ class VisualDistance:
 
         vectors = embed_crops(items, self.config, embedder, cache)
         return {
-            cid: proto
+            cid: [vectors[k] for k in keys if k in vectors]
             for cid, keys in keys_by_species.items()
-            if (proto := prototype([vectors[k] for k in keys if k in vectors])) is not None
+        }
+
+    def _prototypes(
+        self, records: list[VideoRecord], embedder: Embedder, cache: EmbeddingCache
+    ) -> dict[str, np.ndarray]:
+        """One prototype per species (``category_id``) from its mask-cropped animal embeddings."""
+        return {
+            cid: proto
+            for cid, vecs in self._vectors_by_species(records, embedder, cache).items()
+            if (proto := prototype(vecs)) is not None
         }
 
     def compute(self, partition: Partition) -> pd.Series:
         """Return ``visual_distance`` per probe species (``category_id``); ``NaN`` where no crops exist."""
         embedder = Embedder(self.encoder, self.config)
         cache = EmbeddingCache(self.config, self.encoder, self.config.features.mask_crop)
+        variant = self.config.features.distance_variant
+        if variant == "nearest_prototype":
+            return self._nearest_prototype(partition, embedder, cache)
+        return self._distributional(partition, embedder, cache, variant)
+
+    def _nearest_prototype(
+        self, partition: Partition, embedder: Embedder, cache: EmbeddingCache
+    ) -> pd.Series:
+        """Cosine gap to the nearest reference-species prototype (the default distance)."""
         ref = self._prototypes(reference_records(partition, self.config), embedder, cache)
         # On the species split reference and probe are the same set — reuse the prototypes.
         probe = (
@@ -103,4 +126,29 @@ class VisualDistance:
             )
             for cid in partition.probe_species
         }
+        return pd.Series(rows, name="visual_distance", dtype="float64")
+
+    def _distributional(
+        self, partition: Partition, embedder: Embedder, cache: EmbeddingCache, variant: str
+    ) -> pd.Series:
+        """Fréchet/MMD distance from each probe species' embedding set to the pooled reference set."""
+        ref_vecs = self._vectors_by_species(
+            reference_records(partition, self.config), embedder, cache
+        )
+        probe_vecs = (
+            ref_vecs
+            if partition.held_axis == "species"
+            else self._vectors_by_species(probe_records(partition, self.config), embedder, cache)
+        )
+        rows: dict[str, float] = {}
+        for cid in partition.probe_species:
+            target = probe_vecs.get(cid)
+            if not target:
+                rows[cid] = float("nan")
+                continue
+            exclude = cid if partition.loso else None
+            pool = [v for c, vecs in ref_vecs.items() if c != exclude for v in vecs]
+            rows[cid] = distributional_distance(
+                np.asarray(target), np.asarray(pool), variant, seed=self.config.seed
+            )
         return pd.Series(rows, name="visual_distance", dtype="float64")
