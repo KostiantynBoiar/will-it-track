@@ -113,8 +113,15 @@ class Ablations:
         return path
 
     def robustness_sweep(self) -> Path:
-        """Re-run under alternative design choices (encoder, crop, prompt) — needs fresh GPU passes."""
-        raise NotImplementedError("design/confound robustness variants (encoder/crop/prompt) — run on GPU")
+        """Re-run under alternative design choices (encoder/crop/prompt/distance) — needs fresh GPU passes.
+
+        The per-variant feature tables are built on the GPU pod (``scripts/run_robustness.sh``) and dropped
+        as ``outputs/features_<variant>.parquet``; this delegates to the robustness experiment driver, which
+        fits the standing 4-distance GLM through the unchanged CV core and writes the comparison summary JSON.
+        """
+        from src.analysis.robustness_experiment import run
+
+        return run(self.config)
 
 
 def main() -> None:

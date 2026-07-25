@@ -6,7 +6,7 @@ import json
 
 import pandas as pd
 
-from src.analysis.report import _ablation, _fp, _variance
+from src.analysis.report import _ablation, _fp, _robustness, _variance
 
 
 def test_fp_table_renders_the_correlate_not_predictor_story(tmp_path) -> None:
@@ -24,6 +24,33 @@ def test_fp_table_renders_the_correlate_not_predictor_story(tmp_path) -> None:
     assert "9.8\\%" in tex and "$p=0.053$" in tex
     assert "$-0.33$" in tex and "significant" in tex  # the visual correlate
     assert summary["overall_fp_rate"] == 0.0983
+
+
+def test_robustness_table_renders_the_null_survives_story(tmp_path) -> None:
+    """The robustness table renders each variant's OOS gain + a 'null holds' conclusion when none validate."""
+    def scheme(delta: float, p: float) -> dict:
+        return {"n": 346, "mae": 0.30, "baseline_mae": 0.30, "delta": delta,
+                "delta_lo": delta - 0.01, "delta_hi": delta + 0.01, "p_value": p}
+
+    (tmp_path / "robustness_experiment_summary.json").write_text(json.dumps({
+        "experiment": "design_robustness_sweep (R6)", "target": "pDetA",
+        "bonferroni_m": 2, "alpha_corrected": 0.025,
+        "verdict": "NULL SURVIVES all 2 design variants (none beats the mean on both schemes)",
+        "models": [
+            {"variant": "baseline", "label": "baseline (DINOv2, mask-crop, species prompt)",
+             "is_baseline": True, "n_cells": 346,
+             "schemes": {"species": scheme(0.004, 0.24), "location": scheme(0.004, 0.24)},
+             "both_schemes_positive": True, "both_schemes_significant_bonferroni": False},
+            {"variant": "clip", "label": "CLIP encoder", "is_baseline": False, "n_cells": 346,
+             "schemes": {"species": scheme(-0.002, 0.63), "location": scheme(-0.001, 0.58)},
+             "both_schemes_positive": False, "both_schemes_significant_bonferroni": False},
+        ],
+    }))
+    summary, tex = _robustness(tmp_path)
+    assert "\\label{tab:robustness}" in tex
+    assert "CLIP encoder" in tex and "(baseline)" in tex
+    assert "The null holds throughout" in tex  # honest conclusion driven by the (null) verdict
+    assert "n.s." in tex and summary["bonferroni_m"] == 2
 
 
 def test_ablation_table_shows_only_size_moves_the_score(tmp_path) -> None:
