@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # R7 MammAlps end-to-end (pod): extract frames → SAM 3 inference → box-HOTA score → distances → GLM/CV → report.
 # Split A (leave-species-out) on the pooled probe set; leave-camera-out is the environment scheme.
-# Prereqs: mammalps_v1.zip downloaded, dense annotations converted (src.adapters.mammalps), SA-FARI env + the
-# VEval scorer present, HF token set (SAM 3 checkpoint).
+# Frames are streamed from the Zenodo zip via HTTP range (remotezip) — no 82 GiB local download needed.
+# Prereqs: dense annotations converted (src.adapters.mammalps), remotezip + SA-FARI env + the VEval scorer,
+# HF token set (SAM 3 checkpoint).
 set -euo pipefail
 
+cd "$(cd "$(dirname "$0")/.." && pwd)"  # repo root, so `python3 scripts/...` can import `src`
+export PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}"
 export SAFARI_PATHS__DATA_ROOT=/workspace/data_mammalps
 export SAFARI_PATHS__OUTPUTS_ROOT=/workspace/outputs_mammalps
 export SAFARI_FEATURES__EMBED_DEVICE=cuda
@@ -12,10 +15,10 @@ export SAFARI_INFERENCE__PRECISION="${SAFARI_INFERENCE__PRECISION:-bf16}"
 export HF_TOKEN="$(cat ~/.cache/huggingface/token)"
 export HF_HUB_DISABLE_XET=1
 CFG=configs/mammalps.yaml
-ZIP=/workspace/data_mammalps/mammalps_v1.zip
+ZURL=https://zenodo.org/records/15588220/files/mammalps_v1.zip
 
-echo "== [1/7] extract frames from the video zip =="
-python3 scripts/extract_mammalps_frames.py --config "$CFG" --zip "$ZIP"
+echo "== [1/7] stream + extract frames from the Zenodo zip (HTTP range) =="
+python3 scripts/extract_mammalps_frames.py --config "$CFG" --remote-url "$ZURL"
 
 echo "== [2/7] SAM 3 promptable inference over the probe clips =="
 python3 -m src.inference.harness --split test --config "$CFG"
