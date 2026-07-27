@@ -1,0 +1,21 @@
+# BURST independent-replication profile (R7). Overlaid onto src/config.py defaults by Config.load.
+# Point the pipeline at converted BURST annotations + BURST frames; tag outputs "burst" so its tables
+# (*_burst.tex) sit beside the SA-FARI ones. Run Split A (leave-species-out) — BURST has no location split.
+seed: 0
+
+data:
+  train_ann: burst_train_ext.json    # emitted by `python -m src.adapters.burst`
+  test_ann: burst_test_ext.json
+  keep_hard_negatives: true          # BURST neg_category_ids → hard negatives (FP analysis)
+
+burst:
+  raw_dir: burst/raw                 # downloaded BURST split JSONs, under data_root
+  train_json: train/all_classes.json
+  test_json: val/all_classes.json
+  seed_taxonomy_from_safari: true    # inherit the study's own LVIS-vocabulary taxonomy
+  min_frames: 2                      # taxonomy_csv defaults to the packaged src/adapters/class_taxonomy.csv
+
+inference:
+  prompt_mode: species               # prompt SAM 3 with the BURST class name (the noun phrase)
+
+experiment: burst                    # suffixes report tables; use a distinct outputs_root when running

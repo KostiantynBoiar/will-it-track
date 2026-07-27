@@ -225,6 +225,35 @@ class CVConfig(BaseModel):
     n_bootstrap: int = 1000
 
 
+class BurstConfig(BaseModel):
+    """BURST → SA-Co adapter (R7 independent replication).
+
+    The converter reads the downloaded BURST split JSONs and emits ``burst_{train,test}_ext.json`` in the
+    SA-Co ``_ext`` schema the pipeline already reads, so nothing downstream changes. All paths are relative
+    to ``paths.data_root``.
+
+    Attributes:
+        raw_dir: Directory holding the downloaded BURST split JSONs, relative to ``data_root``.
+        train_json: BURST split used as the SA-Co reference (the ``"train"`` origin).
+        test_json: BURST split used as the SA-Co probe (the ``"test"`` origin).
+        taxonomy_csv: Optional override for the curated ``name → 7-level taxonomy`` map, relative to
+            ``data_root``. Empty ⇒ use the packaged base map ``src/adapters/class_taxonomy.csv``.
+        seed_taxonomy_from_safari: Also derive ``name → taxonomy`` from the SA-FARI ``categories`` (the
+            shared LVIS vocabulary), so BURST animal classes inherit the same taxonomy the study used; the
+            CSV takes precedence where both define a name.
+        min_frames: Skip BURST sequences with fewer than this many annotated frames.
+        keep_hard_negatives: Emit ``neg_category_ids`` as ``num_masklets=0`` probes for the FP analysis.
+    """
+
+    raw_dir: str = "burst/raw"
+    train_json: str = "train/all_classes.json"
+    test_json: str = "val/all_classes.json"
+    taxonomy_csv: str = ""  # empty ⇒ packaged src/adapters/class_taxonomy.csv
+    seed_taxonomy_from_safari: bool = True
+    min_frames: int = 2
+    keep_hard_negatives: bool = True
+
+
 class Config(BaseSettings):
     """Top-level configuration aggregating every section.
 
@@ -260,6 +289,7 @@ class Config(BaseSettings):
     features: FeaturesConfig = Field(default_factory=FeaturesConfig)
     model: ModelConfig = Field(default_factory=ModelConfig)
     cv: CVConfig = Field(default_factory=CVConfig)
+    burst: BurstConfig = Field(default_factory=BurstConfig)
     seed: int = 0
     experiment: str = "location"
 
