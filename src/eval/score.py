@@ -148,13 +148,24 @@ class Scorer:
         )
         return json.loads(result_path.read_text())
 
+    def _metric_keys(self) -> dict[str, tuple[str, ...]]:
+        """Per-metric lookup order; puts ``bbox_*`` before ``mask_*`` when ``eval.prefer_bbox`` (box GT)."""
+        if not self.config.eval.prefer_bbox:
+            return _METRIC_KEYS
+        return {
+            "pDetA": ("bbox_DetA", "mask_DetA", "pDetA", "DetA"),
+            "pAssA": ("bbox_AssA", "mask_AssA", "pAssA", "AssA"),
+            "pHOTA": ("bbox_HOTA", "mask_HOTA", "pHOTA", "HOTA"),
+        }
+
     def _parse_veval(self, result: dict) -> dict[tuple[str, str], dict]:
         """Map the VEval result into ``{(video_id, category_id): {metric: value}}``.
 
         The evaluator emits ``{"dataset_results": {..aggregate..}, "video_np_results": [{video_id,
         category_id, **metrics}]}``; we key each per-probe entry by ``(video_id, category_id)`` (as
-        strings, to match the harness records) and resolve each metric via :data:`_METRIC_KEYS`. Absent
-        ``video_np_results`` yields an empty map (scores become NaN, support is still counted).
+        strings, to match the harness records) and resolve each metric via :meth:`_metric_keys` (mask-first,
+        or bbox-first when ``eval.prefer_bbox``). Absent ``video_np_results`` yields an empty map (scores
+        become NaN, support is still counted).
         """
         entries = (
             result.get("video_np_results")
@@ -162,10 +173,11 @@ class Scorer:
             or result.get("results")
             or []
         )
+        metric_keys = self._metric_keys()
         per_probe: dict[tuple[str, str], dict] = {}
         for entry in entries:
             key = (str(entry["video_id"]), str(entry["category_id"]))
-            per_probe[key] = {m: _first_present(entry, keys) for m, keys in _METRIC_KEYS.items()}
+            per_probe[key] = {m: _first_present(entry, keys) for m, keys in metric_keys.items()}
         return per_probe
 
     def _scored_gt(self, split: str, pred_dir: Path) -> Path:

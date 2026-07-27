@@ -1,0 +1,25 @@
+# MammAlps independent-replication profile (R7; box-only Alpine camera-trap tracker).
+# Pooled probe set → leave-species-out + leave-camera-out. GT boxes → box-HOTA (eval.prefer_bbox).
+# Run Split A: assemble --partition species --origins test.
+seed: 0
+
+data:
+  train_ann: mammalps_train_ext.json   # emitted empty (reference = probe on Split A)
+  test_ann: mammalps_test_ext.json     # all capped/subsampled clips (the probe set)
+  keep_hard_negatives: true
+
+mammalps:
+  raw_dir: dense                       # extracted dense-annotation JSONs, under data_root
+  target_fps: 3.0                      # subsample the 30fps clips
+  max_frames_per_clip: 120
+  max_clips_per_cell: 12               # bound red-deer dominance per (species, camera)
+  min_frames: 4
+  location_by: site_cam                # environment/location axis = S1_C1 …
+
+inference:
+  prompt_mode: species                 # prompt SAM 3 with the species name
+
+eval:
+  prefer_bbox: true                    # MammAlps GT is boxes → score box-HOTA, not mask-HOTA
+
+experiment: mammalps                   # suffixes report tables; use a distinct outputs_root when running

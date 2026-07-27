@@ -127,10 +127,14 @@ class EvalConfig(BaseModel):
     Attributes:
         metrics: Reported metrics (computed by the vendored VEval scorer).
         veval_script: Path to the vendored evaluator, under ``paths.third_party_root``.
+        prefer_bbox: Read VEval's ``bbox_*`` HOTA metrics before ``mask_*``. On for a box-only dataset
+            (e.g. MammAlps), whose GT is emitted as filled-rectangle masks: a tight predicted mask vs a
+            rectangle GT would deflate mask-IoU, so box-IoU HOTA (``bbox_*``) is the honest score there.
     """
 
     metrics: tuple[str, ...] = ("pHOTA", "pDetA", "pAssA")
     veval_script: str = "sam3/sam3/eval/saco_veval_eval.py"  # <clone>/sam3/eval/... (repo dir + package)
+    prefer_bbox: bool = False
 
 
 class FeaturesConfig(BaseModel):
@@ -245,13 +249,41 @@ class BurstConfig(BaseModel):
         keep_hard_negatives: Emit ``neg_category_ids`` as ``num_masklets=0`` probes for the FP analysis.
     """
 
-    raw_dir: str = "burst/raw"
-    train_json: str = "train/all_classes.json"
+    raw_dir: str = ""  # BURST splits extracted directly under data_root ({train,val,test,info}/)
+    train_json: str = "train/train.json"
     test_json: str = "val/all_classes.json"
     taxonomy_csv: str = ""  # empty ⇒ packaged src/adapters/class_taxonomy.csv
-    seed_taxonomy_from_safari: bool = True
+    seed_taxonomy_from_safari: bool = False  # SA-FARI names are mostly specific species; the CSV covers more
     min_frames: int = 2
     keep_hard_negatives: bool = True
+    exclude_sources: tuple[str, ...] = ("AVA", "HACS")  # gated TAO sources (separate agreement) — skip them
+
+
+class MammAlpsConfig(BaseModel):
+    """MammAlps → SA-Co adapter (R7 independent replication; box-only Alpine camera-trap tracker).
+
+    MammAlps ships per-clip JSONs of bounding-box tracks (5 species, 9 cameras / 3 sites, 30 fps MP4s, no
+    masks). The adapter emits each box as a filled-rectangle RLE (segmentations) plus the native box (bboxes),
+    subsamples the 30 fps clips to ``target_fps`` and caps per ``(species, camera)`` cell so the SAM 3
+    inference stays tractable; scoring uses ``eval.prefer_bbox`` (box-HOTA).
+
+    Attributes:
+        raw_dir: Directory of the extracted dense-annotation JSONs, relative to ``data_root``.
+        taxonomy_csv: Optional override for the packaged ``src/adapters/mammalps_taxonomy.csv``.
+        target_fps: Subsample the 30 fps clips to this rate (step = round(clip_fps / target_fps)).
+        max_frames_per_clip: Cap on kept (subsampled) frames per clip.
+        max_clips_per_cell: Cap on clips per ``(species, camera)`` cell (bounds red-deer dominance).
+        min_frames: Skip clips with fewer than this many kept frames.
+        location_by: ``"site_cam"`` (S1_C1 …, the cell/location key) or ``"site"`` (S1/S2/S3, coarser).
+    """
+
+    raw_dir: str = "dense"
+    taxonomy_csv: str = ""  # empty ⇒ packaged src/adapters/mammalps_taxonomy.csv
+    target_fps: float = 3.0
+    max_frames_per_clip: int = 120
+    max_clips_per_cell: int = 12
+    min_frames: int = 4
+    location_by: str = "site_cam"
 
 
 class Config(BaseSettings):
@@ -290,6 +322,7 @@ class Config(BaseSettings):
     model: ModelConfig = Field(default_factory=ModelConfig)
     cv: CVConfig = Field(default_factory=CVConfig)
     burst: BurstConfig = Field(default_factory=BurstConfig)
+    mammalps: MammAlpsConfig = Field(default_factory=MammAlpsConfig)
     seed: int = 0
     experiment: str = "location"
 
