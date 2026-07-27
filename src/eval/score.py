@@ -175,8 +175,13 @@ class Scorer:
         full train GT (all ~31k videos, ~0.9 GB on disk) OOM-kills the evaluator. We only ever predict a
         capped sample, so we hand VEval a GT restricted to those video ids --- keeping its footprint in the
         same range as the (small) test split. Written next to the outputs; harmless for test (keeps all).
+
+        Per-probe files are named ``{video_id}_{category_id}.json`` (:func:`inference.harness.probe_filename`),
+        so the video id is the stem with the trailing ``_{category_id}`` removed --- ``rsplit`` on the last
+        underscore recovers it (``category_id`` is numeric, and pooled ids like ``train:123`` carry a colon,
+        not an underscore).
         """
-        pred_ids = {p.stem for p in pred_dir.glob("*.json")}
+        pred_ids = {p.stem.rsplit("_", 1)[0] for p in pred_dir.glob("*.json")}
         data = SAFARI(split, self.config)._load()
         trimmed = dict(data)
         trimmed["videos"] = [v for v in data.get("videos", []) if str(v["id"]) in pred_ids]
