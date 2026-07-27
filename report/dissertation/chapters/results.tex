@@ -110,8 +110,16 @@ real correlate. Removing the support covariate does not rescue a distance effect
 partition (Table~\ref{tab:variance}) tells the same story from the other direction.
 \IfFileExists{tables/ablations.tex}{\input{tables/ablations}}{}
 
-\paragraph{Design robustness (future work).} Three further checks --- a CLIP rather than DINOv2 visual
-encoder, whole-frame rather than mask-cropped visual embeddings, and a generic ``animal'' rather than a
-species-specific prompt --- each require a fresh GPU inference or embedding pass and are left for future work.
-Given that the null is flat across the factor ablation, the variance partition, both hold-out schemes, and the
-intrinsic-difficulty pivot, a change of encoder, crop, or prompt is unlikely to overturn it.
+\paragraph{Design robustness.} The null is not an artefact of the encoder, the crop, the prompt, or the
+distance functional (Table~\ref{tab:robustness}). Re-running the full leave-species-out and leave-location-out
+procedure with a CLIP rather than DINOv2 encoder, a whole-frame rather than mask-cropped embedding, and a
+distributional Fr\'echet or MMD rather than nearest-prototype distance each leaves the out-of-sample gain
+indistinguishable from the baseline (all $\Delta\mathrm{MAE}\le0.007$, $p\ge0.10$, every 95\% CI spanning
+zero). A generic ``animal'' prompt is included for completeness: prompting non-specifically collapses
+per-species detection to a near-constant, mostly-zero target (mean \texttt{pDetA}$\approx0.14$, $73\%$ of cells
+exactly zero),\footnote{A minority of clips were additionally skipped for GPU memory on the $16$\,GB card used
+for this pass; they are scored as misses and add noise but do not drive the collapse, which is intrinsic to the
+non-specific prompt.} so the distance model cannot beat --- and, fitting a degenerate target, underperforms ---
+a mean predictor. Across every variant the label-free distances fail identically, confirming the null is a
+property of the transfer problem, not of one modelling choice.
+\IfFileExists{tables/robustness.tex}{\input{tables/robustness}}{}
