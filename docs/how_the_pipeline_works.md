@@ -138,6 +138,58 @@ genuinely "no signal," not "failed to look."
 
 ---
 
+## Q4 — Does the result hold on a *completely different* dataset? (MammAlps)
+
+Every experiment above used **one** pile of videos (SA-FARI). A fair skeptic could say: *maybe
+your "no" is just a quirk of that one pile.* So we hired the **same contractor for a second
+job on a totally different pile** and ran the *entire* machinery again, unchanged.
+
+**The second pile — [MammAlps](https://zenodo.org/records/15588220).** Camera-trap videos of
+**Alpine mountain animals** (red deer, roe deer, fox, wolf, hare) from Switzerland — a
+different continent, different species, different cameras. Nothing about our code changed;
+only the input pile did.
+
+**The catch — this pile marks animals with *boxes*, not outlines.** SA-FARI gives a
+pixel-perfect **mask** (the exact shape of the animal); MammAlps only gives a **rectangle**
+around it. SAM 3 always draws tight outlines, so grading a tight outline against a loose
+rectangle would unfairly mark SAM 3 *wrong even when it's right*. Two honest fixes
+([`src/adapters/mammalps.py`](../src/adapters/mammalps.py),
+[`src/adapters/boxes.py`](../src/adapters/boxes.py)):
+1. Turn each box into a **filled rectangle** so the "how does it look / how big is it"
+   measurements still run.
+2. Grade **box-against-box** instead of outline-against-box (`eval.prefer_bbox`). We *checked*
+   this was necessary, not a fudge: grading outline-against-rectangle gives a near-zero score
+   (mask overlap ≈ 0.002) — proof the box grading is the fair one.
+
+**Getting the videos without an 82 GB download.** The full MammAlps archive is 82 GB and
+wouldn't fit on the machine. Instead of downloading the whole pile, we **reached into the
+online zip and pulled out only the ~135 clips we needed**
+([`scripts/extract_mammalps_frames.py`](../scripts/extract_mammalps_frames.py), HTTP "range"
+requests) — a few GB instead of 82.
+
+**The result — the "no" holds, but as a *consistency check*, not proof.**
+- **SAM 3 genuinely works here:** it finds the Alpine animals with a sensible grade (~0.44) —
+  a real score, not zero and not perfect.
+- **The distances again fail to predict the grades** — the same "no" as SA-FARI. A different
+  continent and different animals did **not** break the result; it **agrees** with it.
+- **But this pile is tiny — only 20 report cards** (5 species, 9 cameras), so we are honest
+  that it **can't be called independent *proof*.** We showed *why*: we ran a measurement we
+  *know* is predictive through the same test, and even **it** couldn't pass on just 20 cards.
+  If a real signal can't pass, the test is simply too small here — so a flat result means
+  "too little data to tell," which **reinforces** the main SA-FARI answer rather than adding a
+  new one.
+- **One tempting fluke, correctly thrown out:** the "looks different" distance *did* clear the
+  bar on this small pile — but it pointed the **wrong way** (it claimed *more* unusual-looking
+  animals are *easier* to find, the opposite of the theory) and, on inspection, was just
+  tracking which two rare species happened to fail. A wrong-direction fluke on 4 of 20 cards is
+  a confound, not a discovery, so we report it only to dismiss it.
+
+**Bottom line:** a second, independent dataset on another continent **did not overturn** the
+null — it lines up with it — but it is too small to be independent confirmation. A larger
+second dataset is the next step. (Full record: [`docs/mammalps_replication.md`](mammalps_replication.md).)
+
+---
+
 ## One-line summary
 
 > SA-FARI feeds videos + prompts to a **frozen** SAM 3; an **official** scorer grades the
@@ -156,3 +208,5 @@ genuinely "no signal," not "failed to look."
 | How the official metric grades it into cells | [`src/eval/score.py`](../src/eval/score.py) |
 | The distances (`X`) | `src/features/{taxonomic,visual,environment,temporal,size}.py` |
 | The GLM fit + leave-group-out validation | `src/analysis/{regression,cross_val}.py` |
+| The second dataset (MammAlps) adapter + boxes | [`src/adapters/mammalps.py`](../src/adapters/mammalps.py), [`src/adapters/boxes.py`](../src/adapters/boxes.py) |
+| The MammAlps replication result + how to reproduce | [`docs/mammalps_replication.md`](mammalps_replication.md), [`scripts/mammalps_replication_analysis.py`](../scripts/mammalps_replication_analysis.py) |
