@@ -69,8 +69,9 @@ instead of tracking the diagonal (dashed) --- the distances carry no out-of-samp
 The primary novelty test --- leave-one-species-out over the pooled train+test species (99 species,
 1025 scored cells) --- is in Tables~\ref{tab:gate1_species}--\ref{tab:cv_species}. Out-of-sample
 prediction is not significant on any hold-out (Table~\ref{tab:cv_species}). The only coefficient whose CI
-excludes zero, \emph{visual distance} (Table~\ref{tab:coefficients_species}), is positive --- the wrong
-sign for H1 --- and is a \textbf{confound}: visually-distinctive species are larger
+excludes zero, \emph{visual distance} (Table~\ref{tab:coefficients_species}), is positive --- meaning
+more-novel species are detected \emph{better}, the reverse of what H1 predicts --- and is a \textbf{confound}:
+visually-distinctive species are larger
 (visual~$\leftrightarrow$~$\log$-area $r=0.22$) and larger animals score higher
 ($\log$-area~$\leftrightarrow$~pDetA $r=0.30$, the strongest raw correlate of the score). Adding an animal-size
 covariate shrinks the visual coefficient from $+0.37$ to $+0.22$ (CI now spanning zero) while size itself
@@ -153,13 +154,14 @@ signal that cannot clear the bar shows the instrument, not the hypothesis, is th
 \paragraph{The one feature that ``validates'' is a confound, not a finding.} Visual distance alone beats the
 mean baseline on both schemes ($\Delta\mathrm{MAE}=+0.078/+0.080$, $p\approx0.01$), but this is spurious and is
 reported only to be dismissed. Its association with detection is \emph{positive}
-($r=+0.636$, $p=0.003$) --- the opposite sign to the novelty$\rightarrow$failure hypothesis, driven by the two
+($r=+0.636$, $p=0.003$) --- the opposite direction to the novelty$\rightarrow$failure hypothesis
+(more-novel animals are detected \emph{better}, not worse), driven by the two
 large, high-footage deer species SAM\,3 detects best; it is confounded with support ($r=+0.60$ with
 $n_\text{frames}$); and because visual distance is species-constant with tied values (red\,=\,roe\,=\,$0.40$,
 hare\,=\,wolf\,=\,$0.15$), its leave-species-out ``validity'' reduces to a twin species standing in for the
 held-out one --- exactly the species-constant-feature artefact the double cross-validation is designed to
-reject. Removing the two rare, low-support species that anchor it (hare, wolf; $4/20$ cells) flips the sign to
-$r=-0.33$ (n.s.) and erases the gain on both schemes. This is the same visual/size confound diagnosed on
+reject. Removing the two rare, low-support species that anchor it (hare, wolf; $4/20$ cells) reverses the
+correlation to $r=-0.33$ (n.s.) and erases the gain on both schemes. This is the same visual/size confound diagnosed on
 SA-FARI, and it does not support H1.
 
 \paragraph{Scope.} MammAlps exercises only three of the four distances (temporal and the familiarity proxy are
@@ -184,8 +186,8 @@ only $+0.002$ ($p=0.374$), with visual ($+0.003$, $p=0.257$), taxonomic (full-ta
 $p=0.952$) and environment ($-0.001$, $p=0.747$) all individually null, and the association specs null likewise
 (Table~\ref{tab:replication_burst}). The result is robust to dropping the $19$ single-cell species and to a
 size control. The lone near-signal, visual distance, is the familiar artefact: its correlation with detection
-is $+0.17$ --- the \emph{wrong} sign for novelty and a size confound (partial correlation given
-$\log$-area $+0.08$, $p=0.35$). Three datasets --- SA-FARI, MammAlps and BURST --- now converge on the same
+is $+0.17$ --- in the \emph{opposite} direction to the novelty hypothesis (more-novel animals detected better),
+and a size confound (partial correlation given $\log$-area $+0.08$, $p=0.35$). Three datasets --- SA-FARI, MammAlps and BURST --- now converge on the same
 before-running distance null.
 \IfFileExists{tables/gate1_measurement_burst.tex}{\input{tables/gate1_measurement_burst}}{}
 \IfFileExists{tables/replication_burst.tex}{\input{tables/replication_burst}}{}
@@ -196,9 +198,24 @@ MammAlps, where nothing validated: at $132$ cells the pipeline is demonstrably a
 misconfigured test. This does not, however, license calling the distance null fully powered. The confidence win
 runs mostly through a \emph{within}-species channel --- collapsing \texttt{conf\_mean\_score} to species means,
 as a species-constant distance effectively is, drops its gain to $+0.004$ ($p=0.21$) --- whereas a distance can
-only act \emph{between} species, where the correlations are at most $+0.37$ (visual, wrong-signed) against
-confidence's $+0.50$. The design thus detects a large between-species predictor but is underpowered for a small
+only act \emph{between} species, where the correlations are at most $+0.37$ (visual, and in the
+opposite direction to novelty) against confidence's $+0.50$. The design thus detects a large between-species predictor but is underpowered for a small
 one. We therefore read BURST as a third convergent null --- no moderate-or-large before-running distance signal,
 in a better-powered mask-native regime --- rather than positive proof, with the only validated predictor across
 all three datasets remaining SAM\,3's own after-running detection confidence, a mechanistically near-circular,
 non-novel signal.
+
+\section{Cross-dataset synthesis}
+\label{sec:cross_dataset}
+Table~\ref{tab:cross_dataset} collects every feature tested, its numerical out-of-sample result, and the
+dataset it was measured on. The pattern is consistent across all three: no before-running label-free distance
+--- taxonomic, visual, or environment, alone or combined --- predicts detection or association transfer out of
+sample; every gain over a mean predictor is within bootstrap noise of zero. The only near-signal, visual
+distance, appears in the \emph{opposite} direction to the novelty hypothesis (more-novel animals detected
+better, not worse) and dissolves under an animal-size control wherever it is examined. The single feature that validates is not a before-running distance at all but SAM\,3's own
+\emph{after-running} detection confidence, and even that decisively only on the large SA-FARI sample; the same
+animal-size confound is the only before-running quantity that ever reaches significance. The contribution is
+this robust, thrice-replicated null, honestly bounded: consistent across a camera-trap and an
+internet-video dataset, and powered enough on SA-FARI and BURST to exclude a moderate effect, but not a small
+one.
+\IfFileExists{tables/cross_dataset_comparison.tex}{\input{tables/cross_dataset_comparison}}{}

@@ -1,0 +1,51 @@
+% Cross-dataset feature comparison --- hand-maintained; numbers verified against the committed
+% per-dataset tables/docs and the MammAlps/BURST replication analyses. See docs/{label_free_prediction_null,
+% mammalps_replication,burst_replication}.md.
+\begin{table}[htbp]\centering
+  \caption{What was tested, the numerical out-of-sample result, and on which dataset. Result is the
+  leave-species-out gain in MAE over a mean predictor ($\Delta$MAE, with one-sided bootstrap $p$) unless noted;
+  positive and significant means the feature predicts transfer. The before-running label-free distances are
+  null on all three datasets; the only feature that validates is SAM\,3's own \emph{after-running} confidence
+  (and only decisively on SA-FARI --- on BURST it fires through a within-species channel a distance cannot use,
+  and on MammAlps the design is too small for anything to validate). ``Opposite direction'' means the
+  association runs the reverse of what novelty predicts --- more-novel animals are detected \emph{better}, not
+  worse --- so it cannot support the hypothesis.}
+  \label{tab:cross_dataset}
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{p{4.5cm}p{6.4cm}p{3.1cm}}
+    \toprule
+    Feature tested & Result (leave-species-out) & Dataset \\
+    \midrule
+    \multicolumn{3}{l}{\emph{Before-running label-free distances (the research question)}} \\
+    Combined distances (tax.\,+\,vis.\,+\,env.) & $\Delta$MAE $-0.004$ ($p{=}0.74$), n.s. & SA-FARI (1025 cells, 99 sp.) \\
+    Combined distances (tax.\,+\,vis.\,+\,env.) & $\Delta$MAE $+0.014$ ($p{=}0.41$), n.s. & MammAlps (20 cells, 5 sp.) \\
+    Combined distances (tax.\,+\,vis.\,+\,env.) & $\Delta$MAE $+0.002$ ($p{=}0.37$), n.s. & BURST (132 cells, 41 sp.) \\
+    \addlinespace
+    Visual distance alone & coef.\ $-0.14$ [$-0.50,0.14$], n.s. & SA-FARI \\
+    Visual distance alone & $\Delta$MAE $+0.080$ ($p{=}0.01$) --- \emph{opposite direction; size confound} & MammAlps \\
+    Visual distance alone & $\Delta$MAE $+0.003$ ($p{=}0.26$) --- opposite direction & BURST \\
+    \addlinespace
+    Taxonomic distance alone & coef.\ $-0.36$ [$-3.87,0.09$], n.s. & SA-FARI \\
+    Taxonomic distance alone & $\Delta$MAE $-0.08$ ($p{=}0.94$), n.s. & MammAlps \\
+    Taxonomic distance alone (full-tax.\ $n{=}82$) & $\Delta$MAE $-0.006$ ($p{=}0.95$), n.s. & BURST \\
+    \addlinespace
+    Environment distance alone & coef.\ $+0.04$ [$-0.19,0.24$], n.s. & SA-FARI \\
+    Environment distance alone & $\Delta$MAE $-0.001$ ($p{=}0.75$), n.s. & BURST \\
+    Temporal gap & n.s.\ (present); degenerate elsewhere & SA-FARI (MammAlps/BURST: all-NaN) \\
+    \midrule
+    \multicolumn{3}{l}{\emph{Confound control}} \\
+    Animal size ($\log$-area) & $\Delta$MAE $+0.015$ ($p{=}0.01$) --- validates & SA-FARI \\
+    Animal size ($\log$-area) & $\Delta$MAE $-0.015$ ($p{=}0.65$), n.s. & MammAlps \\
+    Animal size ($\log$-area) & $\Delta$MAE $+0.005$ ($p{=}0.14$), n.s. & BURST \\
+    \midrule
+    \multicolumn{3}{l}{\emph{After-running (reads SAM\,3's own outputs --- not before-running)}} \\
+    Detection confidence (ATC) & $\Delta$MAE $+0.143$ ($p{\approx}0$) --- validates & SA-FARI \\
+    Detection confidence (ATC) & $\Delta$MAE $+0.029$ ($p{=}0.01$) --- fires (liveness only) & BURST \\
+    Detection confidence (mean score) & $\Delta$MAE $-0.05$ ($p{=}0.96$) --- fails (underpowered) & MammAlps \\
+    \midrule
+    \multicolumn{3}{l}{\emph{Detection precision (hard negatives)}} \\
+    Hallucination rate vs.\ visual distance & $r{=}-0.33$; LSO $\Delta$MAE $+0.008$ ($p{=}0.053$), marginal & SA-FARI \\
+    \bottomrule
+  \end{tabular}
+\end{table}

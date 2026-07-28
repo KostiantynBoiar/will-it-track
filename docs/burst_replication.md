@@ -67,12 +67,12 @@ the key honesty point (and where an initial over-reading was corrected). `conf_m
 at n=132. **But** the confidence win runs mainly through a **within-species** channel: `conf_mean_score` is 73%
 within-species variance, and **collapsing it to species-means (making it distance-like) kills the win: +0.0044,
 p=0.212.** Distances are 100% species-constant, so leave-species-out can only use the **between-species**
-channel, where the correlations are visual **+0.37 (wrong sign)**, taxonomic −0.02, environment +0.09, versus
+channel, where the correlations are visual **+0.37 (opposite direction)**, taxonomic −0.02, environment +0.09, versus
 `conf_atc` +0.50. A power simulation put the 80%-power minimum detectable between-species |r| at ≈0.65–0.70. So
 the design detects a *large* between-species predictor (conf_atc) but is **underpowered for a small one**.
 
 **3. The one near-signal is a confound, not a finding.** `visual_distance` correlates with pDetA at +0.170 —
-the **wrong sign** for the novelty hypothesis and a **size confound** (`corr(visual,log_area)=+0.40`; partial-r
+the **opposite direction** to the novelty hypothesis and a **size confound** (`corr(visual,log_area)=+0.40`; partial-r
 given log_area = +0.082, p=0.348). It does not even reach OOS significance.
 
 ## Honest headline

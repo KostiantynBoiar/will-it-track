@@ -99,7 +99,7 @@ Target `pDetA`, **346 positive test cells**, controls `log(n_frames)` + `log_are
 | `conf_mean_score` | 0.23 | [−1.59, 2.16] | ✗ (collinear with the other conf features) |
 | `taxonomic_distance` | −0.08 | [−0.53, 0.96] | ✗ (H0) |
 | `environment_distance` | −0.02 | [−0.14, 0.10] | ✗ (H0) |
-| `visual_distance` | 0.20 | [0.005, 0.41] | ✅ but the known size-confounded wrong-sign artefact |
+| `visual_distance` | 0.20 | [0.005, 0.41] | ✅ but the known size-confounded opposite-direction artefact |
 
 **Diagnostic:** `pDetA = 0` on 18.8 % of cells; the 64 `atc_coverage = 0` cells are exactly those misses
 (mean `pDetA` 0.000); the 282 `atc_coverage > 0` cells average `pDetA` 0.659. Correlations with `pDetA`:

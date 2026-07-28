@@ -66,7 +66,7 @@ power readout.)
 
 **3. The one "significant" feature is a confound, not a finding.** `visual_distance`-alone clears the bar
 (ΔMAE +0.078/+0.080, p≈0.01) but must never be reported as a predictor:
-- **Wrong sign.** `corr(visual_distance, pDetA) = +0.636` (p=0.003) — higher visual novelty ⇒ *better*
+- **Opposite direction.** `corr(visual_distance, pDetA) = +0.636` (p=0.003) — higher visual novelty ⇒ *better*
   detection, the opposite of the H1 hypothesis.
 - **Support confound.** `corr(visual, n_frames) = +0.60`, `corr(visual, n_masklets) = +0.56`.
 - **Species-constant, carried by 4 cells.** Values tie within species (red=roe=0.401, hare=wolf=0.154,
@@ -85,7 +85,7 @@ power readout.)
 ## Honest headline
 
 MammAlps **reinforces, and does not contradict, the SA-FARI null**: the pre-registered label-free distance
-model does not predict detection transfer out-of-sample, the only feature that clears the bar is a wrong-signed
+model does not predict detection transfer out-of-sample, the only feature that clears the bar is an opposite-direction
 support confound, and even a genuinely predictive per-cell feature cannot validate at this sample size. It is
 an underpowered, directionally-consistent check — not independent confirmation of any positive result.
 
