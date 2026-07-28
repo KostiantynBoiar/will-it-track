@@ -22,11 +22,10 @@ itself a valid result and motivates the representational-probing direction of Ch
 
 \section{Dataset, splits, and the analysis unit}
 \label{sec:meth-data}
-We use SA-FARI~\cite{safari} throughout. In the released \texttt{\_ext} annotations, a probe is a
-(video, text-prompt) pair; the animal's species and its seven-level taxonomy are resolved through the
-prompt's \texttt{category\_id}, while per-video \texttt{location\_id} and creation timestamp give place and
-time. We aggregate scores to a \emph{cell} --- a $(\texttt{category\_id}, \text{species}, \text{location},
-\text{time})$ group keyed by the stable species identity \texttt{category\_id} --- and attach support
+We use SA-FARI~\cite{safari} throughout. In its annotations, each test is a \emph{probe} --- a
+(video, text-prompt) pair; the prompt resolves the animal's species and its seven-level taxonomy, while each
+video's location and timestamp give place and time. We aggregate scores to a \emph{cell} --- a
+(species, location, time) group, keyed by a stable numeric species identifier --- and attach support
 counts ($n_\text{frames}$, $n_\text{masklets}$, $n_\text{videos}$) used for weighting and as covariates.
 Hard negatives (prompts for absent species) are kept, as they drive the false-positive side of detection;
 the one exception is the stratified per-species cap used to make the large pooled pass feasible, under which
@@ -90,7 +89,7 @@ SAM\,3~\cite{sam3} is run frozen over the probe videos (species-specific prompts
 a generic ``animal'' prompt for robustness) and scored with the official \texttt{VEval} evaluator --- the
 metric is never re-implemented --- giving per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA}~\cite{hota}
 with their support. A single inference pass over the union of Split~A and Split~B probes serves both
-experiments; predictions are stored per $(\text{video}, \texttt{category\_id})$ so that the several
+experiments; predictions are stored per (video, species) so that the several
 species-prompts issued on one video do not collide, and the harness is resumable at per-video granularity and
 never updates a weight. We aggregate two ways and keep them distinct: the \emph{micro} dataset-level
 \texttt{VEval} score (the published SA-FARI operating point, $\approx\!0.65$ mask-\texttt{pHOTA}) and the
@@ -208,7 +207,7 @@ rather than novelty.
 Because the sole apparent effect proved to be a size confound, we ask a complementary question: is transfer
 governed by the intrinsic \emph{difficulty} of the target imagery rather than its \emph{novelty}? We promote
 the label-free scene properties already measured for the environment axis --- low-light/IR
-(\texttt{achromatic\_fraction}), clutter, and the night/IR flag --- from nuisance covariates to predictors of
+(the low-light fraction), clutter, and the night/IR flag --- from nuisance covariates to predictors of
 interest, and test them against the same out-of-sample bar. To separate a genuine difficulty effect from the
 size confound, we fit a \emph{nested} sequence of models --- support only; size only; difficulty only (no
 size); difficulty plus size --- and compare their out-of-sample gains, so that any apparent difficulty effect
@@ -263,7 +262,7 @@ supports both leave-species-out and leave-camera-out. Only three of the four dis
 (built on TAO~\cite{tao}): $41$ animal species across $132$ video\,$\times$\,class cells, with native COCO-RLE
 masks scored by mask-HOTA. The animal categories are selected from BURST's $482$ LVIS classes~\cite{lvis} by a
 WordNet filter~\cite{wordnet} (hyponyms of \emph{animal.n.01}) and mapped to a seven-level biological taxonomy where resolvable ($25/41$ species full,
-the rest partial $\rightarrow$ \texttt{NaN}). BURST carries no site or timestamp metadata, so the cell key is
+the rest left undefined). BURST carries no site or timestamp metadata, so the cell key is
 the per-video sequence and leave-species-out is the only valid grouping; the association target is genuinely
 non-degenerate here, so both components are tested. Masks stream from the RWTH server and TAO frames from the
 Hugging Face mirror by HTTP range, so only the annotated frames of the capped animal videos are fetched.
@@ -282,6 +281,6 @@ computed; hard negatives are retained; and all inference is single-GPU and infer
 config-driven (every constraint is a toggle, so an ablation flips config, not code) and covered by hermetic
 tests; every reported number is regenerated from the repository, and split definitions, seeds, and reference
 sets are persisted so both experiments are reproducible end to end. The engineering safeguards that keep the
-measurement honest --- memory-lean feature assembly, per-$(\text{video},\texttt{category\_id})$ prediction
+measurement honest --- memory-lean feature assembly, per-(video, species) prediction
 keying, trimming the ground truth to the scored videos before evaluation, and the size-confound control ---
 are catalogued in the appendix, each framed as a validity safeguard.
