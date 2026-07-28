@@ -1,0 +1,17 @@
+% MammAlps Gate-1 --- hand-maintained (bbox-HOTA); see docs/mammalps_replication.md
+\begin{table}[htbp]\centering
+  \caption{Zero-shot SAM\,3 on MammAlps --- support-weighted mean over the 20 probe cells (MammAlps ships no
+  separate reference split; all clips are probe). Scored with \textbf{bbox}-HOTA (\texttt{eval.prefer\_bbox}):
+  the ground truth is box-only, so mask-IoU is near-zero (dataset mask mAP\,$\approx$\,0.002) and box-IoU is
+  the honest metric. The score is non-degenerate --- SAM\,3 genuinely finds Alpine mammals zero-shot.}
+  \label{tab:gate1_mammalps}
+  \begin{tabular}{lr}
+    \toprule
+    Metric (bbox-HOTA) & Value \\
+    \midrule
+    pDetA & 0.440 \\
+    pAssA & 0.443 \\
+    pHOTA & 0.441 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

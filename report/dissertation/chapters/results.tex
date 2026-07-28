@@ -123,3 +123,47 @@ non-specific prompt.} so the distance model cannot beat --- and, fitting a degen
 a mean predictor. Across every variant the label-free distances fail identically, confirming the null is a
 property of the transfer problem, not of one modelling choice.
 \IfFileExists{tables/robustness.tex}{\input{tables/robustness}}{}
+
+\section{Independent replication (MammAlps)}
+\label{sec:mammalps}
+Every result so far reuses one frozen inference pass on one dataset, so the species and location experiments
+are near-orthogonal overlays rather than statistically independent replications. To test the null on genuinely
+independent data we re-ran the whole pipeline on \textbf{MammAlps} --- an Alpine camera-trap tracker with a
+different continent, species pool, and (uniquely) real per-camera environment metadata. MammAlps ships box-only
+ground truth, so an offline adapter emits each box as a filled-rectangle mask and the scorer reads bbox-HOTA
+(\texttt{eval.prefer\_bbox}); mask-IoU against filled rectangles is near-zero (dataset mask mAP\,$\approx0.002$),
+so box-IoU is the honest metric. The run yields $20$ cells over $5$ species (red deer, roe deer, hare, wolf,
+and a single-cell fox) and $9$ cameras. Zero-shot SAM\,3 is non-degenerate here (pHOTA\,$\approx0.44$,
+Table~\ref{tab:gate1_mammalps}); as on SA-FARI, association tracks detection almost exactly
+($\mathrm{corr}(\texttt{pDetA},\texttt{pAssA})=0.999$, $13/20$ cells identical), so the replication is a
+detection story.
+
+\paragraph{The distance null holds, but as a consistency check --- not confirmation.} The pre-registered
+label-free distance model (taxonomic\,+\,visual\,+\,environment) does not predict detection transfer
+out-of-sample under either hold-out (leave-camera-out $\Delta\mathrm{MAE}=+0.067$, $95\%$~CI
+$[-0.043,+0.144]$, $p=0.099$; leave-species-out $+0.014$, $p=0.410$; both intervals span zero,
+Table~\ref{tab:replication_mammalps}), directionally consistent with the SA-FARI null. We read this as a
+consistency check rather than independent confirmation, because at $n=20$ the out-of-sample test is
+demonstrably underpowered: a \emph{genuinely} predictive per-cell feature --- SAM\,3's own mean confidence,
+in-sample $r=+0.57$ ($p=0.009$) --- itself fails to validate ($\Delta\mathrm{MAE}=-0.03/-0.05$, $p>0.9$). A real
+signal that cannot clear the bar shows the instrument, not the hypothesis, is the limiting factor here.
+\IfFileExists{tables/gate1_measurement_mammalps.tex}{\input{tables/gate1_measurement_mammalps}}{}
+\IfFileExists{tables/replication_mammalps.tex}{\input{tables/replication_mammalps}}{}
+
+\paragraph{The one feature that ``validates'' is a confound, not a finding.} Visual distance alone beats the
+mean baseline on both schemes ($\Delta\mathrm{MAE}=+0.078/+0.080$, $p\approx0.01$), but this is spurious and is
+reported only to be dismissed. Its association with detection is \emph{positive}
+($r=+0.636$, $p=0.003$) --- the opposite sign to the novelty$\rightarrow$failure hypothesis, driven by the two
+large, high-footage deer species SAM\,3 detects best; it is confounded with support ($r=+0.60$ with
+$n_\text{frames}$); and because visual distance is species-constant with tied values (red\,=\,roe\,=\,$0.40$,
+hare\,=\,wolf\,=\,$0.15$), its leave-species-out ``validity'' reduces to a twin species standing in for the
+held-out one --- exactly the species-constant-feature artefact the double cross-validation is designed to
+reject. Removing the two rare, low-support species that anchor it (hare, wolf; $4/20$ cells) flips the sign to
+$r=-0.33$ (n.s.) and erases the gain on both schemes. This is the same visual/size confound diagnosed on
+SA-FARI, and it does not support H1.
+
+\paragraph{Scope.} MammAlps exercises only three of the four distances (temporal and the familiarity proxy are
+degenerate over the six-week window; taxonomic distance is near-constant across five species), scores a
+different target regime (box-HOTA at $3$\,fps), and is underpowered by construction (a single-cell fox fold).
+It therefore reinforces --- and does not contradict --- the SA-FARI null, but cannot serve as independent
+confirmation of any positive result. A larger, mask-native second dataset remains the route to that.

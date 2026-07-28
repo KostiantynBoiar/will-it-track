@@ -1,0 +1,22 @@
+% MammAlps replication --- hand-maintained; reproduce with scripts/mammalps_replication_analysis.py
+\begin{table}[htbp]\centering
+  \caption{MammAlps independent replication --- out-of-sample error of the pre-registered label-free distance
+  model (taxonomic\,+\,visual\,+\,environment) under whole-group hold-out, against a mean predictor. Hold-out
+  \emph{camera} is leave-one-camera-out (the environment scheme); \emph{species} is leave-one-species-out.
+  $\Delta$ is the MAE gain over baseline; the bracketed 95\% CI and one-sided $p$ come from a paired bootstrap
+  resampling whole held-out groups. Every interval spans zero on both targets and both schemes: the label-free
+  distances do not predict transfer, directionally consistent with the SA-FARI null. $n=20$ cells (5 species,
+  9 cameras); a single-cell fox fold and near-constant taxonomic distance leave the species scheme
+  underpowered.}
+  \label{tab:replication_mammalps}
+  \begin{tabular}{llrrrcr}
+    \toprule
+    Hold-out & Target & $n$ & MAE & Baseline & $\Delta$~[95\% CI] & $p$ \\
+    \midrule
+    camera  & pDetA & 20 & 0.210 & 0.277 & +0.067~[$-$0.043,\,+0.144] & 0.099 \\
+    camera  & pAssA & 20 & 0.205 & 0.274 & +0.069~[$-$0.040,\,+0.145] & 0.095 \\
+    species & pDetA & 20 & 0.263 & 0.277 & +0.014~[$-$0.218,\,+0.162] & 0.410 \\
+    species & pAssA & 20 & 0.255 & 0.274 & +0.018~[$-$0.215,\,+0.165] & 0.410 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
