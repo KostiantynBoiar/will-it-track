@@ -1,0 +1,26 @@
+% BURST replication --- hand-maintained; reproduce with scripts/burst_replication_analysis.py
+\begin{table}[htbp]\centering
+  \caption{BURST independent replication --- out-of-sample error under leakage-free leave-species-out
+  cross-validation (41 species, 132 mask-native cells), against a mean predictor. $\Delta$ is the MAE gain over
+  baseline for \texttt{pDetA}; the bracketed 95\% CI and one-sided $p$ come from a paired bootstrap resampling
+  whole held-out species. Every before-running distance is null (CI spans zero); the after-running confidence
+  controls fire, but through a within-species channel a species-constant distance cannot use (collapsing
+  \texttt{conf\_mean\_score} to species means drops it to $+0.004$, $p=0.21$), so they establish pipeline
+  liveness, not power for a distance. BURST has no shared locations, so leave-species-out is the only valid
+  scheme.}
+  \label{tab:replication_burst}
+  \begin{tabular}{lrcr}
+    \toprule
+    Predictor & $\Delta$MAE & 95\% CI & $p$ \\
+    \midrule
+    distances (taxonomic\,+\,visual\,+\,environment) & +0.002 & [$-$0.007,\,+0.011] & 0.374 \\
+    ~~visual only                                    & +0.003 & [$-$0.005,\,+0.013] & 0.257 \\
+    ~~taxonomic only (full-taxonomy subset, $n{=}82$)& $-$0.006 & --- & 0.952 \\
+    ~~environment only                               & $-$0.001 & [$-$0.005,\,+0.003] & 0.747 \\
+    animal size (\texttt{log\_area}) [control]       & +0.005 & [$-$0.003,\,+0.014] & 0.143 \\
+    \midrule
+    \texttt{conf\_mean\_score} [after-running control] & \textbf{+0.035} & [+0.011,\,+0.063] & \textbf{0.004} \\
+    \texttt{conf\_atc} [after-running control]         & \textbf{+0.029} & [+0.004,\,+0.055] & \textbf{0.012} \\
+    \bottomrule
+  \end{tabular}
+\end{table}

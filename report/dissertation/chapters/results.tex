@@ -167,3 +167,38 @@ degenerate over the six-week window; taxonomic distance is near-constant across 
 different target regime (box-HOTA at $3$\,fps), and is underpowered by construction (a single-cell fox fold).
 It therefore reinforces --- and does not contradict --- the SA-FARI null, but cannot serve as independent
 confirmation of any positive result. A larger, mask-native second dataset remains the route to that.
+
+\section{Independent replication (BURST)}
+\label{sec:burst}
+The larger, mask-native dataset MammAlps pointed to is BURST. Its animal subset --- the animal LVIS classes of
+the validation split, streamed mask-native and prompted by class name --- yields $132$ video\,$\times$\,class
+cells across $41$ species, an order of magnitude more leave-species-out groups than MammAlps, in a distinct
+regime (internet/driving/movie video, not camera traps). Zero-shot SAM\,3 is again non-degenerate
+(pHOTA\,$0.635$, Table~\ref{tab:gate1_burst}), and here the association target is genuine
+($\mathrm{corr}(\texttt{pDetA},\texttt{pAssA})=0.76$; of the $71$ multi-object cells, none has \texttt{pAssA}
+exactly equal to \texttt{pDetA}), so both components are testable.
+
+\paragraph{A third convergent null.} Under leakage-free leave-species-out cross-validation the before-running
+distances again fail to predict detection transfer: the combined distance model improves out-of-sample MAE by
+only $+0.002$ ($p=0.374$), with visual ($+0.003$, $p=0.257$), taxonomic (full-taxonomy subset $-0.006$,
+$p=0.952$) and environment ($-0.001$, $p=0.747$) all individually null, and the association specs null likewise
+(Table~\ref{tab:replication_burst}). The result is robust to dropping the $19$ single-cell species and to a
+size control. The lone near-signal, visual distance, is the familiar artefact: its correlation with detection
+is $+0.17$ --- the \emph{wrong} sign for novelty and a size confound (partial correlation given
+$\log$-area $+0.08$, $p=0.35$). Three datasets --- SA-FARI, MammAlps and BURST --- now converge on the same
+before-running distance null.
+\IfFileExists{tables/gate1_measurement_burst.tex}{\input{tables/gate1_measurement_burst}}{}
+\IfFileExists{tables/replication_burst.tex}{\input{tables/replication_burst}}{}
+
+\paragraph{Powered, but not proof.} On the same cells the after-running confidence controls do fire
+(\texttt{conf\_mean\_score} $+0.035$, $p=0.004$; \texttt{conf\_atc} $+0.029$, $p=0.012$), a real contrast with
+MammAlps, where nothing validated: at $132$ cells the pipeline is demonstrably alive, not a dead or
+misconfigured test. This does not, however, license calling the distance null fully powered. The confidence win
+runs mostly through a \emph{within}-species channel --- collapsing \texttt{conf\_mean\_score} to species means,
+as a species-constant distance effectively is, drops its gain to $+0.004$ ($p=0.21$) --- whereas a distance can
+only act \emph{between} species, where the correlations are at most $+0.37$ (visual, wrong-signed) against
+confidence's $+0.50$. The design thus detects a large between-species predictor but is underpowered for a small
+one. We therefore read BURST as a third convergent null --- no moderate-or-large before-running distance signal,
+in a better-powered mask-native regime --- rather than positive proof, with the only validated predictor across
+all three datasets remaining SAM\,3's own after-running detection confidence, a mechanistically near-circular,
+non-novel signal.

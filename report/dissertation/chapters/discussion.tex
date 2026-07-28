@@ -55,11 +55,13 @@ distance-from-SA-FARI, and a coverage-anchored proxy for the real corpus remains
 familiarity proxy is one such hedge). Second, the analysis is a single dataset and a single frozen backbone,
 and --- since one inference pass is reused across both splits --- the species and location experiments are two
 overlays on the \emph{same} scored cells, not independent replications; they give near-orthogonal but not
-statistically independent evidence. We take one step against this by re-running the whole pipeline on an
-independent dataset (MammAlps, \S\ref{sec:mammalps}): the distance null holds there too, but the $20$-cell
-design is underpowered --- a genuinely predictive feature also fails to validate --- so it is a consistency
-check, not confirmation, and a larger mask-native second dataset (for example BURST) remains future work.
-Third, the effective sample is tens of independent
+statistically independent evidence. We take two steps against this by re-running the whole pipeline on
+independent datasets. On MammAlps (\S\ref{sec:mammalps}) the distance null holds but the $20$-cell design is
+underpowered; on the larger, mask-native BURST (\S\ref{sec:burst}, $132$ cells / $41$ species) it holds again
+and better-powered, giving a third convergent null. Neither is positive proof --- BURST detects only a large
+between-species predictor and remains underpowered for a small species-constant distance effect --- so we
+report convergence, not independent confirmation of any positive. Third, the effective sample is tens of
+independent
 species/locations, not hundreds of cells --- which is why
 inference is group-clustered throughout, and why aggregate correlations (e.g. the location-level night/IR
 effect) are reported alongside their much weaker cell-level values to avoid the ecological-correlation fallacy.
