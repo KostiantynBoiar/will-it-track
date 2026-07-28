@@ -1,0 +1,42 @@
+name,Kingdom,Phylum,Class,Order,Family,Genus,Species
+dog,Animalia,Chordata,Mammalia,Carnivora,Canidae,Canis,Canis lupus
+cat,Animalia,Chordata,Mammalia,Carnivora,Felidae,Felis,Felis catus
+horse,Animalia,Chordata,Mammalia,Perissodactyla,Equidae,Equus,Equus caballus
+zebra,Animalia,Chordata,Mammalia,Perissodactyla,Equidae,Equus,Equus quagga
+cow,Animalia,Chordata,Mammalia,Artiodactyla,Bovidae,Bos,Bos taurus
+calf,Animalia,Chordata,Mammalia,Artiodactyla,Bovidae,Bos,Bos taurus
+bull,Animalia,Chordata,Mammalia,Artiodactyla,Bovidae,Bos,Bos taurus
+sheep,Animalia,Chordata,Mammalia,Artiodactyla,Bovidae,Ovis,Ovis aries
+black_sheep,Animalia,Chordata,Mammalia,Artiodactyla,Bovidae,Ovis,Ovis aries
+goat,Animalia,Chordata,Mammalia,Artiodactyla,Bovidae,Capra,Capra hircus
+giraffe,Animalia,Chordata,Mammalia,Artiodactyla,Giraffidae,Giraffa,Giraffa camelopardalis
+hog,Animalia,Chordata,Mammalia,Artiodactyla,Suidae,Sus,Sus scrofa
+camel,Animalia,Chordata,Mammalia,Artiodactyla,Camelidae,Camelus,Camelus dromedarius
+hippopotamus,Animalia,Chordata,Mammalia,Artiodactyla,Hippopotamidae,Hippopotamus,Hippopotamus amphibius
+lion,Animalia,Chordata,Mammalia,Carnivora,Felidae,Panthera,Panthera leo
+polar_bear,Animalia,Chordata,Mammalia,Carnivora,Ursidae,Ursus,Ursus maritimus
+giant_panda,Animalia,Chordata,Mammalia,Carnivora,Ursidae,Ailuropoda,Ailuropoda melanoleuca
+walrus,Animalia,Chordata,Mammalia,Carnivora,Odobenidae,Odobenus,Odobenus rosmarus
+gorilla,Animalia,Chordata,Mammalia,Primates,Hominidae,Gorilla,Gorilla gorilla
+rabbit,Animalia,Chordata,Mammalia,Lagomorpha,Leporidae,Oryctolagus,Oryctolagus cuniculus
+rat,Animalia,Chordata,Mammalia,Rodentia,Muridae,Rattus,Rattus norvegicus
+pigeon,Animalia,Chordata,Aves,Columbiformes,Columbidae,Columba,Columba livia
+duck,Animalia,Chordata,Aves,Anseriformes,Anatidae,Anas,Anas platyrhynchos
+goose,Animalia,Chordata,Aves,Anseriformes,Anatidae,Anser,Anser anser
+chicken,Animalia,Chordata,Aves,Galliformes,Phasianidae,Gallus,Gallus gallus
+deer,Animalia,Chordata,Mammalia,Artiodactyla,Cervidae,,
+elephant,Animalia,Chordata,Mammalia,Proboscidea,Elephantidae,,
+bear,Animalia,Chordata,Mammalia,Carnivora,Ursidae,,
+monkey,Animalia,Chordata,Mammalia,Primates,,,
+squirrel,Animalia,Chordata,Mammalia,Rodentia,Sciuridae,,
+penguin,Animalia,Chordata,Aves,Sphenisciformes,Spheniscidae,,
+eagle,Animalia,Chordata,Aves,Accipitriformes,Accipitridae,,
+heron,Animalia,Chordata,Aves,Pelecaniformes,Ardeidae,,
+bird,Animalia,Chordata,Aves,,,
+turtle,Animalia,Chordata,Reptilia,Testudines,,
+lizard,Animalia,Chordata,Reptilia,Squamata,,
+frog,Animalia,Chordata,Amphibia,Anura,,
+shark,Animalia,Chordata,Chondrichthyes,,,
+fish,Animalia,Chordata,,,,
+crab,Animalia,Arthropoda,Malacostraca,Decapoda,,
+spider,Animalia,Arthropoda,Arachnida,Araneae,,

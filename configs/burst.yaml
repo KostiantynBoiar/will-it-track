@@ -1,0 +1,26 @@
+# BURST independent-replication profile (R7; mask-native LVIS-class tracker, many animal species).
+# Animal subset of BURST val → leave-species-out only (location = per-video seq_name, no shared sites).
+# GT is masks → mask-HOTA (eval.prefer_bbox off). Run Split A: assemble --partition species --origins test.
+seed: 0
+
+data:
+  train_ann: burst_train_ext.json      # emitted empty (reference = probe on Split A)
+  test_ann: burst_test_ext.json        # capped animal probes (the probe set)
+  keep_hard_negatives: true
+
+burst:
+  ann_file: val_all_classes.json       # extracted BURST val masks, under annotations_subdir
+  max_videos_per_category: 8           # bound dog/person-style dominance per species
+  max_frames_per_video: 20
+  min_frames: 2
+
+inference:
+  prompt_mode: species                 # prompt SAM 3 with the animal class name
+
+eval:
+  prefer_bbox: false                   # BURST GT is masks → score mask-HOTA
+
+cv:
+  group_schemes: [species]             # only leave-species-out is meaningful (location = per-video)
+
+experiment: burst                      # suffixes report tables; use a distinct outputs_root when running

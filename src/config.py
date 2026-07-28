@@ -256,6 +256,32 @@ class MammAlpsConfig(BaseModel):
     location_by: str = "site_cam"
 
 
+class BurstConfig(BaseModel):
+    """BURST → SA-Co adapter (R7 many-species replication; mask-native LVIS-class tracker).
+
+    BURST ships one ``all_classes.json`` per split: a list of ``sequences``, each carrying a source
+    ``dataset`` + ``seq_name`` (locating the TAO frames), ``annotated_image_paths``, per-frame COCO-RLE
+    ``segmentations`` keyed by track id, and ``track_category_ids`` (track → LVIS category). The adapter
+    keeps only the animal categories (those in the packaged taxonomy CSV — a WordNet-derived whitelist),
+    emits the RLE masks directly (mask-native, so ``eval.prefer_bbox`` stays off), and caps videos per
+    category so SAM 3 inference stays tractable. Location is the per-video ``seq_name`` (no site metadata),
+    time is empty, so only leave-species-out is meaningful (``cv.group_schemes = ("species",)``).
+
+    Attributes:
+        ann_file: The extracted BURST annotation JSON (relative to ``annotations_subdir``).
+        taxonomy_csv: Optional override for the packaged ``src/adapters/burst_taxonomy.csv``.
+        max_videos_per_category: Cap on sequences per animal category (bounds dog/person dominance).
+        max_frames_per_video: Cap on kept annotated frames per sequence.
+        min_frames: Skip sequences with fewer than this many annotated frames of the target category.
+    """
+
+    ann_file: str = "val_all_classes.json"
+    taxonomy_csv: str = ""  # empty ⇒ packaged src/adapters/burst_taxonomy.csv
+    max_videos_per_category: int = 8
+    max_frames_per_video: int = 20
+    min_frames: int = 2
+
+
 class Config(BaseSettings):
     """Top-level configuration aggregating every section.
 
@@ -292,6 +318,7 @@ class Config(BaseSettings):
     model: ModelConfig = Field(default_factory=ModelConfig)
     cv: CVConfig = Field(default_factory=CVConfig)
     mammalps: MammAlpsConfig = Field(default_factory=MammAlpsConfig)
+    burst: BurstConfig = Field(default_factory=BurstConfig)
     seed: int = 0
     experiment: str = "location"
 
