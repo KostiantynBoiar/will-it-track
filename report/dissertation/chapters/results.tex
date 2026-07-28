@@ -129,8 +129,8 @@ property of the transfer problem, not of one modelling choice.
 \label{sec:mammalps}
 Every result so far reuses one frozen inference pass on one dataset, so the species and location experiments
 are near-orthogonal overlays rather than statistically independent replications. To test the null on genuinely
-independent data we re-ran the whole pipeline on \textbf{MammAlps} --- an Alpine camera-trap tracker with a
-different continent, species pool, and (uniquely) real per-camera environment metadata. MammAlps ships box-only
+independent data we re-ran the whole pipeline on \textbf{MammAlps}~\cite{mammalps} --- an Alpine camera-trap
+tracker with a different continent, species pool, and (uniquely) real per-camera environment metadata. MammAlps ships box-only
 ground truth, so an offline adapter emits each box as a filled-rectangle mask and the scorer reads bbox-HOTA
 (\texttt{eval.prefer\_bbox}); mask-IoU against filled rectangles is near-zero (dataset mask mAP\,$\approx0.002$),
 so box-IoU is the honest metric. The run yields $20$ cells over $5$ species (red deer, roe deer, hare, wolf,
@@ -172,8 +172,8 @@ confirmation of any positive result. A larger, mask-native second dataset remain
 
 \section{Independent replication (BURST)}
 \label{sec:burst}
-The larger, mask-native dataset MammAlps pointed to is BURST. Its animal subset --- the animal LVIS classes of
-the validation split, streamed mask-native and prompted by class name --- yields $132$ video\,$\times$\,class
+The larger, mask-native dataset MammAlps pointed to is BURST~\cite{burst}. Its animal subset --- the animal
+LVIS classes of the validation split, streamed mask-native and prompted by class name --- yields $132$ video\,$\times$\,class
 cells across $41$ species, an order of magnitude more leave-species-out groups than MammAlps, in a distinct
 regime (internet/driving/movie video, not camera traps). Zero-shot SAM\,3 is again non-degenerate
 (pHOTA\,$0.635$, Table~\ref{tab:gate1_burst}), and here the association target is genuine

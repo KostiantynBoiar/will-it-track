@@ -251,18 +251,18 @@ two independent tracking datasets. The abstraction boundary that makes this chea
 the loader: an offline adapter converts each dataset into the SA-Co JSON the loader and evaluator already read,
 so nothing downstream changes. Only the small logit GLM is ever fitted; SAM\,3 is frozen throughout.
 
-\paragraph{MammAlps (box-only, small).} An Alpine camera-trap tracker: 5 species over 3 sites / 9 cameras,
-box-only ground truth. The adapter emits each box as a filled-rectangle RLE (so the mask-cropped visual, size
+\paragraph{MammAlps (box-only, small).} An Alpine camera-trap tracker~\cite{mammalps}: 5 species over 3 sites /
+9 cameras, box-only ground truth. The adapter emits each box as a filled-rectangle RLE (so the mask-cropped visual, size
 and environment features run) together with the native box, and the scorer reads box-HOTA rather than mask-HOTA
 (against a filled rectangle a tight predicted mask has near-zero IoU, so box-IoU is the honest metric). The
 $30$\,fps clips are subsampled to $3$\,fps and capped per (species, camera) cell; the per-camera site metadata
 supports both leave-species-out and leave-camera-out. Only three of the four distances are testable
 (temporal is degenerate over the six-week window; taxonomic is near-constant across five species).
 
-\paragraph{BURST (mask-native, many-species).} The animal subset of the BURST validation split (built on TAO):
-$41$ animal species across $132$ video\,$\times$\,class cells, with native COCO-RLE masks scored by mask-HOTA.
-The animal categories are selected from BURST's $482$ LVIS classes by a WordNet filter (hyponyms of
-\emph{animal.n.01}) and mapped to a seven-level biological taxonomy where resolvable ($25/41$ species full,
+\paragraph{BURST (mask-native, many-species).} The animal subset of the BURST validation split~\cite{burst}
+(built on TAO~\cite{tao}): $41$ animal species across $132$ video\,$\times$\,class cells, with native COCO-RLE
+masks scored by mask-HOTA. The animal categories are selected from BURST's $482$ LVIS classes~\cite{lvis} by a
+WordNet filter~\cite{wordnet} (hyponyms of \emph{animal.n.01}) and mapped to a seven-level biological taxonomy where resolvable ($25/41$ species full,
 the rest partial $\rightarrow$ \texttt{NaN}). BURST carries no site or timestamp metadata, so the cell key is
 the per-video sequence and leave-species-out is the only valid grouping; the association target is genuinely
 non-degenerate here, so both components are tested. Masks stream from the RWTH server and TAO frames from the
