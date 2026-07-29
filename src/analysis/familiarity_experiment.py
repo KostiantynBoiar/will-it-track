@@ -62,6 +62,12 @@ def extract(config: Config, origins: tuple[str, ...] = ("train", "test")) -> pd.
         series = proxy.compute(partition)  # embeds once, then reuses the cached vectors
         df[col] = df["category_id"].map(series)
         print(f"  {col}: {int(df[col].notna().sum())}/{len(df)} cells non-null", flush=True)
+    # Recompute visual_distance on the SAME species partition so the head-to-head is fair — a base
+    # features.parquet built on the location split carries the (near-degenerate) location-partition value.
+    # Reuses the DINOv2 cache, so this is cheap; idempotent when the base was already the species build.
+    from src.features.visual import VisualDistance
+
+    df["visual_distance"] = df["category_id"].map(VisualDistance(config).compute(partition))
     df["log_area"] = df["category_id"].map(_log_area(config, partition))
     path = write_parquet(df, outputs / "features_fam.parquet")
     print(f"features_fam -> {path} ({len(df)} cells)")
