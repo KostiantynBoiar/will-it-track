@@ -8,8 +8,8 @@ version, see [`project_in_plain_english.md`](project_in_plain_english.md).
 ## TL;DR
 
 We tried one more way to guess whether SAM 3 will work on a new animal **before running it** — this time by
-asking **SAM 3 itself** how well it already "knows" the animal. Result so far: **it doesn't help** — the same
-"no" as every other before-running trick we tried.
+asking **SAM 3 itself** how well it already "knows" the animal. Result, on both datasets we tested: **it
+doesn't help** — the same "no" as every other before-running trick we tried.
 
 ## The hole we're plugging
 
@@ -60,8 +60,14 @@ does it look," which we already know doesn't predict transfer and is tangled up 
 the **silhouette** version got close (p = 0.02) and, interestingly, was *not* a size artefact — but it didn't
 clear the (stricter, multiple-test-corrected) bar, and BURST is too small to trust a flicker.
 
-**SA-FARI (the big, powered one): running now.** _[This line updates when it lands — pre-registered
-expectation: the same "no."]_
+**SA-FARI (the big, powered one — 346 cells, ~100 species): NO.** Same story. On the real novelty test
+(hide whole species) none of the three predicts a held-out species' grade at the strict bar — the best,
+silhouette, only reaches p = 0.03 and doesn't clear it; the other two are clearly nothing (p = 0.07, 0.09). All
+three are **63–89% the same number as the old visual distance**, and none adds anything over visual distance +
+size. The silhouette near-miss shows up again — and, oddly, it is *not* a size artefact (it's the "clean" half
+of the visual distance) — but it still fails as a predictor. This is the powered sample where the model's own
+after-the-fact confidence *does* validate strongly, so the familiarity "no" is a real absence of signal, not a
+too-small test.
 
 ## Why a "no" here is still worth having
 
