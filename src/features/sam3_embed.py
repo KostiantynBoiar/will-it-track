@@ -65,10 +65,16 @@ class Sam3Embedder:
         self._torch, self._device, self._dtype = torch, device, dtype
 
     def _pool(self, out) -> np.ndarray:  # noqa: ANN001 - Sam3VisionEncoderOutput
-        """Reduce a vision-encoder output to one vector per crop per ``features.familiarity_pooling``."""
-        if self.config.features.familiarity_pooling == "patch_mean":
-            return out.last_hidden_state.mean(dim=1).float().cpu().numpy()
-        return out.pooler_output.float().cpu().numpy()
+        """Reduce a vision-encoder output to one vector per crop per ``features.familiarity_pooling``.
+
+        SAM 3's ``Sam3VisionEncoderOutput.pooler_output`` is ``None`` (the neck emits only patch tokens +
+        FPN maps), so ``patch_mean`` --- the mean over the ``last_hidden_state`` patch-token axis --- is the
+        default and the fallback whenever no pooled vector is available.
+        """
+        pooled = getattr(out, "pooler_output", None)
+        if self.config.features.familiarity_pooling == "pooler" and pooled is not None:
+            return pooled.float().cpu().numpy()
+        return out.last_hidden_state.mean(dim=1).float().cpu().numpy()  # mean over the patch tokens
 
     def embed(self, images: list[Image.Image]) -> np.ndarray:
         """Embed crops to L2-normalised float32 vectors ``(len(images), D)`` via SAM 3's vision encoder."""

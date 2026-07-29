@@ -200,7 +200,7 @@ class FeaturesConfig(BaseModel):
     compute_familiarity: bool = False
     familiarity_encoder: str = "sam3"
     familiarity_metric: str = "silhouette"  # silhouette | nearest_prototype | mahalanobis
-    familiarity_pooling: str = "pooler"  # pooler | patch_mean
+    familiarity_pooling: str = "patch_mean"  # patch_mean (SAM 3 has no pooler_output) | pooler
 
 
 class ModelConfig(BaseModel):
