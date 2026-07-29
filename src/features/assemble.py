@@ -23,6 +23,7 @@ import pandas as pd
 from src.config import Config
 from src.features.confidence import CONF_COLS, ConfidenceFeature
 from src.features.environment import EnvironmentDistance
+from src.features.familiarity import FamiliarityProxy
 from src.features.size import SizeFeature
 from src.features.taxonomic import TaxonomicDistance
 from src.features.temporal import TemporalGap
@@ -146,6 +147,13 @@ class FeatureAssembler:
             environment=EnvironmentDistance(self.config).compute(partition),
             size=SizeFeature(self.config).compute(partition),
             confidence=ConfidenceFeature(self.config).compute(partition, reference_pdeta=ref_pdeta),
+            # SAM 3 familiarity proxy (T2.5) — off by default (needs the GPU transformers backend); when on it
+            # populates familiarity_proxy, otherwise the column stays NaN and the standard build is unchanged.
+            familiarity=(
+                FamiliarityProxy(self.config).compute(partition)
+                if self.config.features.compute_familiarity
+                else None
+            ),
         )
         path = write_parquet(merged, self.config.paths.outputs_root / "features.parquet")
         covered = int(merged["environment_distance"].notna().sum())

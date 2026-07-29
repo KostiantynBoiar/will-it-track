@@ -160,6 +160,16 @@ class FeaturesConfig(BaseModel):
         background_fill: How to neutralise the animal in the scene embedding (``"mean"``/``"zero"``).
         night_ir_threshold: Mean channel-spread (0-255) below which a frame counts as night/IR.
         embeddings_subdir: Cache dir for embeddings, under ``paths.outputs_root``.
+        compute_familiarity: Compute the SAM 3 familiarity proxy during assembly (T2.5; needs the GPU
+            transformers backend). Off by default so the standard assemble stays transformers-free and the
+            committed feature tables are byte-identical.
+        familiarity_encoder: Cache name for the SAM 3 crop embeddings (separate ``sam3_crop*.npz`` file).
+        familiarity_metric: How separability is measured in SAM 3's feature space --- ``"silhouette"``
+            (compactness vs nearest-other-species; the genuine separability signal), ``"nearest_prototype"``
+            (cosine gap to the nearest reference species, i.e. the visual distance with SAM 3's encoder), or
+            ``"mahalanobis"`` (typicality vs the reference feature Gaussian).
+        familiarity_pooling: Pool SAM 3's vision-encoder output to one vector per crop --- ``"pooler"`` (the
+            neck's pooled output) or ``"patch_mean"`` (mean over patch tokens).
     """
 
     visual_encoder: str = "dinov2"
@@ -187,6 +197,10 @@ class FeaturesConfig(BaseModel):
     background_fill: str = "mean"
     night_ir_threshold: float = 12.0
     embeddings_subdir: str = "embeddings"
+    compute_familiarity: bool = False
+    familiarity_encoder: str = "sam3"
+    familiarity_metric: str = "silhouette"  # silhouette | nearest_prototype | mahalanobis
+    familiarity_pooling: str = "pooler"  # pooler | patch_mean
 
 
 class ModelConfig(BaseModel):
