@@ -177,8 +177,8 @@ SAM\,3's image encoder (\texttt{get\_vision\_features}, mean-pooled over the pat
 and each species is scored three ways --- \emph{silhouette} (own-cluster compactness vs the nearest other
 species), \emph{nearest-prototype} (the visual distance recomputed with SAM\,3's encoder rather than DINOv2),
 and \emph{Mahalanobis} typicality against the reference feature Gaussian. Like the other distances it is
-\textbf{before-running} (an image property, not a function of SAM\,3's tracking output --- so, unlike the
-after-running confidence estimator, non-circular) and \textbf{label-free}. Each metric is validated at the exact
+\textbf{before-running} (an image property, not a function of SAM\,3's tracking output, so it is non-circular)
+and \textbf{label-free}. Each metric is validated at the exact
 leave-species-out bar (Bonferroni over the three), size-controlled, and put in a head-to-head against the DINOv2
 visual distance: the decisive question is whether it adds any out-of-sample gain over \texttt{visual\_distance}
 $+$ size (\S\ref{sec:familiarity}).
@@ -279,11 +279,11 @@ non-degenerate here, so both components are tested. Masks stream from the RWTH s
 Hugging Face mirror by HTTP range, so only the annotated frames of the capped animal videos are fetched.
 
 \paragraph{Interpreting the replications.} Both datasets are held to the exact same out-of-sample bar as
-SA-FARI, and both include the animal-size confound control and the after-running confidence features as
-positive controls --- a fired control shows the test is alive at that sample size, and its failure to fire (as
-on the $20$-cell MammAlps) marks the design as underpowered rather than the hypothesis as confirmed. We report
-convergence across datasets, not independent proof: BURST detects only a large between-species predictor, so it
-cannot exclude a small before-running distance effect (\S\ref{sec:burst}).
+SA-FARI, with the animal-size confound as the positive control --- it validates out-of-sample on SA-FARI, so a
+test that stays flat for the distances there is genuinely finding no signal; where it too fails to fire (as on
+the $20$-cell MammAlps and on BURST) the design is simply too small to certify power, marking the result as
+consistency rather than confirmation. We report convergence across datasets, not independent proof: BURST is
+better powered by cell count but still cannot exclude a small before-running distance effect (\S\ref{sec:burst}).
 
 \section{Reproducibility, implementation, and constraints}
 \label{sec:meth-repro}

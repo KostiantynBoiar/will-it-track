@@ -65,9 +65,8 @@ clear the (stricter, multiple-test-corrected) bar, and BURST is too small to tru
 silhouette, only reaches p = 0.03 and doesn't clear it; the other two are clearly nothing (p = 0.07, 0.09). All
 three are **63–89% the same number as the old visual distance**, and none adds anything over visual distance +
 size. The silhouette near-miss shows up again — and, oddly, it is *not* a size artefact (it's the "clean" half
-of the visual distance) — but it still fails as a predictor. This is the powered sample where the model's own
-after-the-fact confidence *does* validate strongly, so the familiarity "no" is a real absence of signal, not a
-too-small test.
+of the visual distance) — but it still fails as a predictor. This is the powered sample where the animal-size
+control *does* validate, so the familiarity "no" is a real absence of signal, not a too-small test.
 
 ## Why a "no" here is still worth having
 

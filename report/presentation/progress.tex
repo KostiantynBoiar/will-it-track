@@ -249,20 +249,12 @@
 \end{frame}
 
 % ------------------------------------------------------------ two extras
-\begin{frame}{Two other things we checked}
-  \begin{block}{Hallucinations (animal absent)}
+\begin{frame}{One other thing we checked --- hallucinations}
+  \begin{block}{When the animal is absent, does the model invent one?}
     \footnotesize
     SAM\,3 wrongly returns an animal about \textbf{10\%} of the time. More distinctive species hallucinate
     \emph{less} (a real, size-independent correlation) --- but out-of-sample it \textbf{just misses}
     significance ($p=0.053$). A genuine correlation, \textbf{not} a validated predictor.
-  \end{block}
-  \vspace{0.3em}
-  \begin{block}{The model's own confidence (explored, then set aside)}
-    \footnotesize
-    If we let SAM\,3 \emph{run first} and read its own confidence, that \emph{does} predict its accuracy.
-    We deliberately keep it out of the contribution: (1) it needs running the model, defeating the
-    ``predict \emph{before} running'' goal; and (2) it is near-circular (a known result). We use it only as an
-    internal check that the pipeline can detect a strong signal.
   \end{block}
 \end{frame}
 

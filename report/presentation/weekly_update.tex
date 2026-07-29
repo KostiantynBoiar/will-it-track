@@ -1,0 +1,192 @@
+% =====================================================================
+%  Weekly update (Beamer, single-file) --- for the supervisor.
+%  Week ending 2026-07-29: two independent replications + the familiarity proxy.
+%  Build:  report/build.sh report/presentation   (Tectonic + Ghostscript-normalise)
+% =====================================================================
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\setbeamertemplate{itemize items}[circle]
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+
+% --- self-contained palette (matches the progress deck) ---
+\definecolor{navy}{RGB}{30,64,124}
+\definecolor{forest}{RGB}{34,120,60}
+\definecolor{burnt}{RGB}{214,104,26}
+\definecolor{plum}{RGB}{140,55,135}
+\setbeamercolor{structure}{fg=navy}
+\setbeamercolor{frametitle}{fg=navy}
+\setbeamerfont{frametitle}{series=\bfseries}
+
+\newcommand{\ck}{{\color{forest}$\checkmark$}}
+\newcommand{\no}{{\color{burnt}\textbf{--}}}
+
+\title[Weekly update]{Predicting the Zero-Shot Transfer of a Promptable Video Tracker}
+\subtitle{Weekly update --- stress-testing the negative result}
+\author{Kostiantyn Boiar}
+\institute{MSc Dissertation \,\textbullet\, University of Glasgow\\[2pt]
+\small Supervisor: Dr Marwa Mahmoud}
+\date{Week ending \today}
+
+\begin{document}
+
+\begin{frame}[plain]\titlepage\end{frame}
+
+% ---------------------------------------------------------------- one sentence
+\begin{frame}{This week, in one sentence}
+  \begin{block}{}
+    \centering\large
+    I tried hard to \textbf{break} last week's ``we can't predict it'' result --- on \textbf{two new datasets}
+    and by \textbf{asking SAM\,3 itself} --- and it \textbf{held everywhere}.
+  \end{block}
+  \vspace{0.6em}
+  \begin{itemize}\footnotesize
+    \item The ``no'' is now \textbf{triangulated}: same answer on a camera-trap dataset, an internet-video
+          dataset, and a model-internal check.
+    \item That turns a one-dataset result into a \textbf{robust, honest negative} --- the contribution.
+    \item Everything below is built, hermetically tested, run on the GPU, committed, and written up.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------- where we were
+\begin{frame}{Where we were last week}
+  \begin{block}{}\centering
+    On \textbf{SA-FARI} we can \emph{measure} SAM\,3's reliability but \textbf{cannot predict it in advance}
+    from label-free ``distance'' signals --- beyond a small, obvious \textbf{animal-size} effect.
+  \end{block}
+  \vspace{0.5em}
+  \begin{itemize}\footnotesize
+    \item Clean negative result, defended by a positive control (the same test \emph{does} catch size).
+    \item \textbf{The gap:} it was one model, one dataset, one inference run --- so not truly \emph{independent}
+          evidence, and it left one before-running idea untried.
+    \item \textbf{This week closes both.}
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------- what I did
+\begin{frame}{What I did this week}
+  \begin{enumerate}\footnotesize
+    \item \ck\ \textbf{Re-ran the whole pipeline on two independent datasets} --- via offline adapters, so
+          nothing in the pipeline changed; a new dataset is just converted to the format the loader already reads.
+    \begin{itemize}\scriptsize
+      \item \textbf{MammAlps} --- Alpine camera traps, 5 species, box-only ground truth.
+      \item \textbf{BURST} --- internet/movie video, the 41-species animal subset of a mask-native benchmark.
+    \end{itemize}
+    \item \ck\ \textbf{Implemented the last before-running idea} --- read familiarity from \textbf{SAM\,3's own
+          feature space} (hedging the fact that its true training data is secret).
+    \item \ck\ \textbf{Wrote it all into the dissertation} --- methodology, results, discussion, tables, and a
+          plain-English explainer for each; fixed bibliography + layout.
+  \end{enumerate}
+  \vspace{0.2em}
+  {\scriptsize Engineering: box$\to$mask adapters, WordNet animal filter, HTTP-range frame streaming (no huge
+  downloads), SAM\,3 encoder embeddings --- all hermetically tested before the GPU runs.}
+\end{frame}
+
+% ---------------------------------------------------------------- MammAlps
+\begin{frame}{Replication 1 --- MammAlps (small, camera-trap)}
+  \begin{itemize}\footnotesize
+    \item Different continent, species, and camera rig; box-only, so I score box-overlap. \textbf{20 report
+          cards, 5 species.}
+    \item \textbf{Result: the distances predict nothing} --- same as SA-FARI.
+    \item But it is a \textbf{consistency check, not proof}: at 20 cards the test is \textbf{underpowered} ---
+          even a feature I \emph{know} is predictive can't pass it here.
+  \end{itemize}
+  \vspace{0.3em}
+  \begin{block}{The one ``significant'' feature was a fake}
+    \footnotesize
+    Visual distance cleared the bar --- but pointing the \textbf{opposite way} to the theory (more-unusual
+    animals detected \emph{better}) and driven by animal size. The \textbf{same confound} SA-FARI showed, not a
+    finding.
+  \end{block}
+\end{frame}
+
+% ---------------------------------------------------------------- BURST
+\begin{frame}{Replication 2 --- BURST (bigger, mask-native, many species)}
+  \begin{itemize}\footnotesize
+    \item \textbf{41 species, 132 report cards}, real masks, genuine ``following'' content --- the powered test
+          MammAlps couldn't be. SAM\,3 works here (score $\approx 0.64$).
+    \item \textbf{Result: a third convergent null} --- the distances still predict nothing.
+    \item Far better powered than the tiny MammAlps by sheer numbers --- but a \textbf{convergent} null, not
+          proof: no before-running signal fires here (not even animal size), so a small effect can't be ruled out.
+  \end{itemize}
+  \vspace{0.3em}
+  \begin{block}{}\centering\footnotesize
+    Three datasets now agree. The ``no'' is not a quirk of camera-trap data or of one inference run.
+  \end{block}
+\end{frame}
+
+% ---------------------------------------------------------------- cross-dataset
+\begin{frame}{The picture across all three datasets}
+  \centering
+  \footnotesize
+  \begin{tabular}{lccc}
+    \toprule
+    Predict SAM\,3's score from\dots & SA-FARI & MammAlps & BURST \\
+    \midrule
+    the four before-running distances & \no\ no & \no\ no & \no\ no \\
+    \textbf{animal size} (the confound) & \ck\ a little & \no\ no & \no\ no \\
+    \bottomrule
+  \end{tabular}
+  \vspace{0.6em}
+  \begin{itemize}\footnotesize
+    \item No \emph{before-running} label-free distance predicts transfer, anywhere.
+    \item The \emph{only} thing that ever reaches significance is the \textbf{animal-size} confound --- modestly,
+          and only on SA-FARI --- which doubles as the \textbf{positive control}: the same test that stays flat
+          for the distances \emph{does} catch size out-of-sample, so the ``no'' is real, not a weak test.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------- familiarity idea
+\begin{frame}{The last idea: ask SAM\,3 how well it ``knows'' the animal}
+  \begin{block}{The hole it plugs}
+    \centering\footnotesize
+    ``Novelty'' has always meant distance from \emph{our} pile --- but \textbf{nobody knows what SAM\,3 was
+    actually trained on.} So maybe our distances point at the wrong reference.
+  \end{block}
+  \vspace{0.4em}
+  \begin{itemize}\footnotesize
+    \item \textbf{The trick:} instead of a pile we picked, ask the model. Push each animal through \textbf{SAM\,3's
+          own eyes} and see how distinctly it sits in its feature space.
+    \item Familiar animal $\to$ a clean, distinct blob; genuinely new $\to$ fuzzy, smeared into others.
+    \item Still \textbf{before-running} and \textbf{label-free} (a property of the picture, not of SAM\,3's output).
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------- familiarity result
+\begin{frame}{\dots and the answer is still no}
+  \begin{itemize}\footnotesize
+    \item Tried three ways to measure ``distinctness''; ran it on \textbf{SA-FARI and BURST}.
+    \item \textbf{None predicts transfer} at the strict bar. And all three turn out to be \textbf{63--85\% the
+          same number as the old visual distance} --- they just re-measure ``how different does it look,''
+          already a dead end (and a size confound).
+    \item On the powered SA-FARI cells the animal-size control still validates --- so this is a \textbf{genuine
+          no}, not a weak test.
+  \end{itemize}
+  \vspace{0.3em}
+  \begin{block}{Why it matters anyway}
+    \centering\footnotesize
+    It \textbf{closes the loophole}: even reading familiarity \emph{from the model itself} --- sidestepping the
+    ``you don't know its training data'' objection --- you \emph{still} can't forecast its transfer.
+  \end{block}
+\end{frame}
+
+% ---------------------------------------------------------------- bottom line
+\begin{frame}{Where this leaves us}
+  \begin{block}{}\centering\large
+    The negative result is now \textbf{robust and triangulated} --- one honest ``no,'' the same across three
+    datasets and a model-internal check.
+  \end{block}
+  \vspace{0.5em}
+  \begin{itemize}\footnotesize
+    \item Powered enough (SA-FARI, BURST) to rule out a moderate effect; the small-sample caveats are stated
+          honestly, not hidden.
+    \item All built, GPU-run, committed, and written into the dissertation (chapters, tables, figures, PDFs).
+    \item Optional next steps --- none of which change the answer --- a larger mask-native dataset for even more
+          power, or a fuller probe of what SAM\,3's representations encode.
+  \end{itemize}
+\end{frame}
+
+\end{document}

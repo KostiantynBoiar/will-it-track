@@ -141,9 +141,9 @@ half of visual distinctness --- yet it still fails to predict transfer.
 The metrics do reach significance under leave-\emph{location}-out ($p\le0.01$), but this is not a novelty test:
 the familiarity value is species-constant (within-species variance $=0$), and on the location split the
 held-out locations' species are shared with the training locations, so a species-constant feature is never
-tested on an unseen species. Crucially, on these same $346$ cells the after-running confidence estimator
-validates decisively, so the leave-species-out familiarity null reflects a genuine absence of before-running
-signal, not a lack of power. The null replicates on BURST (all three metrics $p>0.13$ except a matching
+tested on an unseen species. Crucially, on these same $346$ cells the before-running animal-size control does
+validate out-of-sample, so the leave-species-out familiarity null reflects a genuine absence of signal, not a
+lack of power. The null replicates on BURST (all three metrics $p>0.13$ except a matching
 silhouette near-miss at $p=0.020$; none adds over visual\,$+$\,size). Reading familiarity directly from SAM\,3's
 representations therefore does \emph{not} rescue before-running prediction --- it recovers the same
 size-entangled visual-distinctness signal that was already H0, and closes the ``but you do not know SAM\,3's
@@ -170,9 +170,10 @@ out-of-sample under either hold-out (leave-camera-out $\Delta\mathrm{MAE}=+0.067
 $[-0.043,+0.144]$, $p=0.099$; leave-species-out $+0.014$, $p=0.410$; both intervals span zero,
 Table~\ref{tab:replication_mammalps}), directionally consistent with the SA-FARI null. We read this as a
 consistency check rather than independent confirmation, because at $n=20$ the out-of-sample test is
-demonstrably underpowered: a \emph{genuinely} predictive per-cell feature --- SAM\,3's own mean confidence,
-in-sample $r=+0.57$ ($p=0.009$) --- itself fails to validate ($\Delta\mathrm{MAE}=-0.03/-0.05$, $p>0.9$). A real
-signal that cannot clear the bar shows the instrument, not the hypothesis, is the limiting factor here.
+demonstrably underpowered: not even the animal-size control --- the one before-running quantity that validates
+out-of-sample on the far larger SA-FARI sample --- clears the bar here ($\Delta\mathrm{MAE}=-0.015$, $p=0.65$),
+on a design of five species with a single-cell fox fold. With the instrument this blunt, a flat distance result
+cannot be read as more than consistency.
 \IfFileExists{tables/gate1_measurement_mammalps.tex}{\input{tables/gate1_measurement_mammalps}}{}
 \IfFileExists{tables/replication_mammalps.tex}{\input{tables/replication_mammalps}}{}
 
@@ -217,18 +218,14 @@ before-running distance null.
 \IfFileExists{tables/gate1_measurement_burst.tex}{\input{tables/gate1_measurement_burst}}{}
 \IfFileExists{tables/replication_burst.tex}{\input{tables/replication_burst}}{}
 
-\paragraph{Powered, but not proof.} On the same cells the after-running confidence controls do fire
-(\texttt{conf\_mean\_score} $+0.035$, $p=0.004$; \texttt{conf\_atc} $+0.029$, $p=0.012$), a real contrast with
-MammAlps, where nothing validated: at $132$ cells the pipeline is demonstrably alive, not a dead or
-misconfigured test. This does not, however, license calling the distance null fully powered. The confidence win
-runs mostly through a \emph{within}-species channel --- collapsing \texttt{conf\_mean\_score} to species means,
-as a species-constant distance effectively is, drops its gain to $+0.004$ ($p=0.21$) --- whereas a distance can
-only act \emph{between} species, where the correlations are at most $+0.37$ (visual, and in the
-opposite direction to novelty) against confidence's $+0.50$. The design thus detects a large between-species predictor but is underpowered for a small
-one. We therefore read BURST as a third convergent null --- no moderate-or-large before-running distance signal,
-in a better-powered mask-native regime --- rather than positive proof, with the only validated predictor across
-all three datasets remaining SAM\,3's own after-running detection confidence, a mechanistically near-circular,
-non-novel signal.
+\paragraph{Convergent, but not proof.} At $132$ cells BURST is far better powered than MammAlps, and the
+distance null holds throughout. It is not, however, positive proof: no before-running quantity --- not even the
+animal-size control that validates on SA-FARI --- reaches significance here, so we cannot independently certify
+that this test could have caught a small species-level effect. The lone near-signal, visual distance, is again
+the wrong-direction size confound (its correlation with detection is $+0.37$ between species, the opposite sign
+to novelty). We therefore read BURST as a third convergent null --- no moderate-or-large before-running distance
+signal, in a better-powered mask-native regime with a non-degenerate association target --- rather than positive
+proof, and note that a small species-constant effect cannot be excluded.
 
 \section{Cross-dataset synthesis}
 \label{sec:cross_dataset}
@@ -237,10 +234,10 @@ dataset it was measured on. The pattern is consistent across all three: no befor
 --- taxonomic, visual, or environment, alone or combined --- predicts detection or association transfer out of
 sample; every gain over a mean predictor is within bootstrap noise of zero. The only near-signal, visual
 distance, appears in the \emph{opposite} direction to the novelty hypothesis (more-novel animals detected
-better, not worse) and dissolves under an animal-size control wherever it is examined. The single feature that validates is not a before-running distance at all but SAM\,3's own
-\emph{after-running} detection confidence, and even that decisively only on the large SA-FARI sample; the same
-animal-size confound is the only before-running quantity that ever reaches significance. The contribution is
-this robust, thrice-replicated null, honestly bounded: consistent across a camera-trap and an
-internet-video dataset, and powered enough on SA-FARI and BURST to exclude a moderate effect, but not a small
-one.
+better, not worse) and dissolves under an animal-size control wherever it is examined. The only before-running
+quantity that ever reaches significance is the animal-size confound itself --- and only modestly, on the large
+SA-FARI sample --- which doubles as the positive control that keeps the null honest: the same test that stays
+flat for the distances does pick up size out-of-sample. The contribution is this robust, thrice-replicated
+null, honestly bounded: consistent across a camera-trap and an internet-video dataset, and powered enough on
+SA-FARI to exclude a moderate effect, but not a small one.
 \IfFileExists{tables/cross_dataset_comparison.tex}{\input{tables/cross_dataset_comparison}}{}

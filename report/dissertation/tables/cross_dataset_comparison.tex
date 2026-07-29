@@ -5,9 +5,9 @@
   \caption{What was tested, the numerical out-of-sample result, and on which dataset. Result is the
   leave-species-out gain in MAE over a mean predictor ($\Delta$MAE, with one-sided bootstrap $p$) unless noted;
   positive and significant means the feature predicts transfer. The before-running label-free distances are
-  null on all three datasets; the only feature that validates is SAM\,3's own \emph{after-running} confidence
-  (and only decisively on SA-FARI --- on BURST it fires through a within-species channel a distance cannot use,
-  and on MammAlps the design is too small for anything to validate). ``Opposite direction'' means the
+  null on all three datasets; the only before-running quantity that reaches significance is the animal-size
+  confound, and only modestly on SA-FARI (which doubles as the positive control that keeps the null honest).
+  ``Opposite direction'' means the
   association runs the reverse of what novelty predicts --- more-novel animals are detected \emph{better}, not
   worse --- so it cannot support the hypothesis.}
   \label{tab:cross_dataset}
@@ -38,11 +38,6 @@
     Animal size ($\log$-area) & $\Delta$MAE $+0.015$ ($p{=}0.01$) --- validates & SA-FARI \\
     Animal size ($\log$-area) & $\Delta$MAE $-0.015$ ($p{=}0.65$), n.s. & MammAlps \\
     Animal size ($\log$-area) & $\Delta$MAE $+0.005$ ($p{=}0.14$), n.s. & BURST \\
-    \midrule
-    \multicolumn{3}{l}{\emph{After-running (reads SAM\,3's own outputs --- not before-running)}} \\
-    Detection confidence (ATC) & $\Delta$MAE $+0.143$ ($p{\approx}0$) --- validates & SA-FARI \\
-    Detection confidence (ATC) & $\Delta$MAE $+0.029$ ($p{=}0.01$) --- fires (liveness only) & BURST \\
-    Detection confidence (mean score) & $\Delta$MAE $-0.05$ ($p{=}0.96$) --- fails (underpowered) & MammAlps \\
     \midrule
     \multicolumn{3}{l}{\emph{Detection precision (hard negatives)}} \\
     Hallucination rate vs.\ visual distance & $r{=}-0.33$; LSO $\Delta$MAE $+0.008$ ($p{=}0.053$), marginal & SA-FARI \\
