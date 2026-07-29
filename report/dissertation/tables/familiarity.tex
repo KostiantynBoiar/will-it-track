@@ -1,0 +1,21 @@
+% SAM 3 familiarity proxy (T2.5) --- hand-maintained; reproduce with src/analysis/familiarity_experiment.py
+\begin{table}[htbp]\centering
+  \caption{SAM\,3 familiarity proxy (T2.5, detection): does the separability of a species in SAM\,3's \emph{own}
+  vision-encoder feature space predict \texttt{pDetA}? Each metric is size-controlled and validated at the same
+  leave-species-out bar as the distances; $\Delta$MAE~($p$) is the out-of-sample gain over a mean predictor.
+  None clears the Bonferroni threshold ($\alpha=0.05/3=0.017$) on the leave-species-out (novelty) test on
+  either dataset. The last columns (SA-FARI) are the cell-level correlations with the DINOv2 visual distance and
+  animal size: all three metrics largely \emph{re-encode} the visual distance ($r_\text{vis}=0.63$--$0.85$).
+  On the same $346$ SA-FARI cells the after-running confidence control validates strongly, so this is a genuine
+  null, not an underpowered one.}
+  \label{tab:familiarity}
+  \begin{tabular}{lccccc}
+    \toprule
+    Metric & SA-FARI $\Delta$MAE~($p$) & BURST $\Delta$MAE~($p$) & $r_\text{vis}$ & $r_\text{size}$ & clears bar? \\
+    \midrule
+    silhouette        & +0.012~(0.034) & +0.012~(0.020) & +0.67 & $-$0.16 & no \\
+    nearest-prototype & +0.009~(0.068) & +0.006~(0.136) & +0.63 & +0.03 & no \\
+    mahalanobis       & +0.008~(0.085) & +0.006~(0.148) & +0.85 & +0.32 & no \\
+    \bottomrule
+  \end{tabular}
+\end{table}

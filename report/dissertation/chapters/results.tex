@@ -125,6 +125,31 @@ a mean predictor. Across every variant the label-free distances fail identically
 property of the transfer problem, not of one modelling choice.
 \IfFileExists{tables/robustness.tex}{\input{tables/robustness}}{}
 
+\section{SAM\,3 familiarity proxy}
+\label{sec:familiarity}
+The distances measure novelty against the SA-FARI reference, not against SAM\,3's undisclosed pretraining set.
+The familiarity proxy (\S\ref{sec:meth-familiarity}) closes that gap by reading familiarity from SAM\,3's own
+vision-encoder feature space --- three separability metrics on the $346$ positive cells
+(Table~\ref{tab:familiarity}). The result is another null: on the leave-species-out novelty test none of the
+three clears the Bonferroni threshold ($\alpha=0.017$) --- the strongest, silhouette, reaches only $p=0.034$
+($\Delta\mathrm{MAE}=+0.012$), and nearest-prototype and Mahalanobis do not come close ($p=0.068$, $0.085$). All
+three are dominated by the DINOv2 visual distance they re-encode ($r=0.63$--$0.85$), and in the head-to-head
+none adds out-of-sample gain over \texttt{visual\_distance}\,$+$\,size. The one curiosity is that silhouette,
+unlike the visual distance, is \emph{not} a size artefact ($r_\text{size}=-0.16$) --- it is the size-independent
+half of visual distinctness --- yet it still fails to predict transfer.
+
+The metrics do reach significance under leave-\emph{location}-out ($p\le0.01$), but this is not a novelty test:
+the familiarity value is species-constant (within-species variance $=0$), and on the location split the
+held-out locations' species are shared with the training locations, so a species-constant feature is never
+tested on an unseen species. Crucially, on these same $346$ cells the after-running confidence estimator
+validates decisively, so the leave-species-out familiarity null reflects a genuine absence of before-running
+signal, not a lack of power. The null replicates on BURST (all three metrics $p>0.13$ except a matching
+silhouette near-miss at $p=0.020$; none adds over visual\,$+$\,size). Reading familiarity directly from SAM\,3's
+representations therefore does \emph{not} rescue before-running prediction --- it recovers the same
+size-entangled visual-distinctness signal that was already H0, and closes the ``but you do not know SAM\,3's
+true training set'' loophole in the null.
+\IfFileExists{tables/familiarity.tex}{\input{tables/familiarity}}{}
+
 \section{Independent replication (MammAlps)}
 \label{sec:mammalps}
 Every result so far reuses one frozen inference pass on one dataset, so the species and location experiments

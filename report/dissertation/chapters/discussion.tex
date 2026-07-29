@@ -51,8 +51,11 @@ estimator must clear the same whole-group hold-out bar that these well-motivated
 % TODO: expand.
 Three limitations bound the claim. First, distances are measured against the SA-FARI train split, \emph{not}
 SAM\,3's true pretraining corpus (Meta's SA-Co), which is undisclosed; the null is scoped to
-distance-from-SA-FARI, and a coverage-anchored proxy for the real corpus remains untested (the deferred
-familiarity proxy is one such hedge). Second, the analysis is a single dataset and a single frozen backbone,
+distance-from-SA-FARI. We test one hedge against this --- the familiarity proxy (\S\ref{sec:familiarity}),
+which reads separability directly from SAM\,3's own features --- and it too is null, recovering the same
+size-entangled visual signal, so even model-internal familiarity does not lift the null; a coverage-anchored
+proxy for the actual corpus nonetheless remains untested. Second, the analysis is a single dataset and a single
+frozen backbone,
 and --- since one inference pass is reused across both splits --- the species and location experiments are two
 overlays on the \emph{same} scored cells, not independent replications; they give near-orthogonal but not
 statistically independent evidence. We take two steps against this by re-running the whole pipeline on
@@ -65,8 +68,10 @@ independent
 species/locations, not hundreds of cells --- which is why
 inference is group-clustered throughout, and why aggregate correlations (e.g. the location-level night/IR
 effect) are reported alongside their much weaker cell-level values to avoid the ecological-correlation fallacy.
-The open branch this work does not pursue is representational probing --- whether SAM\,3's own features encode
-the species.
+Representational probing is only partly opened here: the familiarity proxy (\S\ref{sec:familiarity}) probes
+whether SAM\,3's features \emph{separate} the species --- they do, but that separability merely re-encodes the
+visual distance and does not predict transfer --- while a fuller probe of what those representations encode
+remains open.
 
 \section{Ethical considerations}
 % TODO: expand.

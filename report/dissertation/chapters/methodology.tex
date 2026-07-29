@@ -167,10 +167,21 @@ Mean $\log$ ground-truth mask area per species. This is not a hypothesis variabl
 included to separate genuine visual novelty from the fact that visually-distinctive species tend to be large
 and thus easier to segment; its role in exposing the one apparent effect as an artefact is
 Section~\ref{sec:meth-model}.
-\subsection{SAM\,3 familiarity proxy (deferred)}
-Separability of the target species in SAM\,3's own feature space would hedge against the unknown true
-pretraining set. It is \emph{not implemented in the present work} and is noted as future work in the
-Limitations; no result depends on it.
+\subsection{SAM\,3 familiarity proxy}
+\label{sec:meth-familiarity}
+Because SAM\,3's true pretraining corpus is undisclosed, every distance above is measured against the SA-FARI
+reference, not against what SAM\,3 actually saw (\S\ref{sec:meth-repro} caveat). The familiarity proxy hedges
+this by reading familiarity \emph{from the model itself}: how separable each species is in SAM\,3's \emph{own}
+vision-encoder feature space. The same mask-cropped animals used for the visual distance are pushed through
+SAM\,3's image encoder (\texttt{get\_vision\_features}, mean-pooled over the patch tokens to a $1024$-d vector),
+and each species is scored three ways --- \emph{silhouette} (own-cluster compactness vs the nearest other
+species), \emph{nearest-prototype} (the visual distance recomputed with SAM\,3's encoder rather than DINOv2),
+and \emph{Mahalanobis} typicality against the reference feature Gaussian. Like the other distances it is
+\textbf{before-running} (an image property, not a function of SAM\,3's tracking output --- so, unlike the
+after-running confidence estimator, non-circular) and \textbf{label-free}. Each metric is validated at the exact
+leave-species-out bar (Bonferroni over the three), size-controlled, and put in a head-to-head against the DINOv2
+visual distance: the decisive question is whether it adds any out-of-sample gain over \texttt{visual\_distance}
+$+$ size (\S\ref{sec:familiarity}).
 
 \section{Statistical modelling and hypothesis testing}
 \label{sec:meth-model}
