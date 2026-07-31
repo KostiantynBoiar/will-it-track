@@ -34,16 +34,16 @@ hard negatives are set aside from inference and analysed instead by the separate
 
 \paragraph{Two complementary splits.}
 Inspection of the annotations shows the shipped split is disjoint by \emph{location} but shares species
-across train and test (Section~\ref{sec:bg-safari}); on that split species-distance is $\approx 0$ for every
+across train and test (Section~\ref{sec:bg-safari}); on that split species-distance is $\approx\!0$ for every
 cell, so it cannot test species novelty. Because SAM\,3 is frozen and zero-shot on all of SA-FARI, the split
 only defines our \emph{reference distribution}, so we are free to repartition the same videos. We therefore
 use two near-orthogonal experiments and run inference only once (scoring is per-video and split-agnostic):
 \begin{description}[leftmargin=1.6em,style=nextline]
-  \item[Split A --- species hold-out (primary).] Pooled species are partitioned by a \emph{leave-one-species-out}
+  \item[Split A --- species hold-out (primary).] Pooled species are partitioned by a \emph{leave-species-out}
     view, so a held-out species' distance is to the nearest \emph{other} species; species-distance varies while
     the environment stays largely familiar, isolating H1. Validated by leave-species-out cross-validation.
   \item[Split B --- location hold-out (secondary).] The official train/test split, whose unseen locations
-    isolate H2 and whose benchmark comparability carries the Phase-1 score-sanity check.
+    isolate H2 and whose benchmark comparability carries the Gate~1 score-sanity check.
 \end{description}
 Split A is a \emph{constructed} hold-out --- legitimate because the model is frozen, and reported as such.
 At the scale we work with, the location split (Split~B) yields $1{,}447$ scored cells over $113$
@@ -94,7 +94,7 @@ species-prompts issued on one video do not collide, and the harness is resumable
 never updates a weight. We aggregate two ways and keep them distinct: the \emph{micro} dataset-level
 \texttt{VEval} score (the published SA-FARI operating point, $\approx\!0.65$ mask-\texttt{pHOTA}) and the
 per-cell support-weighted \emph{macro} mean over positive cells that is our modelling target. Because the
-macro mean is a positives-only per-cell average it sits lower ($\approx\!0.53$), and every Gate-1 number we
+macro mean is a positives-only per-cell average it sits lower ($\approx\!0.53$), and every Gate~1 number we
 quote is the macro value, labelled as such.
 
 \paragraph{No retraining; validity of the frozen protocol.} It bears stating plainly, as it is easily
@@ -110,7 +110,7 @@ Gate~1) \emph{alongside} separately fine-tuned rows whose gain we deliberately f
 non-membership at the \emph{dataset} level; we cannot verify it frame-by-frame, since SAM\,3's full
 pretraining corpus is undisclosed. We do not claim otherwise: every distance is measured against the SA-FARI
 \emph{train reference}, not against SAM\,3's true (unknown) pretraining distribution, and the familiarity
-proxy (Section~\ref{sec:meth-features}, planned) is the hedge for exactly this gap.
+proxy (Section~\ref{sec:meth-familiarity}) is the hedge for exactly this gap.
 
 \section{The frozen reference (leakage firewall)}
 \label{sec:meth-reference}
@@ -130,14 +130,14 @@ species.
 \subsection{Visual distance}
 Each species is fingerprinted by a \emph{prototype} --- the re-normalised mean DINOv2~\cite{dinov2} embedding
 of its \emph{ground-truth-mask-cropped} animals --- and the visual distance is the cosine gap from a probe
-species' prototype to that of the nearest \emph{other} reference species (leave-one-species-out on Split~A),
+species' prototype to that of the nearest \emph{other} reference species (leave-species-out on Split~A),
 with a CLIP~\cite{clip} encoder as a robustness check. Using the dataset's ground-truth masks means this
 feature needs no SAM\,3.
 \subsection{Environment distance}
-Embedding distance between the animal-masked-out background scene and the nearest reference location, plus an
-interpretable day/night--infrared flag (from per-channel colour statistics of the frame) and a clutter score
-given by the variance of a Laplacian over the masked background --- a cheap measure of local edge/texture
-density, not a colour statistic.
+Embedding distance between the animal-masked-out background scene and the nearest reference location, plus
+interpretable scene covariates from the same frames: a day/night--infrared (IR) flag and a low-light fraction
+(both from per-channel colour statistics of the frame), and a clutter score given by the variance of a
+Laplacian over the masked background --- a cheap measure of local edge/texture density, not a colour statistic.
 
 \begin{figure}[htbp]
 \centering
@@ -170,18 +170,17 @@ Section~\ref{sec:meth-model}.
 \subsection{SAM\,3 familiarity proxy}
 \label{sec:meth-familiarity}
 Because SAM\,3's true pretraining corpus is undisclosed, every distance above is measured against the SA-FARI
-reference, not against what SAM\,3 actually saw (\S\ref{sec:meth-repro} caveat). The familiarity proxy hedges
+reference, not against what SAM\,3 actually saw (Section~\ref{sec:meth-repro} caveat). The familiarity proxy hedges
 this by reading familiarity \emph{from the model itself}: how separable each species is in SAM\,3's \emph{own}
 vision-encoder feature space. The same mask-cropped animals used for the visual distance are pushed through
-SAM\,3's image encoder (\texttt{get\_vision\_features}, mean-pooled over the patch tokens to a $1024$-d vector),
-and each species is scored three ways --- \emph{silhouette} (own-cluster compactness vs the nearest other
-species), \emph{nearest-prototype} (the visual distance recomputed with SAM\,3's encoder rather than DINOv2),
-and \emph{Mahalanobis} typicality against the reference feature Gaussian. Like the other distances it is
-\textbf{before-running} (an image property, not a function of SAM\,3's tracking output, so it is non-circular)
-and \textbf{label-free}. Each metric is validated at the exact
-leave-species-out bar (Bonferroni over the three), size-controlled, and put in a head-to-head against the DINOv2
-visual distance: the decisive question is whether it adds any out-of-sample gain over \texttt{visual\_distance}
-$+$ size (\S\ref{sec:familiarity}).
+SAM\,3's image encoder, mean-pooling the patch-token features to a $1024$-d vector, and each species is scored
+three ways --- \emph{silhouette} (own-cluster compactness vs the nearest other species), \emph{nearest-prototype}
+(the visual distance recomputed with SAM\,3's encoder rather than DINOv2), and \emph{Mahalanobis} typicality
+against the reference feature Gaussian. Like the other distances it is \textbf{before-running} (an image
+property, not a function of SAM\,3's tracking output, so it is non-circular) and \textbf{label-free}. Each metric
+is validated at the exact leave-species-out bar (Bonferroni over the three), size-controlled, and put in a
+head-to-head against the DINOv2 visual distance: the decisive question is whether it adds any out-of-sample gain
+over the visual distance $+$ size (Section~\ref{sec:familiarity}).
 
 \section{Statistical modelling and hypothesis testing}
 \label{sec:meth-model}
@@ -217,9 +216,9 @@ rather than novelty.
 \subsection{The intrinsic-difficulty pivot and the nested decomposition}
 Because the sole apparent effect proved to be a size confound, we ask a complementary question: is transfer
 governed by the intrinsic \emph{difficulty} of the target imagery rather than its \emph{novelty}? We promote
-the label-free scene properties already measured for the environment axis --- low-light/IR
-(the low-light fraction), clutter, and the night/IR flag --- from nuisance covariates to predictors of
-interest, and test them against the same out-of-sample bar. To separate a genuine difficulty effect from the
+the label-free scene properties already measured for the environment axis --- the low-light fraction, the
+clutter score, and the night/IR flag --- from nuisance covariates to predictors of interest, and test them
+against the same out-of-sample bar. To separate a genuine difficulty effect from the
 size confound, we fit a \emph{nested} sequence of models --- support only; size only; difficulty only (no
 size); difficulty plus size --- and compare their out-of-sample gains, so that any apparent difficulty effect
 that is really size is exposed as such (Chapter~\ref{ch:results}, Table~\ref{tab:difficulty}). We also report
@@ -258,8 +257,8 @@ not statistically independent. To test whether the before-running null is a prop
 rather than of SA-FARI, we re-run the \emph{entire} pipeline --- unchanged frozen SAM\,3, the same official
 scorer, the same distances, and the same leave-species-out cross-validation and paired group bootstrap --- on
 two independent tracking datasets. The abstraction boundary that makes this cheap is the annotation schema, not
-the loader: an offline adapter converts each dataset into the SA-Co JSON the loader and evaluator already read,
-so nothing downstream changes. Only the small logit GLM is ever fitted; SAM\,3 is frozen throughout.
+the loader: an offline adapter converts each dataset into the SA-Co annotation JSON (the SA-FARI/VEval schema)
+the loader and evaluator already read, so nothing downstream changes. Only the small logit GLM is ever fitted; SAM\,3 is frozen throughout.
 
 \paragraph{MammAlps (box-only, small).} An Alpine camera-trap tracker~\cite{mammalps}: 5 species over 3 sites /
 9 cameras, box-only ground truth. The adapter emits each box as a filled-rectangle RLE (so the mask-cropped visual, size
@@ -283,11 +282,11 @@ SA-FARI, with the animal-size confound as the positive control --- it validates 
 test that stays flat for the distances there is genuinely finding no signal; where it too fails to fire (as on
 the $20$-cell MammAlps and on BURST) the design is simply too small to certify power, marking the result as
 consistency rather than confirmation. We report convergence across datasets, not independent proof: BURST is
-better powered by cell count but still cannot exclude a small before-running distance effect (\S\ref{sec:burst}).
+better powered by cell count but still cannot exclude a small before-running distance effect (Section~\ref{sec:burst}).
 
 \section{Reproducibility, implementation, and constraints}
 \label{sec:meth-repro}
-The model is frozen and scored by the official evaluator; the seen set is frozen before any distance is
+The model is frozen and scored by the official evaluator; the reference (seen) set is frozen before any distance is
 computed; hard negatives are retained; and all inference is single-GPU and inference-only. The pipeline is
 config-driven (every constraint is a toggle, so an ablation flips config, not code) and covered by hermetic
 tests; every reported number is regenerated from the repository, and split definitions, seeds, and reference
