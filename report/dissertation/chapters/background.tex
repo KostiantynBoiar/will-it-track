@@ -60,6 +60,20 @@ That camera-trap models degrade at new locations is well established. \emph{Terr
 showed that recognisers excellent at trained camera sites fail sharply at unseen ones; WILDS~\cite{wilds}
 consolidated this (via iWildCam) as a canonical real-world shift; and PanAf-FGBG~\cite{panaf} demonstrated
 that behaviour-correlated \emph{backgrounds} causally drive the drop, proposing a latent-space mitigation.
+The claim that scene context, not the object, drives such failures has a longer pedigree in general vision.
+\citet{xiao} isolate foreground from background on ImageNet (the ImageNet-9 ``Background Challenge'') and show
+that a classifier scores well above chance from the background \emph{alone}, and that an adversarially chosen
+background flips a correctly classified foreground up to $87.5\%$ of the time --- background is genuine signal,
+not noise. \citet{elephant} make the parallel point for detectors: transplanting an object into an unfamiliar
+scene suppresses its detection, flips its predicted identity with position, and disturbs \emph{other}
+detections, exposing a reliance on context and co-occurrence. We adopt the same foreground/background
+decomposition these works rest on --- masking the animal out to embed only the scene (the environment
+distance) and masking the scene out to embed only the animal (the visual distance) --- but \emph{invert its
+purpose}: where they perturb or subtract the background to \emph{measure and mitigate} a model's causal
+reliance on it~\cite{xiao,elephant,panaf}, we use the isolated background as a label-free, before-running
+\emph{distance} whose job is to \emph{forecast} transfer. Notably, \citet{xiao} also find that more accurate,
+more robust models rely on background \emph{less} --- which anticipates our result for a strong,
+prompt-anchored zero-shot model, and to which we return in Chapter~\ref{ch:discussion}.
 These works are the empirical backdrop for our environment axis --- but they share two features that mark the
 gap. They \textbf{measure or mitigate} degradation after the fact rather than \emph{predicting} per-site or
 per-species reliability in advance, and they study \textbf{classifiers or behaviour recognisers}, not

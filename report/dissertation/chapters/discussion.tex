@@ -31,11 +31,57 @@ spend compute, the more useful regime. The second axis is the \textbf{output}. E
 detector/segmenter~\cite{pcr,rca}; none concerns identity maintained over time, and none is decomposed. Ours is
 the first study to ask the question of a promptable \emph{video tracker}, split into detection
 (\texttt{pDetA}) and association (\texttt{pAssA}). AutoEval~\cite{autoeval} is the closest methodological
-cousin --- it, too, regresses a performance score on a distributional feature distance --- and it is precisely
-the recipe whose strong classifier-level correlation does \emph{not} reproduce once the distance is measured
-before running and the target is a tracker. Our result therefore does not contradict these positives; it
-extends the question to a regime where the label-free-distance shortcut stops working, and reports honestly
-that it does.
+cousin --- it, too, regresses a performance score on a distributional feature distance --- and the strength of
+its positive sharpens the contrast: it reports a near-perfect rank correlation (Spearman $\rho\approx-0.91$)
+between a Fr\'echet distribution-shift distance and classifier accuracy. That distance, though, is computed
+from the model's own penultimate features \emph{after} the target images are passed through the network, and
+predicts a scalar classifier accuracy. We test AutoEval's exact functional in our own regime --- the Fr\'echet
+and MMD distributional distances on cached DINOv2 embeddings, computed \emph{before} running SAM\,3
+(\S\ref{sec:burst}, Table~\ref{tab:robustness}) --- and it stays null ($\Delta\mathrm{MAE}\le0.007$,
+$p\ge0.10$, every confidence interval spanning zero), so the failure is not an artefact of a lazy
+nearest-prototype distance: even the strongest AutoEval-style distance carries no before-running transfer
+signal. The contrast is not merely one of magnitude but of \emph{sign}: our nearest analogue, the visual
+distance, correlates with detection in the \emph{opposite} (wrong) direction and dissolves under an
+animal-size control. Our result therefore does not contradict AutoEval's positive; it extends the recipe to a
+regime --- distance measured before running, target a decomposed video tracker --- where the shortcut stops
+working, and reports honestly that it does. A final bridge makes the boundary concrete:
+Accuracy-on-the-Line~\cite{aotl} was validated on iWildCam, the same camera-trap shift this dissertation cites
+via WILDS and Terra Incognita~\cite{wilds,terra} --- so the exact wildlife shift where a classifier's OOD
+accuracy \emph{is} predictable label-free is where our before-running distances are \emph{not}, across both the
+classifier-to-tracker and after-running-to-before-running boundaries.
+
+\section{Reconciling the environment null with the background-bias literature}
+\label{sec:disc-background}
+Our environment axis inherits its motivation and its foreground/background separation from a literature that
+finds backgrounds emphatically \emph{do} matter~\cite{terra,xiao,elephant,panaf}, so the null it returns
+deserves an explicit reconciliation rather than a bare report. The apparent tension dissolves on two
+distinctions. The first is \textbf{causal reliance versus predictive distance}. \citet{xiao}, \citet{elephant}
+and PanAf-FGBG~\cite{panaf} all \emph{intervene} on the background --- swap it, transplant the object, or
+subtract the paired background-only clip's features --- and watch performance move; PanAf, most sharply, shows
+a chimpanzee-behaviour classifier that scores from the background \emph{alone} almost as well as from the
+foreground on unseen locations, and recovers several points of the location drop by subtracting the
+background. That is a statement about how a model \emph{uses} context. Ours is the strictly weaker,
+correlational question of whether a scalar scene \emph{distance}-from-reference \emph{forecasts} an untouched
+model's per-cell score --- and a model can lean causally on context while its score stays unpredictable from a
+one-number distance. Our null therefore does not deny their causal findings; it locates a regime where the
+label-free-distance shortcut, not the context reliance, fails.
+
+The second distinction is \textbf{why the promptable regime should be the one where it fails}, and here the
+same literature supplies the mechanism. \citet{xiao}, \citet{elephant} and PanAf all study models that must
+\emph{infer} the category --- a classifier with no foreground cue, or a detector reading co-occurrence --- for
+which a spuriously correlated background is a usable shortcut. SAM\,3 is \emph{told} what to find: the prompt
+\texttt{"impala"} supplies the foreground identity, removing the incentive to ride the scene, exactly the
+direction \citet{xiao}'s own finding predicts (better, less-shortcut-prone models close the background gap).
+PanAf's target compounds this --- fine-grained \emph{behaviour} is intrinsically background-correlated (a chimp
+nests in trees, drinks at water), whereas ours is finding and following the \emph{named animal itself}, where
+naming it short-circuits the context dependence. The honest reading is thus an extension, not a refutation: the
+very backgrounds that causally drive a camera-trap classifier's location drop do not, once surgically isolated
+from the animal and used as a before-running distance, forecast a promptable tracker's transfer --- and because
+we isolate the scene from the animal explicitly (a step none of the label-free-prediction methods take), this
+is a cleaner statement than ``background is diagnostic'', not a weaker one. The claim is bounded accordingly: it
+concerns background \emph{distance} as a \emph{predictor} of \emph{detection} transfer for a promptable tracker
+(the secondary location split, replicated null on BURST, with a near-degenerate association target), not a
+blanket ``background is irrelevant'', which would wrongly contradict \cite{terra,xiao,panaf}.
 
 \section{Why label-free distances do not yield a deployment estimator}
 % TODO: expand.
