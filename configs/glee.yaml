@@ -1,0 +1,23 @@
+# GLEE model-swap profile: run a second frozen text-promptable video tracker (GLEE) over the SAME
+# SA-FARI cells, then re-fit the SAME four-distance GLM/CV. Tests whether the label-free null is
+# SAM-3-specific or task-general. A CONTROLLED MODEL-SWAP, not independent replication (same dataset,
+# GT, distances — only the tracker changes). GPU-gated; see docs/glee_second_model.md.
+#
+# Predictions are auto-namespaced under predictions/glee/ (tracker != "sam3"), so SAM 3's artefacts are
+# untouched. Run: python -m src.inference.harness --split test --config configs/glee.yaml
+# (or --tracker glee). Set glee_config/glee_weights to the staged GLEE repo yaml + checkpoint first.
+seed: 0
+
+inference:
+  tracker: glee
+  prompt_mode: species                 # prompt GLEE with the animal class name (batch_name_list=[prompt])
+  glee_model: GLEE_Lite_scaleup        # ResNet-50 zero-shot checkpoint (scaleup = best open-vocab)
+  glee_config: null                    # set to projects/GLEE/configs/.../<model>.yaml on the GPU box
+  glee_weights: null                   # set to the downloaded GLEE_Lite_scaleup.pth on the GPU box
+  glee_score_threshold: 0.0            # GLEE per-query pre-filter; keep VEval owning the operating point
+  score_threshold: 0.0                 # harness writes raw scores → VEval decides HOTA (parity with SAM 3)
+
+eval:
+  prefer_bbox: false                   # SA-FARI GT is masks → score mask-HOTA (same as the SAM 3 run)
+
+experiment: glee                       # suffixes report tables so GLEE's coexist with SAM 3's

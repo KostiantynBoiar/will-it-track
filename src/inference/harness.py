@@ -77,10 +77,20 @@ class InferenceHarness:
         """
         self.config = config or Config()
         if tracker is None:
+            tracker = self._build_tracker(self.config.inference.tracker)
+        self.tracker = tracker
+
+    def _build_tracker(self, name: str) -> Tracker:
+        """Construct the configured tracker (imported lazily so GPU deps stay out of module import)."""
+        if name == "sam3":
             from src.inference.sam3_tracker import Sam3Tracker
 
-            tracker = Sam3Tracker(self.config)
-        self.tracker = tracker
+            return Sam3Tracker(self.config)
+        if name == "glee":
+            from src.inference.glee_tracker import GleeTracker
+
+            return GleeTracker(self.config)
+        raise ValueError(f"unknown inference.tracker {name!r} (expected 'sam3' or 'glee')")
 
     def _prompt(self, record: VideoRecord) -> str:
         """The text prompt for a probe (species-specific, or the generic robustness prompt)."""
@@ -89,13 +99,16 @@ class InferenceHarness:
         return record.noun_phrase or record.species
 
     def _out_dir(self, split: str) -> Path:
-        """Per-(split, prompt-mode) predictions directory."""
-        return (
-            self.config.paths.outputs_root
-            / self.config.inference.predictions_subdir
-            / split
-            / self.config.inference.prompt_mode
-        )
+        """Per-(tracker, split, prompt-mode) predictions directory.
+
+        The default ``"sam3"`` tracker keeps the historical ``predictions/{split}/{prompt_mode}/`` path
+        (so existing artefacts are byte-identical); any other tracker (e.g. GLEE) is namespaced under its
+        own subdir so the model-swap run never collides with — or resumes against — SAM 3's files.
+        """
+        base = self.config.paths.outputs_root / self.config.inference.predictions_subdir
+        if self.config.inference.tracker != "sam3":
+            base = base / self.config.inference.tracker
+        return base / split / self.config.inference.prompt_mode
 
     def _frames(self, record: VideoRecord) -> list:
         """Load a video's frames, fetching only the ones not already on disk."""
@@ -165,7 +178,7 @@ class InferenceHarness:
         if limit is not None:
             records = records[:limit]
 
-        desc = f"SAM 3 {split}/{self.config.inference.prompt_mode}"
+        desc = f"{self.config.inference.tracker} {split}/{self.config.inference.prompt_mode}"
         for record in tqdm(records, desc=desc, unit="probe"):
             path = out_dir / probe_filename(record.video_id, record.category_id)
             if path.exists():
@@ -190,10 +203,15 @@ def main() -> None:
     ap.add_argument(
         "--per-species", type=int, default=None, help="cap present videos per species (stratified sample)"
     )
+    ap.add_argument(
+        "--tracker", default=None, choices=("sam3", "glee"), help="which frozen tracker to run"
+    )
     args = ap.parse_args()
     cfg = Config.load(args.config)
     if args.per_species is not None:
         cfg.inference.max_videos_per_species = args.per_species
+    if args.tracker is not None:
+        cfg.inference.tracker = args.tracker
     InferenceHarness(cfg).run(args.split, args.limit)
 
 

@@ -95,9 +95,11 @@ class SplitsConfig(BaseModel):
 
 
 class InferenceConfig(BaseModel):
-    """Frozen SAM 3 promptable inference.
+    """Frozen promptable-tracker inference (SAM 3 by default; GLEE for the model-swap).
 
     Attributes:
+        tracker: Which frozen tracker to run — ``"sam3"`` (default) or ``"glee"``. Selects the class the
+            harness constructs; a controlled model-swap that leaves the ``"sam3"`` path byte-identical.
         sam3_model: Hugging Face id (or local path) of the frozen SAM 3 checkpoint.
         prompt_mode: ``"species"`` (primary) or ``"generic"`` ("animal", robustness).
         device: Torch device for inference.
@@ -105,12 +107,20 @@ class InferenceConfig(BaseModel):
         batch_frames: Frames per inference batch.
         score_threshold: Minimum confidence to keep a predicted masklet; ``0.0`` writes raw scores so
             VEval (not the harness) owns the operating point (its own ``prob_thresh`` decides HOTA).
+            Shared by every tracker so the scoring stage stays identical across the swap.
         predictions_subdir: Where per-video prediction JSONs are written, under ``paths.outputs_root``.
         max_videos_per_species: Cap on present (positive) videos scored per species — a stratified
             sample so the huge train split (~31k probes) yields the species hold-out at feasible cost;
             ``None`` runs every probe. Hard negatives are skipped when capping (positives-only H1 fit).
+        glee_model: Name/tag of the GLEE checkpoint (default the zero-shot ``GLEE_Lite_scaleup``).
+        glee_config: Path to GLEE's model YAML (detectron2/GLEE repo); ``None`` until staged on the GPU box.
+        glee_weights: Path to the GLEE ``.pth`` weights; ``None`` until downloaded on the GPU box.
+        glee_score_threshold: GLEE's own per-query pre-filter (it scores *every* query). Distinct from
+            ``score_threshold`` (which stays ``0.0`` so VEval owns the final operating point); this only
+            decides which candidate detections GLEE emits before VEval. Never tune it to flatter the null.
     """
 
+    tracker: str = "sam3"
     sam3_model: str = "facebook/sam3"
     prompt_mode: str = "species"
     device: str = "cuda"
@@ -119,6 +129,10 @@ class InferenceConfig(BaseModel):
     score_threshold: float = 0.0
     predictions_subdir: str = "predictions"
     max_videos_per_species: int | None = None
+    glee_model: str = "GLEE_Lite_scaleup"
+    glee_config: str | None = None
+    glee_weights: str | None = None
+    glee_score_threshold: float = 0.0
 
 
 class EvalConfig(BaseModel):
