@@ -113,11 +113,16 @@ class InferenceConfig(BaseModel):
             sample so the huge train split (~31k probes) yields the species hold-out at feasible cost;
             ``None`` runs every probe. Hard negatives are skipped when capping (positives-only H1 fit).
         glee_model: Name/tag of the GLEE checkpoint (default the zero-shot ``GLEE_Lite_scaleup``).
+        glee_repo: Path to the GLEE checkout root (the dir containing ``projects/``); put on ``sys.path``
+            at load so ``projects.GLEE.glee.*`` imports resolve. ``None`` until staged on the GPU box.
         glee_config: Path to GLEE's model YAML (detectron2/GLEE repo); ``None`` until staged on the GPU box.
         glee_weights: Path to the GLEE ``.pth`` weights; ``None`` until downloaded on the GPU box.
         glee_score_threshold: GLEE's own per-query pre-filter (it scores *every* query). Distinct from
             ``score_threshold`` (which stays ``0.0`` so VEval owns the final operating point); this only
             decides which candidate detections GLEE emits before VEval. Never tune it to flatter the null.
+        glee_topk: Top-k GLEE queries kept per frame before thresholding (== NUM_OBJECT_QUERIES).
+        glee_match_threshold: Min track-embed cosine similarity to link a detection to a running track
+            (MinVIS association). Set once from a couple of visualised clips; never tune it to change the null.
     """
 
     tracker: str = "sam3"
@@ -130,9 +135,12 @@ class InferenceConfig(BaseModel):
     predictions_subdir: str = "predictions"
     max_videos_per_species: int | None = None
     glee_model: str = "GLEE_Lite_scaleup"
+    glee_repo: str | None = None
     glee_config: str | None = None
     glee_weights: str | None = None
     glee_score_threshold: float = 0.0
+    glee_topk: int = 100
+    glee_match_threshold: float = 0.3
 
 
 class EvalConfig(BaseModel):

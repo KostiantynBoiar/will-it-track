@@ -16,7 +16,7 @@ from pycocotools import mask as coco_mask
 
 from src.config import Config
 from src.dataset import VideoRecord
-from src.inference.glee_tracker import GleeTracker, _masklets_from_glee
+from src.inference.glee_tracker import GleeTracker, _glee_out_dict, _masklets_from_glee
 from src.inference.harness import InferenceHarness, probe_filename
 from src.inference.sam3_tracker import Masklet
 
@@ -77,6 +77,16 @@ def test_masklets_from_glee_rejects_out_of_range_frame() -> None:
     """A detection frame index outside the clip is a hard error, not a silent drop."""
     with pytest.raises(ValueError, match="out of range"):
         _masklets_from_glee({1: [(5, _mask(8, 8, (0, 2, 0, 2)), 0.9)]}, n_frames=3)
+
+
+def test_glee_out_dict_unwraps_both_shapes() -> None:
+    """The forward-output unwrap reaches the pred dict whether GLEE returns a dict or a nested tuple."""
+    d = {"pred_masks": 1, "pred_logits": 2, "pred_track_embed": 3}
+    assert _glee_out_dict(d) is d  # bare dict
+    assert _glee_out_dict((d, "masks")) is d  # (out_dict, mask_dict)
+    assert _glee_out_dict(((d, "masks"), "loss", "loss")) is d  # nested training-style tuple
+    with pytest.raises(RuntimeError, match="could not locate"):
+        _glee_out_dict({"no_masks_here": 1})
 
 
 def test_config_default_tracker_is_sam3() -> None:

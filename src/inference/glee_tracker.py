@@ -4,16 +4,20 @@ GLEE (CVPR 2024) has the same contract as SAM 3: a text prompt in -> zero-shot d
 every matching instance across a video, masks out. Running it over the same SA-FARI cells tests whether the
 label-free null is SAM-3-specific or task-general. See docs/glee_second_model.md.
 
-The heavy backend (torch + GLEE + detectron2) is imported lazily in load(), so this module imports on the
-CPU analysis env and the tests never touch a GPU. Model-touching code lives in load()/_run(); the pure
-output-to-Masklet assembly is _masklets_from_glee(), unit-tested without any model. Masklet and encode_rle
-are reused from sam3_tracker — one masklet per track, no obj_id (identity is list membership, as SAM 3 does).
+Only the GPU-only backend (torch + GLEE + detectron2, absent from the local analysis env) is imported
+lazily in load(); everything else is imported at the top. So this module imports on the CPU analysis env
+and the tests never touch a GPU. Model-touching code lives in load()/_run(); the pure output-to-Masklet
+assembly is _masklets_from_glee(), unit-tested without any model. Masklet and encode_rle are reused from
+sam3_tracker — one masklet per track, no obj_id (identity is list membership, as SAM 3 does).
 """
 
 from __future__ import annotations
 
+import sys
+
 import numpy as np
 from PIL import Image
+from scipy.optimize import linear_sum_assignment
 
 from src.config import Config
 from src.inference.sam3_tracker import Masklet, encode_rle
@@ -52,6 +56,23 @@ def _masklets_from_glee(
     return out
 
 
+def _glee_out_dict(raw):  # noqa: ANN001, ANN202
+    """Reach GLEE's pred_* dict from forward()'s return, tolerant of the tuple-vs-dict shape.
+
+    GLEE's forward may return the dict directly (app.py: (outputs, _) = ...; outputs['pred_masks']) or a
+    nested tuple ((out_dict, mask_dict), ...); peel until a dict with 'pred_masks' is found.
+    """
+    obj = raw
+    for _ in range(4):
+        if isinstance(obj, dict) and "pred_masks" in obj:
+            return obj
+        if isinstance(obj, (tuple, list)) and obj:
+            obj = obj[0]
+        else:
+            break
+    raise RuntimeError(f"could not locate GLEE pred dict in forward() output of type {type(raw)}")
+
+
 class GleeTracker:
     """Frozen GLEE video tracker (loads on first track); satisfies the Tracker protocol.
 
@@ -77,27 +98,49 @@ class GleeTracker:
         import torch  # lazy: GPU (pod) env only
 
         inf = self.config.inference
-        if not inf.glee_config or not inf.glee_weights:
+        if not inf.glee_config or not inf.glee_weights or not inf.glee_repo:
             raise RuntimeError(
-                "GleeTracker needs inference.glee_config and inference.glee_weights set "
-                "(the GLEE model YAML + .pth). See docs/glee_second_model.md for staging."
+                "GleeTracker needs inference.glee_repo, glee_config and glee_weights set "
+                "(the GLEE checkout root + model YAML + .pth). See docs/glee_second_model.md for staging."
             )
-        # Build the GLEE model from its config + weights. Finalised on the GPU box against the GLEE repo
-        # checkout (projects/GLEE), per docs/glee_second_model.md.
         self._model = self._build_glee(inf.glee_config, inf.glee_weights, inf.device)
         self._dtype = {"bf16": torch.bfloat16, "fp16": torch.float16}.get(inf.precision, torch.float32)
         self._torch = torch
 
     def _build_glee(self, config_path: str, weights_path: str, device: str):  # noqa: ANN001, ANN202
-        """Construct the GLEE model from its config + weights on device (GPU box only)."""
-        from detectron2.config import get_cfg  # lazy: GLEE/detectron2 env only
-        from detectron2.engine import DefaultPredictor
+        """Construct the frozen GLEE_Model from its detectron2 cfg + checkpoint on device (GPU box only).
+
+        Mirrors GLEE's app.py: get_cfg -> add_glee_config -> merge_from_file -> GLEE_Model(cfg, None,
+        device, None, True) -> load_state_dict(strict=False) -> eval(). strict=False is deliberate — the
+        checkpoint carries training-only keys (matcher, track-loss) absent at inference. The GLEE checkout
+        is a source tree, so glee_repo (the dir containing projects/) is put on sys.path first.
+        """
+        import torch  # torch + detectron2 + GLEE are GPU-backend only -> lazy
+        from detectron2.config import get_cfg
+
+        glee_repo = self.config.inference.glee_repo
+        if glee_repo and glee_repo not in sys.path:
+            sys.path.insert(0, glee_repo)
+        from projects.GLEE.glee.config import add_glee_config
+        from projects.GLEE.glee.models.glee_model import GLEE_Model
 
         cfg = get_cfg()
+        add_glee_config(cfg)
         cfg.merge_from_file(config_path)
-        cfg.MODEL.WEIGHTS = weights_path
-        cfg.MODEL.DEVICE = device
-        return DefaultPredictor(cfg)
+        cfg.freeze()
+
+        model = GLEE_Model(cfg, None, device, None, True).to(device)
+        state = torch.load(weights_path, map_location=device)
+        state = state.get("model", state)  # detectron2 ckpts wrap weights under "model"
+        missing, unexpected = model.load_state_dict(state, strict=False)
+        print(f"  GLEE weights loaded: {len(missing)} missing, {len(unexpected)} unexpected keys")
+        model.eval()
+
+        self._pixel_mean = torch.tensor([123.675, 116.28, 103.53], device=device).view(3, 1, 1)
+        self._pixel_std = torch.tensor([58.395, 57.12, 57.375], device=device).view(3, 1, 1)
+        self._size_divisibility = 32
+        self._infer_short_side = 800
+        return model
 
     def track(self, frames: list[Image.Image], prompt: str) -> list[Masklet]:
         """Run GLEE open-vocab video tracking; one Masklet per kept track.
@@ -126,14 +169,88 @@ class GleeTracker:
     def _infer_tracks(
         self, frames: list[Image.Image], prompt: str, processing_device: str
     ) -> dict[int, list[tuple[int, np.ndarray, float]]]:
-        """GLEE forward + MinVIS association -> track_id -> [(frame_index, bool_mask@HW, score), ...].
+        """GLEE per-frame forward + MinVIS track-embed association -> per-track detections at original HW.
 
-        Finalised against the GLEE checkout on the GPU box (docs/glee_second_model.md): per frame, run the
-        forward with batch_name_list=[prompt] to get pred_masks/pred_logits/pred_track_embed; keep queries
-        above the score threshold; Hungarian-match pred_track_embed across frames into persistent tracks;
-        upsample each kept mask to (H, W) and binarise. Isolated so _masklets_from_glee stays GPU-free.
+        Per frame: preprocess (RGB, ImageNet mean/std at 0-255 scale, no /255; resize short side to 800,
+        pad to a multiple of 32); forward in category mode with batch_name_list=[prompt]; read
+        pred_masks/pred_logits/pred_track_embed; keep top-k queries above the score threshold; upsample
+        masks to the original (H, W) and binarise at logit 0; then link detections to running tracks by
+        Hungarian matching on track-embed cosine similarity (MinVIS), creating a new track for each
+        unmatched detection. Returns the dict schema _masklets_from_glee consumes.
         """
-        raise NotImplementedError(
-            "GleeTracker._infer_tracks is finalised on the GPU box against the GLEE repo checkout; "
-            "the CPU groundwork (contract + _masklets_from_glee) is complete and tested."
-        )
+        import torch  # torch/torchvision are GPU-backend only -> lazy (scipy is a top-level import)
+        import torch.nn.functional as F
+        import torchvision
+
+        model = self._model
+        device = self.config.inference.device
+        thr = self.config.inference.glee_score_threshold
+        keep_topk = self.config.inference.glee_topk
+        match_thr = self.config.inference.glee_match_threshold
+        resizer = torchvision.transforms.Resize(self._infer_short_side, antialias=True)
+        pixel_mean = self._pixel_mean.to(processing_device)
+        pixel_std = self._pixel_std.to(processing_device)
+        d = self._size_divisibility
+
+        tracks: dict[int, list[tuple[int, np.ndarray, float]]] = {}
+        track_embeds: dict[int, np.ndarray] = {}  # track_id -> last-seen L2-normed embed (running prototype)
+        next_track_id = 0
+
+        for frame_idx, frame in enumerate(frames):
+            img = np.asarray(frame.convert("RGB"))  # HWC uint8 RGB (no BGR swap)
+            ori_h, ori_w = img.shape[:2]
+
+            chw = torch.as_tensor(np.ascontiguousarray(img.transpose(2, 0, 1))).to(processing_device).float()
+            chw = (chw - pixel_mean) / pixel_std  # 0-255 scale, no /255
+            resized = resizer(chw[None])  # [1,3,rh,rw]
+            re_h, re_w = resized.shape[-2:]
+            pad_h = (re_h + d - 1) // d * d
+            pad_w = (re_w + d - 1) // d * d
+            infer_image = torch.zeros(1, 3, pad_h, pad_w, device=processing_device)
+            infer_image[0, :, :re_h, :re_w] = resized[0]  # top-left; zeros pad bottom/right
+            infer_image = infer_image.to(device)
+
+            with torch.no_grad():
+                raw = model(infer_image, [], task="coco", batch_name_list=[prompt], is_train=False)
+            out = _glee_out_dict(raw)
+
+            scores_q = out["pred_logits"][0].sigmoid().max(-1)[0]  # [Q]
+            mask_pred = out["pred_masks"][0]  # [Q, h', w'] logits
+            track_embed = out["pred_track_embed"][0]  # [Q, D]
+
+            k = min(keep_topk, scores_q.shape[0])
+            top_scores, top_idx = scores_q.topk(k)
+            sel = top_idx[top_scores >= thr]
+            if sel.numel() == 0:
+                continue
+
+            m = mask_pred[sel][None]  # [1, K, h', w']
+            m = F.interpolate(m, size=(pad_h, pad_w), mode="bilinear", align_corners=False)
+            m = m[:, :, :re_h, :re_w]  # crop the zero pad -> resized-image extent
+            m = F.interpolate(m, size=(ori_h, ori_w), mode="bilinear", align_corners=False)
+            masks_np = (m[0] > 0.0).detach().cpu().numpy().astype(bool)  # [K, ori_h, ori_w]
+            emb = F.normalize(track_embed[sel], dim=-1).detach().cpu().numpy()  # [K, D] L2-normed
+            det_scores = scores_q[sel].detach().cpu().numpy()
+
+            if track_embeds:
+                tids = list(track_embeds.keys())
+                prev = np.stack([track_embeds[t] for t in tids])  # [T, D] already normed
+                sim = emb @ prev.T  # [K, T] cosine
+                row, col = linear_sum_assignment(-sim)  # maximise similarity
+                matched = set()
+                for r, c in zip(row, col, strict=False):
+                    if sim[r, c] >= match_thr:
+                        tid = tids[c]
+                        tracks[tid].append((frame_idx, masks_np[r], float(det_scores[r])))
+                        track_embeds[tid] = emb[r]  # near-online: update to the latest frame
+                        matched.add(r)
+                unmatched = [r for r in range(len(sel)) if r not in matched]
+            else:
+                unmatched = list(range(len(sel)))
+
+            for r in unmatched:
+                tracks[next_track_id] = [(frame_idx, masks_np[r], float(det_scores[r]))]
+                track_embeds[next_track_id] = emb[r]
+                next_track_id += 1
+
+        return tracks
