@@ -276,9 +276,9 @@ class GleeTracker:
                         tracks[tid].append((frame_idx, masks_np[r], float(det_scores[r])))
                         track_embeds[tid] = emb[r]  # near-online: update to the latest frame
                         matched.add(r)
-                unmatched = [r for r in range(len(sel)) if r not in matched]
+                unmatched = [r for r in range(len(det_scores)) if r not in matched]
             else:
-                unmatched = list(range(len(sel)))
+                unmatched = list(range(len(det_scores)))
 
             for r in unmatched:
                 tracks[next_track_id] = [(frame_idx, masks_np[r], float(det_scores[r]))]
