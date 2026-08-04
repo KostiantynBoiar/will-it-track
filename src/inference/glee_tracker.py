@@ -27,6 +27,7 @@ def _masklets_from_glee(
     tracks: dict[int, list[tuple[int, np.ndarray, float]]],
     n_frames: int,
     threshold: float = 0.0,
+    score_gain: float = 1.0,
 ) -> list[Masklet]:
     """Assemble one Masklet per GLEE track from its per-frame detections (pure, model-free, tested).
 
@@ -34,7 +35,13 @@ def _masklets_from_glee(
         tracks: track_id -> list of (frame_index, bool_mask, score) for the frames where the track is
             present. Masks must already be at original frame resolution; absent frames are omitted.
         n_frames: Total frames in the clip; each masklet's segmentations is padded to this length.
-        threshold: Drop a track whose max-over-frames score is below this (GLEE's per-query pre-filter).
+        threshold: Drop a track whose max-over-frames score is below this (GLEE's per-query pre-filter),
+            applied to the RAW score before any gain.
+        score_gain: Monotonic rescale of the reported score (raw * gain, clipped to 1.0). GLEE's raw
+            confidences are compressed (max ~0.42) and never clear VEval's fixed 0.5 gate; a gain > 1
+            lifts its real detections above that gate so both trackers are scored at the same VEval
+            operating point. Default 1.0 is identity (SAM 3 and the tests are unaffected). Rank-preserving,
+            so it never reorders detections; it is a documented per-model operating-point choice.
 
     Returns:
         One Masklet per kept track, segmentations of length n_frames (RLE where present, None where absent)
@@ -44,9 +51,10 @@ def _masklets_from_glee(
     for _track_id, detections in tracks.items():
         if not detections:
             continue
-        score = max(float(s) for _fi, _mask, s in detections)
-        if score < threshold:
+        raw = max(float(s) for _fi, _mask, s in detections)
+        if raw < threshold:
             continue
+        score = min(raw * score_gain, 1.0)
         segs: list[dict | None] = [None] * n_frames
         for frame_index, mask, _s in detections:
             if not 0 <= frame_index < n_frames:
@@ -181,7 +189,8 @@ class GleeTracker:
         schema _infer_tracks must produce for _masklets_from_glee is fixed and tested here.
         """
         tracks = self._infer_tracks(frames, prompt, processing_device)
-        return _masklets_from_glee(tracks, len(frames), self.config.inference.glee_score_threshold)
+        inf = self.config.inference
+        return _masklets_from_glee(tracks, len(frames), inf.glee_score_threshold, inf.glee_score_gain)
 
     def _infer_tracks(
         self, frames: list[Image.Image], prompt: str, processing_device: str

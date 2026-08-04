@@ -123,6 +123,11 @@ class InferenceConfig(BaseModel):
         glee_topk: Top-k GLEE queries kept per frame before thresholding (== NUM_OBJECT_QUERIES).
         glee_match_threshold: Min track-embed cosine similarity to link a detection to a running track
             (MinVIS association). Set once from a couple of visualised clips; never tune it to change the null.
+        glee_score_gain: Monotonic (rank-preserving) rescale of GLEE's masklet score (raw * gain, clipped
+            to 1.0). GLEE's raw confidences are compressed (max ~0.42) and never clear VEval's fixed 0.5
+            gate, so with gain 1.0 every GLEE detection is filtered out. A gain > 1 lifts its real
+            detections above the gate so GLEE and SAM 3 are scored at the same VEval operating point. A
+            documented operating-point choice; set once and frozen, never tuned to change the result.
     """
 
     tracker: str = "sam3"
@@ -141,6 +146,7 @@ class InferenceConfig(BaseModel):
     glee_score_threshold: float = 0.0
     glee_topk: int = 100
     glee_match_threshold: float = 0.3
+    glee_score_gain: float = 1.0
 
 
 class EvalConfig(BaseModel):

@@ -49,6 +49,24 @@ def test_masklets_from_glee_alignment_and_rle() -> None:
     assert decoded.sum() == (6 - 2) * (9 - 3)  # 4x6 box
 
 
+def test_masklets_from_glee_score_gain_monotonic() -> None:
+    """score_gain rescales (raw*gain, clipped to 1) rank-preserving; threshold applies to the RAW score."""
+    h, w = 8, 8
+    tracks = {
+        1: [(0, _mask(h, w, (0, 3, 0, 3)), 0.10)],  # raw 0.10 -> gained 0.50
+        2: [(0, _mask(h, w, (0, 2, 0, 2)), 0.30)],  # raw 0.30 -> gained 1.00 (clipped)
+    }
+    out = _masklets_from_glee(tracks, n_frames=1, threshold=0.0, score_gain=5.0)
+    scores = sorted(m.score for m in out)
+    assert scores == pytest.approx([0.5, 1.0])  # monotonic; higher raw stays higher
+    # threshold is on the raw score, not the gained one
+    kept = _masklets_from_glee({3: [(0, _mask(h, w, (0, 2, 0, 2)), 0.05)]}, 1, threshold=0.1, score_gain=5.0)
+    assert kept == []  # raw 0.05 < 0.1 threshold -> dropped despite gain
+    # default gain is identity
+    ident = _masklets_from_glee({4: [(0, _mask(h, w, (0, 2, 0, 2)), 0.3)]}, 1)
+    assert ident[0].score == pytest.approx(0.3)
+
+
 def test_masklets_from_glee_threshold_and_empty() -> None:
     """Below-threshold tracks are dropped; no tracks (hard negative) gives an empty list, no fake mask."""
     h, w = 10, 10
