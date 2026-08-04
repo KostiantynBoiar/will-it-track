@@ -211,7 +211,12 @@ class Scorer:
     def score(self, split: str = "test") -> Path:
         """Score the harness predictions and write ``outputs/scores.parquet``; return its path."""
         inf = self.config.inference
-        pred_dir = self.config.paths.outputs_root / inf.predictions_subdir / split / inf.prompt_mode
+        # Mirror the harness's per-tracker namespacing: "sam3" keeps the historical path; any other
+        # tracker (e.g. GLEE) is read from its own subdir so trackers' predictions never collide.
+        base = self.config.paths.outputs_root / inf.predictions_subdir
+        if inf.tracker != "sam3":
+            base = base / inf.tracker
+        pred_dir = base / split / inf.prompt_mode
         pred_file = pred_dir.with_suffix(".json")
         result = self._run_veval(pred_file, self._scored_gt(split, pred_dir))
         summary_path = self.config.paths.outputs_root / "veval_summary.json"
