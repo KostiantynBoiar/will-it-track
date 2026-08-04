@@ -143,6 +143,10 @@ class GleeTracker:
             model = GLEE_Model(cfg, None, device, None, True).to(device)
             state = torch.load(weights_path, map_location=device)
             state = state.get("model", state)  # detectron2 ckpts wrap weights under "model"
+            # Some GLEE checkpoints (e.g. *_scaleup) prefix every key with "glee." while GLEE_Model's own
+            # modules are unprefixed (backbone.*, lang_projection, ...); strip it so the weights map on.
+            if state and all(k.startswith("glee.") for k in state):
+                state = {k[len("glee."):]: v for k, v in state.items()}
             missing, unexpected = model.load_state_dict(state, strict=False)
         finally:
             os.chdir(prev_cwd)
