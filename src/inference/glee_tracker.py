@@ -113,8 +113,12 @@ class GleeTracker:
         Mirrors GLEE's app.py: get_cfg -> add_glee_config -> merge_from_file -> GLEE_Model(cfg, None,
         device, None, True) -> load_state_dict(strict=False) -> eval(). strict=False is deliberate — the
         checkpoint carries training-only keys (matcher, track-loss) absent at inference. The GLEE checkout
-        is a source tree, so glee_repo (the dir containing projects/) is put on sys.path first.
+        is a source tree, so glee_repo (the dir containing projects/) is put on sys.path first, and model
+        construction runs with the cwd at glee_repo because GLEE loads CLIP weights from the relative path
+        projects/GLEE/clip_vit_base_patch32.
         """
+        import os
+
         import torch  # torch + detectron2 + GLEE are GPU-backend only -> lazy
         from detectron2.config import get_cfg
 
@@ -129,10 +133,16 @@ class GleeTracker:
         cfg.merge_from_file(config_path)
         cfg.freeze()
 
-        model = GLEE_Model(cfg, None, device, None, True).to(device)
-        state = torch.load(weights_path, map_location=device)
-        state = state.get("model", state)  # detectron2 ckpts wrap weights under "model"
-        missing, unexpected = model.load_state_dict(state, strict=False)
+        prev_cwd = os.getcwd()
+        try:
+            if glee_repo:
+                os.chdir(glee_repo)  # GLEE loads CLIP text weights from a relative path
+            model = GLEE_Model(cfg, None, device, None, True).to(device)
+            state = torch.load(weights_path, map_location=device)
+            state = state.get("model", state)  # detectron2 ckpts wrap weights under "model"
+            missing, unexpected = model.load_state_dict(state, strict=False)
+        finally:
+            os.chdir(prev_cwd)
         print(f"  GLEE weights loaded: {len(missing)} missing, {len(unexpected)} unexpected keys")
         model.eval()
 
