@@ -125,18 +125,21 @@ class GleeTracker:
         glee_repo = self.config.inference.glee_repo
         if glee_repo and glee_repo not in sys.path:
             sys.path.insert(0, glee_repo)
-        from projects.GLEE.glee.config import add_glee_config
-        from projects.GLEE.glee.models.glee_model import GLEE_Model
 
-        cfg = get_cfg()
-        add_glee_config(cfg)
-        cfg.merge_from_file(config_path)
-        cfg.freeze()
-
+        # GLEE reads several data files (dataset descriptions, CLIP text weights) from paths relative to
+        # the repo root, at BOTH import time and construction time, so chdir there for the whole block.
         prev_cwd = os.getcwd()
         try:
             if glee_repo:
-                os.chdir(glee_repo)  # GLEE loads CLIP text weights from a relative path
+                os.chdir(glee_repo)
+            from projects.GLEE.glee.config import add_glee_config
+            from projects.GLEE.glee.models.glee_model import GLEE_Model
+
+            cfg = get_cfg()
+            add_glee_config(cfg)
+            cfg.merge_from_file(config_path)
+            cfg.freeze()
+
             model = GLEE_Model(cfg, None, device, None, True).to(device)
             state = torch.load(weights_path, map_location=device)
             state = state.get("model", state)  # detectron2 ckpts wrap weights under "model"
