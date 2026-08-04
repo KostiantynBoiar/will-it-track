@@ -254,9 +254,15 @@ class GleeTracker:
             m = F.interpolate(m, size=(pad_h, pad_w), mode="bilinear", align_corners=False)
             m = m[:, :, :re_h, :re_w]  # crop the zero pad -> resized-image extent
             m = F.interpolate(m, size=(ori_h, ori_w), mode="bilinear", align_corners=False)
-            masks_np = (m[0] > 0.0).detach().cpu().numpy().astype(bool)  # [K, ori_h, ori_w]
-            emb = F.normalize(track_embed[sel], dim=-1).detach().cpu().numpy()  # [K, D] L2-normed
-            det_scores = scores_q[sel].detach().cpu().numpy()
+            masks = (m[0] > 0.0)  # [K, ori_h, ori_w] bool on device
+
+            # NMS: GLEE emits every object query, so many are duplicate detections of the same instance.
+            # Suppress overlapping boxes (derived from the masks) so each real object survives once.
+            sel_scores = scores_q[sel]
+            keep = self._nms_keep(masks, sel_scores, torchvision, torch)
+            masks_np = masks[keep].detach().cpu().numpy().astype(bool)
+            emb = F.normalize(track_embed[sel][keep], dim=-1).detach().cpu().numpy()  # [K', D] L2-normed
+            det_scores = sel_scores[keep].detach().cpu().numpy()
 
             if track_embeds:
                 tids = list(track_embeds.keys())
@@ -280,3 +286,17 @@ class GleeTracker:
                 next_track_id += 1
 
         return tracks
+
+    def _nms_keep(self, masks, scores, torchvision, torch):  # noqa: ANN001, ANN202
+        """Indices of the masks to keep after box-NMS (drops duplicate detections of the same instance).
+
+        Boxes are derived from the masks; empty masks are dropped first (masks_to_boxes is undefined on
+        them). Returns the kept indices into the input ordering.
+        """
+        nonempty = masks.flatten(1).any(dim=1)
+        idx = torch.nonzero(nonempty, as_tuple=True)[0]
+        if idx.numel() == 0:
+            return idx
+        boxes = torchvision.ops.masks_to_boxes(masks[idx].float())
+        kept = torchvision.ops.nms(boxes, scores[idx], self.config.inference.glee_nms_iou)
+        return idx[kept]

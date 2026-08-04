@@ -120,7 +120,10 @@ class InferenceConfig(BaseModel):
         glee_score_threshold: GLEE's own per-query pre-filter (it scores *every* query). Distinct from
             ``score_threshold`` (which stays ``0.0`` so VEval owns the final operating point); this only
             decides which candidate detections GLEE emits before VEval. Never tune it to flatter the null.
-        glee_topk: Top-k GLEE queries kept per frame before thresholding (== NUM_OBJECT_QUERIES).
+        glee_topk: Top-k GLEE queries kept per frame before NMS. GLEE emits 100 object queries per frame
+            (mostly low-quality duplicates); a small k (like app.py's num_inst) keeps only the confident few.
+        glee_nms_iou: Box-NMS IoU threshold applied to the kept queries so duplicate detections of the
+            same instance survive once (GLEE has no built-in NMS at inference).
         glee_match_threshold: Min track-embed cosine similarity to link a detection to a running track
             (MinVIS association). Set once from a couple of visualised clips; never tune it to change the null.
         glee_score_gain: Monotonic (rank-preserving) rescale of GLEE's masklet score (raw * gain, clipped
@@ -144,9 +147,10 @@ class InferenceConfig(BaseModel):
     glee_config: str | None = None
     glee_weights: str | None = None
     glee_score_threshold: float = 0.0
-    glee_topk: int = 100
+    glee_topk: int = 20
     glee_match_threshold: float = 0.3
     glee_score_gain: float = 1.0
+    glee_nms_iou: float = 0.5
 
 
 class EvalConfig(BaseModel):
