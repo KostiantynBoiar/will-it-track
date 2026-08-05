@@ -23,10 +23,12 @@ generalises --- across two datasets and, via the controlled model swap, across t
 task-general rather than specific to SAM\,3.
 
 \section{Future work}
-Three directions remain open. First, representational probing --- whether the target species is separable in
-SAM\,3's own feature space --- as a hedge against the unknown pretraining corpus. Second, broadening the model
-swap: more trackers, and ideally a \emph{larger} fair, mask-native dataset than BURST that is not any tracker's
-home turf --- SA-FARI's larger cell count could not be reused, because its camera-trap domain collapses
-internet-trained challengers' calibration even where they localise well, making it the fair-swap ceiling here.
-Third, targets with richer association structure (crowded, multi-object scenes) where the
-detection--association decomposition would have more to distinguish.
+Three directions remain open. First, a fuller \emph{representational} probe. The familiarity proxy already tests
+whether SAM\,3's own features \emph{separate} the species and finds they do, but only by re-encoding the visual
+distance (Section~\ref{sec:familiarity}); what those features actually \emph{encode} --- whether taxonomy is
+represented structurally, and a coverage-anchored proxy for the true, undisclosed pretraining corpus --- is left
+untested. Second, broadening the model swap: more trackers, and ideally a \emph{larger} fair, mask-native dataset
+than BURST that is not any tracker's home turf --- SA-FARI's larger cell count could not be reused, because its
+camera-trap domain collapses internet-trained challengers' calibration even where they localise well, making it
+the fair-swap ceiling here. Third, targets with richer association structure (crowded, multi-object scenes) where
+the detection--association decomposition would have more to distinguish.
