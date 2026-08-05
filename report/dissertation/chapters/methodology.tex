@@ -11,14 +11,18 @@ weighted regression with group-aware, out-of-sample validation rather than a tun
 
 \paragraph{Definition of success and the decision rule.}
 The intended deliverable is a \emph{validated, out-of-sample} predictor of \texttt{pDetA}/\texttt{pAssA}
-from label-free distances, with honest confidence intervals. A distance is taken to predict transfer only
-if it satisfies \textbf{both} criteria: (i) its coefficient's group-cluster-bootstrap 95\% confidence
-interval excludes zero, \emph{and} (ii) the grouped cross-validated model beats a mean-predictor baseline
-by a margin that is significant under a paired group-bootstrap. \textbf{H1} (detection $\leftarrow$
-species novelty) and \textbf{H2} (association $\leftarrow$ environment difficulty) are supported only when
-their respective distances meet this bar on the split that isolates them; if neither does under these
-deliberately powerful tests, we conclude \textbf{H0} --- distance explains little variance --- which is
-itself a valid result and motivates the representational-probing direction of Chapter~\ref{ch:discussion}.
+from label-free distances, with honest confidence intervals. A distance is taken to predict transfer only if
+it satisfies \textbf{both} criteria:
+\begin{enumerate}[label=(\roman*),leftmargin=2.4em]
+  \item its coefficient's group-cluster-bootstrap 95\% confidence interval excludes zero; \emph{and}
+  \item the grouped cross-validated model beats a mean-predictor baseline by a margin that is significant under
+    a paired group-bootstrap.
+\end{enumerate}
+\textbf{H1} (detection $\leftarrow$ species novelty) and \textbf{H2} (association $\leftarrow$ environment
+difficulty) are supported only when their respective distances meet this bar on the split that isolates them;
+if neither does under these deliberately powerful tests, we conclude \textbf{H0} --- distance explains little
+variance --- which is itself a valid result and motivates the representational-probing direction of
+Chapter~\ref{ch:discussion}.
 
 \section{Dataset, splits, and the analysis unit}
 \label{sec:meth-data}
