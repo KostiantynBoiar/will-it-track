@@ -1,13 +1,10 @@
 % Cross-model swap on BURST --- hand-maintained; source report/second_model_comparison.md (Phase 0 runs).
 \begin{table}[htbp]\centering
-  \caption{Cross-model swap on BURST (132 cells, 41 species, mask-HOTA). \emph{Top:} zero-shot detection
-  (\texttt{pDetA}) per tracker --- SAM\,3 and two architecturally-distinct text-promptable challengers, all
-  non-degenerate. \emph{Bottom:} out-of-sample error of the combined four-distance model under leakage-free
-  leave-species-out cross-validation, size-controlled, against a mean predictor; $\Delta$MAE with a 95\% CI and
-  one-sided $p$ from a paired bootstrap over whole held-out species (Bonferroni $\alpha=0.0125$). Both
-  challengers track BURST animals yet the combined distance model is null for each (CI spans zero, neither
-  clears the bar) --- the label-free distance null replicates across trackers. BURST has no shared locations, so
-  leave-species-out is the only valid scheme.}
+  \caption{Cross-model swap on BURST (132 cells, 41 species, mask-HOTA). \emph{Top:} zero-shot \texttt{pDetA}
+  per tracker --- SAM\,3 and two architecturally distinct challengers, all non-degenerate. \emph{Bottom:}
+  out-of-sample error of the combined four-distance model (leave-species-out, size-controlled) vs a mean
+  predictor; $\Delta$MAE [95\% CI]~($p$), Bonferroni $\alpha=0.0125$. Both challengers track BURST animals yet
+  the distance model is null for each --- the null replicates across trackers.}
   \label{tab:model_swap}
   \begin{tabular}{lrrr}
     \toprule

@@ -1,12 +1,9 @@
 % SAM 3 familiarity proxy (T2.5) --- hand-maintained; reproduce with src/analysis/familiarity_experiment.py
 \begin{table}[htbp]\centering
-  \caption{SAM\,3 familiarity proxy (T2.5, detection): does the separability of a species in SAM\,3's \emph{own}
-  vision-encoder feature space predict \texttt{pDetA}? Each metric is size-controlled and validated at the same
-  leave-species-out bar as the distances; $\Delta$MAE~($p$) is the out-of-sample gain over a mean predictor.
-  None clears the Bonferroni threshold ($\alpha=0.05/3=0.017$) on the leave-species-out (novelty) test on
-  either dataset. The last columns (SA-FARI) are the cell-level correlations with the DINOv2 visual distance and
-  animal size: all three metrics largely \emph{re-encode} the visual distance ($r_\text{vis}=0.63$--$0.85$).
-  On the same $346$ SA-FARI cells the before-running animal-size control validates out-of-sample, so this is a
+  \caption{SAM\,3 familiarity proxy (detection): does a species' separability in SAM\,3's \emph{own} feature
+  space predict \texttt{pDetA}? Each metric is size-controlled; $\Delta$MAE~($p$) is the out-of-sample gain over
+  a mean predictor. None clears Bonferroni ($\alpha=0.017$) on either dataset, and all three re-encode the
+  visual distance ($r_\text{vis}=0.63$--$0.85$). As the size control validates on the same cells, this is a
   genuine null, not an underpowered one.}
   \label{tab:familiarity}
   \begin{tabular}{lccccc}

@@ -78,14 +78,11 @@ present species of both official splits into $1{,}025$ scored cells across the $
   \draw[->] (dist.east) -| ([xshift=-1pt]glm.south);
   \draw[->] (glm) -- (cv);
 \end{tikzpicture}
-\caption[The measurement-and-modelling pipeline]{The measurement-and-modelling pipeline, shown for the primary
-case (SAM\,3 on SA-FARI) but identical for every dataset and tracker we study. \emph{Top:} the frozen tracker is
-run over the videos and scored by the official evaluator into per-cell detection/association scores (the target
-$Y$). \emph{Bottom:} four label-free distances are computed from the videos and ground-truth masks against a
-frozen reference set (the predictors $X$). A support-weighted logit GLM relates $X$ to $Y$ and is validated out
-of sample by holding out whole species and whole locations. Only the GLM is ever fitted; the tracker is never
-trained. The same pipeline is re-run unchanged on the external replication dataset and, in the model swap, with
-the tracker substituted.}
+\caption[The measurement-and-modelling pipeline]{The measurement-and-modelling pipeline, identical for every
+dataset and tracker. \emph{Top:} the frozen tracker is scored by the official evaluator into per-cell
+detection/association scores (the target $Y$). \emph{Bottom:} four label-free distances are computed against a
+frozen reference (the predictors $X$). A support-weighted logit GLM relates $X$ to $Y$, validated out of sample
+by holding out whole species and locations. Only the GLM is fitted; the tracker is never trained.}
 \label{fig:pipeline}
 \end{figure}
 
@@ -159,11 +156,10 @@ Laplacian over the masked background --- a cheap measure of local edge/texture d
 \begin{minipage}[b]{0.32\textwidth}\centering
   \includegraphics[width=\linewidth]{figures/feat_background.png}\\[2pt]{\footnotesize (c) \emph{environment}: animal erased}
 \end{minipage}
-\caption[The image-based distances in action]{The two image-based distances on a real camera-trap frame (a
-collared peccary). \textbf{(a)} the frame with its ground-truth mask (orange); \textbf{(b)} the mask-cropped
-animal that the \emph{visual} distance fingerprints (background zeroed); \textbf{(c)} the same frame with the
-animal mean-inpainted, which the \emph{environment} distance fingerprints. The per-video capture date (a
-metadata field, not the pixels) drives the \emph{temporal} gap. None of these features runs SAM\,3.}
+\caption[The image-based distances in action]{The two image-based distances on a camera-trap frame (a collared
+peccary). \textbf{(a)} ground-truth mask (orange); \textbf{(b)} the mask-cropped animal the \emph{visual}
+distance fingerprints; \textbf{(c)} the animal mean-inpainted, which the \emph{environment} distance
+fingerprints. None of these features runs SAM\,3.}
 \label{fig:features}
 \end{figure}
 

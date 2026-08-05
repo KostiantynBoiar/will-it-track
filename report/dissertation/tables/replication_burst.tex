@@ -1,11 +1,9 @@
 % BURST replication --- hand-maintained; reproduce with scripts/burst_replication_analysis.py
 \begin{table}[htbp]\centering
-  \caption{BURST independent replication --- out-of-sample error under leakage-free leave-species-out
-  cross-validation (41 species, 132 mask-native cells), against a mean predictor. $\Delta$ is the MAE gain over
-  baseline for \texttt{pDetA}; the bracketed 95\% CI and one-sided $p$ come from a paired bootstrap resampling
-  whole held-out species. Every before-running distance is null (CI spans zero); not even the animal-size
-  control reaches significance here, so BURST is a convergent null that cannot independently certify power for a
-  small species-level effect. BURST has no shared locations, so leave-species-out is the only valid scheme.}
+  \caption{BURST independent replication --- out-of-sample error under leave-species-out cross-validation
+  (41 species, 132 mask-native cells) vs a mean predictor. $\Delta$MAE is the \texttt{pDetA} gain over baseline,
+  with a paired-bootstrap 95\% CI and one-sided $p$. Every distance is null; not even the animal-size control
+  reaches significance, so BURST is a convergent null that cannot certify power for a small species-level effect.}
   \label{tab:replication_burst}
   \begin{tabular}{lrcr}
     \toprule

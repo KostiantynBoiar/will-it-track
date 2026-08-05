@@ -2,14 +2,11 @@
 % per-dataset tables/docs and the BURST replication analysis. See docs/{label_free_prediction_null,
 % burst_replication}.md.
 \begin{table}[htbp]\centering
-  \caption{What was tested, the numerical out-of-sample result, and on which dataset. Result is the
-  leave-species-out gain in MAE over a mean predictor ($\Delta$MAE, with one-sided bootstrap $p$) unless noted;
-  positive and significant means the feature predicts transfer. The before-running label-free distances are
-  null on both datasets; the only before-running quantity that reaches significance is the animal-size
-  confound, and only modestly on SA-FARI (which doubles as the positive control that keeps the null honest).
-  ``Opposite direction'' means the
-  association runs the reverse of what novelty predicts --- more-novel animals are detected \emph{better}, not
-  worse --- so it cannot support the hypothesis.}
+  \caption{What was tested, its out-of-sample result, and the dataset. Result is the leave-species-out $\Delta$MAE
+  over a mean predictor (one-sided bootstrap $p$) unless noted; positive-and-significant means the feature
+  predicts transfer. The label-free distances are null on both datasets; only the animal-size confound reaches
+  significance, modestly, on SA-FARI (the positive control). ``Opposite direction'' means more-novel animals are
+  detected \emph{better}, not worse --- so it cannot support the hypothesis.}
   \label{tab:cross_dataset}
   \footnotesize
   \setlength{\tabcolsep}{4pt}

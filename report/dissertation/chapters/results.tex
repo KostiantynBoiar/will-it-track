@@ -51,9 +51,9 @@ of a genuine \emph{absence} of before-running label-free signal, not of low powe
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.52\textwidth]{figures/res_pred_vs_actual.pdf}
-\caption[Out-of-sample predicted vs actual]{Out-of-sample predictions vs the truth for detection
-(\texttt{pDetA}), on held-out species and locations. The predictions collapse onto the mean baseline (orange)
-instead of tracking the diagonal (dashed) --- the distances carry no out-of-sample predictive power.}
+\caption[Out-of-sample predicted vs actual]{Out-of-sample detection predictions vs the truth, held-out species
+and locations. They collapse onto the mean baseline (orange) instead of the diagonal (dashed) --- the distances
+carry no predictive power.}
 \label{fig:predvsactual}
 \end{figure}
 
@@ -76,8 +76,7 @@ novelty is flat ($r\approx0.00$). Novelty does not predict transfer.
 \centering
 \includegraphics[width=0.52\textwidth]{figures/res_size_confound.pdf}
 \caption[The size confound]{The one label-free property that predicts detection: animal size. Per-cell
-\texttt{pDetA} rises with the log ground-truth mask area ($r=+0.31$) --- the confound behind the apparent
-visual-distance effect.}
+\texttt{pDetA} rises with log mask area ($r=+0.31$) --- the confound behind the apparent visual-distance effect.}
 \label{fig:size}
 \end{figure}
 
