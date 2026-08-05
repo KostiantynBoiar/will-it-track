@@ -75,7 +75,7 @@ present species of both official splits into $1{,}025$ scored cells across the $
   \draw[->] (vid) -- (sam);   \draw[->] (sam) -- (y);
   \draw[->] (vid.south) |- (dist.west);
   \draw[->] (y.east)    -| ([xshift=-1pt]glm.north);
-  \draw[->] (dist.east) -| ([xshift=-1pt]glm.south);
+  \draw[->] (dist.east) -- ([xshift=-10pt]dist.east -| glm.west) |- (glm.west);
   \draw[->] (glm) -- (cv);
 \end{tikzpicture}
 \caption[The measurement-and-modelling pipeline]{The measurement-and-modelling pipeline, identical for every
