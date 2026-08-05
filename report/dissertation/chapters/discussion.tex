@@ -17,6 +17,23 @@ association is a near-degenerate target on this data. Because most cells contain
 to predict. The decomposition is therefore honestly a detection story; we report the association null with
 those divergence figures as its explanation rather than as a separate failed search.
 
+\subsection{Novelty at the extremes versus graded prediction}
+\label{sec:disc-coarse}
+A natural objection is that novelty \emph{surely} matters --- a familiar species is detected better than a
+totally alien one, so how can a novelty distance be null? Both statements are true and do not conflict, because
+they concern different resolutions of the same axis. The \emph{coarse} claim --- that the extreme tails differ,
+alien-versus-familiar --- is real and never in dispute; the null we report is the far stronger \emph{graded}
+claim H1 actually tests: that a continuous distance predicts \emph{where on the \texttt{pDetA} scale} an unseen
+species lands, out of sample, beyond the size confound, well enough to serve as a deployment gate. These come
+apart because the informative variance in \texttt{pDetA} lives in the middle of the range, not at the poles: the
+easy extremes (common large animals near $1$, hopeless cases near $0$) are already predicted by the mean, so a
+coarse ``alien-versus-familiar'' signal adds nothing exactly where prediction has value. A genuine extreme-tail
+effect can therefore coexist with a null graded predictor without contradiction --- and it is the graded,
+held-out, size-controlled predictor, not the truism, that a practitioner would need and that this work shows
+does not exist. (The model swap sharpens this: the challengers' own detect-or-fail behaviour on exotic species
+is itself a coarse novelty effect, yet it is \emph{that model's} novelty, measured against the wrong reference,
+and it too fails to yield a graded predictor --- so it re-derives the hypothesis, not its confirmation.)
+
 \section{Relation to prior label-free evaluation}
 \label{sec:disc-related}
 The null sits against a literature of \emph{positive} results, and two axes separate every one of those results
@@ -104,12 +121,21 @@ proxy for the actual corpus nonetheless remains untested. Second, the analysis i
 frozen backbone,
 and --- since one inference pass is reused across both splits --- the species and location experiments are two
 overlays on the \emph{same} scored cells, not independent replications; they give near-orthogonal but not
-statistically independent evidence. We take two steps against this by re-running the whole pipeline on
-independent datasets. On MammAlps (\S\ref{sec:mammalps}) the distance null holds but the $20$-cell design is
-underpowered; on the larger, mask-native BURST (\S\ref{sec:burst}, $132$ cells / $41$ species) it holds again
-and better-powered, giving a third convergent null. Neither is positive proof --- BURST detects only a large
-between-species predictor and remains underpowered for a small species-constant distance effect --- so we
-report convergence, not independent confirmation of any positive. Third, the effective sample is tens of
+statistically independent evidence. We take three steps against this. Against the \emph{dataset} threat we
+re-run the whole pipeline on two independent datasets: on MammAlps (\S\ref{sec:mammalps}) the distance null
+holds but the $20$-cell design is underpowered, and on the larger, mask-native BURST (\S\ref{sec:burst}, $132$
+cells / $41$ species) it holds again and better-powered, giving a third convergent null (neither is positive
+proof --- BURST detects only a large between-species predictor and remains underpowered for a small
+species-constant distance effect --- so we report convergence, not independent confirmation of any positive).
+Against the \emph{model} threat --- the ``single frozen backbone'' --- we run the controlled model swap
+(\S\ref{sec:model_swap}): two architecturally distinct open-vocabulary trackers, GLEE and Florence-2\,+\,SAM\,2,
+both track BURST's animals non-degenerately ($\text{pDetA}\,0.34$ and $0.39$) yet the combined distance model is
+null for each (CIs span zero, neither clears the Bonferroni bar), so the null is task-general rather than a SAM\,3
+artefact --- a convergent, confound-free cross-model replication (again not an independently-powered
+certification: two models on one fair dataset). That swap could not run on SA-FARI itself, and honestly so:
+SA-FARI is SAM\,3's own co-released benchmark, and its camera-trap domain collapses the challengers' confidence
+calibration even where they localise well, so BURST is the fair-swap ceiling. Third, the effective sample is
+tens of
 independent
 species/locations, not hundreds of cells --- which is why
 inference is group-clustered throughout, and why aggregate correlations (e.g. the location-level night/IR
@@ -118,6 +144,13 @@ Representational probing is only partly opened here: the familiarity proxy (\S\r
 whether SAM\,3's features \emph{separate} the species --- they do, but that separability merely re-encodes the
 visual distance and does not predict transfer --- while a fuller probe of what those representations encode
 remains open.
+
+Finally, on the scorer itself: all scores come from the \emph{unmodified official} SA-FARI evaluator, which
+wraps the standard HOTA/TETA tracking metrics rather than any SAM-3-specific logic. Its one SAM-3-calibrated
+knob is a fixed $0.5$ confidence gate; we verified it is not load-bearing for the cross-model comparison, since
+the challengers' near-zero SA-FARI scores survive both a box-based metric and a threshold-free
+average-precision metric with no gate at all (\S\ref{sec:model_swap}). The measurement is therefore
+model-fair, and the challenger failures on SA-FARI are genuine detection failures, not scoring artefacts.
 
 \section{Ethical considerations}
 % TODO: expand.
