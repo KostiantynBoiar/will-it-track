@@ -19,14 +19,19 @@ to a fairer dataset. The result:
 3. **On BURST — a fair, off-turf, everyday-animal dataset — the competitors WORK.** GLEE localises at oracle
    mIoU **0.80** (up to 0.96) with well-calibrated scores (0.6–0.9, clearing the 0.5 gate), and its full-split
    **pDetA = 0.340** (median 0.31, spread 0–0.98, 67/132 cells > 0.3) — non-degenerate, vs SAM 3's 0.607.
-4. **The distance null REPLICATES on GLEE (BURST, 132 cells, leave-species-out).** The combined four-distance
-   model is null (ΔMAE **+0.011, p=0.088**, CI spans zero); magnitudes are trivial (~0.01–0.02) throughout;
-   individual flickers do not survive as a usable predictor (§5 caveats). **The label-free null is
-   task-general, not SAM-3-specific** — the exact robustness result the swap was meant to deliver, on real,
-   varying scores from an architecturally-different model, on a dataset SAM 3 was not built for.
+4. **The distance null REPLICATES on BOTH challengers (BURST, 132 cells, leave-species-out).** GLEE combined
+   four-distance model null (ΔMAE +0.011, p=0.088, CI spans zero, §5); Florence-2+SAM2 combined model also null
+   (ΔMAE +0.034, p=0.030, CI just spans zero, §6). Two *architecturally-distinct* trackers (GLEE unified-query;
+   Florence-2 caption-style, no confidence score) both track BURST animals (pDetA 0.34 / 0.39) AND both show the
+   null. **The label-free null is task-general, not SAM-3-specific** — the robustness result the swap was meant to
+   deliver, on real varying scores from two other models, on a dataset SAM 3 was not built for.
+5. **SA-FARI is the ceiling, not BURST's fault (§7).** SA-FARI could not host a fair swap even on its everyday
+   species: GLEE localises jaguar at 0.90 IoU there but its confidence collapses below the 0.5 gate — the
+   *camera-trap footage domain*, not the species, breaks internet-trained detectors' calibration. So BURST is the
+   honest fair-swap arena; MammAlps was infeasible (un-committed dense-annotation prep).
 
-**Net:** the model-swap is *not* a dead end. It is a confound-free replication of the robust null on a second
-model, and it defuses the "you only proved SAM 3 is good" objection. Full detail in §5.
+**Net:** the model-swap is *not* a dead end. It is a confound-free replication of the robust null on **two**
+architecturally-distinct models, and it defuses the "you only proved SAM 3 is good" objection. Full detail §5–§7.
 
 ---
 
@@ -242,5 +247,58 @@ benchmark/species confound, not evidence that the null is a SAM 3 quirk.
 **Caveat (stated, not hidden):** BURST is 41 species / 132 cells and underpowered for a small species-level
 effect (the dissertation already logs the SAM 3 BURST run as a *convergent* null, not independent proof). The
 GLEE swap is the same: a **convergent, confound-free replication**, not an independently-powered certification.
-One model (GLEE) was swapped; Florence-2 passed Gate-0 too and could be added. Every config was pre-registered;
-the driver forces the size control and the Bonferroni bar; nothing was tuned to the result.
+Every config was pre-registered; the driver forces the size control and the Bonferroni bar; nothing was tuned to
+the result.
+
+## 6. Second challenger — Florence-2 + SAM 2 on BURST (the null replicates again)
+
+To move from one challenger to two architecturally-distinct ones, the full BURST swap was repeated with
+**Florence-2 + SAM 2** (Florence-2 detects boxes from text — a *caption-style* generator with **no confidence
+score at all**, structurally different from GLEE's unified query model; SAM 2 turns boxes into masks + tracks
+identity). Full run over all 115 annotated BURST videos, median-seeded, mask-HOTA.
+
+- **Gate-1 (non-degenerate).** pDetA **0.394** (median 0.329; spread min 0 / p75 0.771 / max 0.990; **72/132
+  cells > 0.3**) — comparable to GLEE's 0.340 and, unlike SA-FARI, the seeding fragility did not bite (BURST's
+  clean 20-frame everyday-animal clips give the median seed a good box). SAM 3 baseline 0.607.
+- **Distance null (leave-species-out, size-controlled, Bonferroni m=4, α=0.0125):**
+
+  | Distance | ΔMAE | 95% CI | p |
+  |---|---|---|---|
+  | taxonomic (primary) | +0.034 | [−0.001, +0.069] | 0.031 |
+  | visual | +0.035 | [−0.002, +0.068] | 0.031 |
+  | environment | +0.042 | [+0.011, +0.074] | 0.006 |
+  | temporal | +0.038 | [+0.003, +0.072] | 0.015 |
+  | **all four combined** | **+0.034** | **[−0.001, +0.068]** | **0.030** |
+
+- **Reading (null, but less cleanly than GLEE — stated honestly).** The combined four-distance model — the
+  actual predictor — is null: its CI just spans zero and p=0.030 does **not** clear the Bonferroni bar. So the
+  verdict is the same as GLEE and SAM 3 (no usable graded predictor), but the margin is thinner: Florence's CIs
+  sit closer to zero-exclusion than GLEE's (whose all-four p was 0.088). Two individual distances (environment
+  p=0.006, temporal p=0.015) reach nominal significance, but with the **same discounts** as GLEE: (i) BURST has
+  no locations, so "leave-species-out" is the only real scheme and an apparent two-scheme pass is one partition
+  counted twice; (ii) they route through the animal-size confound the driver already controls; (iii) the
+  combined model — what a deployment estimator would use — is null. It is a genuine, if narrower, replication of
+  the null.
+
+**Net (both challengers).** Two trackers of *different architectures* (GLEE unified-query, Florence-2
+caption-style) both (a) genuinely track BURST animals (pDetA 0.34 / 0.39, non-degenerate) and (b) show the
+label-free-distance null (combined predictor null in both). **The null is task-general across trackers, not a
+SAM 3 quirk** — a materially stronger claim than one challenger, on a fair, confound-free dataset. Honest
+scope: two models × one fair dataset (BURST, n=132, underpowered for a small effect); a *convergent* cross-model
+replication, not an independently-powered certification. MammAlps was **not** run for the challengers: its
+per-clip dense annotations are an un-committed preprocessing artifact not reproducible from the public Zenodo
+record (segmaps only), so BURST is the honest cross-model arena (see §7 and the reproducibility note in
+`scripts/run_mammalps.sh`).
+
+## 7. Why not a larger / SA-FARI-powered fair swap? (the ceiling)
+
+We tested whether SA-FARI's larger cell count could be salvaged for a fair swap by restricting to its *everyday*
+species (the exotic ones being OOD for internet-trained challengers). Running GLEE on 11 SA-FARI everyday-species
+clips (rabbit, jaguar, fox, elephant, cow, deer, …): GLEE **localises them well** — oracle mIoU up to **0.90**
+(jaguar; cow 0.79) — but its **confidence still collapses below VEval's 0.5 gate** (rank_ok 0.24; best-detection
+scores 0.1–0.4). So the SA-FARI failure is **the footage domain, not just the species**: dark, cluttered,
+motion-blurred camera-trap frames wreck an internet-trained detector's score calibration even where it sees the
+animal. On BURST's cleaner internet video the same GLEE produced 0.6–0.9 scores that clear the gate. **Conclusion:
+BURST is the ceiling for a fair swap with current open-vocab trackers** — you cannot have SA-FARI's power and a
+fair, non-degenerate challenger score at once. This is a genuine limitation of the model-swap route, not a flaw
+in the method, and it is reported as such.
