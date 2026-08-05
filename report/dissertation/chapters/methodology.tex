@@ -86,9 +86,12 @@ by holding out whole species and locations. Only the GLM is fitted; the tracker 
 \label{fig:pipeline}
 \end{figure}
 
-SAM\,3~\cite{sam3} is run frozen over the probe videos --- species-specific prompts as the primary condition,
-a generic ``animal'' prompt for robustness --- and scored with the official \texttt{VEval} evaluator, which we
-never re-implement. This yields a per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA}~\cite{hota} with its
+We now instantiate this pipeline on the primary case --- SAM\,3 on SA-FARI --- whose concrete choices,
+numbers, and benchmark status the rest of this section reports; the external replications and the model swap
+(Sections~\ref{sec:meth-replication}--\ref{sec:meth-swap}) then re-run the \emph{same} pipeline on other
+datasets and trackers. SAM\,3~\cite{sam3} is run frozen over the probe videos --- species-specific prompts as
+the primary condition, a generic ``animal'' prompt for robustness --- and scored with the official
+\texttt{VEval} evaluator, which we never re-implement. This yields a per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA}~\cite{hota} with its
 support. A single inference pass over the union of the Split~A and Split~B probes serves both experiments.
 Predictions are stored per (video, species) so that the several species-prompts issued on one video do not
 collide; the harness is resumable at per-video granularity and never updates a weight.
