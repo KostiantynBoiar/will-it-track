@@ -2,17 +2,22 @@
 \label{ch:introduction}
 
 \section{Motivation}
-% TODO: expand into ~1 page.
-Promptable video trackers such as SAM\,3~\cite{sam3} segment and track any named animal in a video
-with no training on that species, and conservation teams now deploy them on new species and regions
-constantly. Yet no rule tells a practitioner, \emph{before running the model}, whether its output is
-trustworthy for a given animal in a given place.
+Promptable video trackers --- of which SAM\,3~\cite{sam3} is the current state of the art --- segment and
+track any named animal in a video with no training on that species, and conservation teams now deploy them on
+new species and regions constantly. Their appeal is exactly this zero-shot reach; their liability is that it is
+\emph{unpredictable}, varying sharply from one animal or place to the next. Yet no rule tells a practitioner,
+\emph{before running the model}, whether its output is trustworthy for a given animal in a given place --- so a
+team pointing a tracker at a new species cannot tell in advance whether to trust it or whether the costly
+alternative, manual annotation, is still required. This dissertation studies that gap on the leading such tracker
+(SAM\,3), and then asks whether whatever we find is specific to it.
 
 \section{Problem statement and research question}
-% TODO: state the RQ precisely and scope it to the SA-FARI train split.
-This dissertation asks whether SAM\,3's zero-shot tracking accuracy on an unseen (species, place) can
-be \emph{predicted in advance} from properties measurable without any label of the target, and which
-factors govern that transfer --- separately for \emph{finding} the animal and \emph{following} it.
+This dissertation asks whether a promptable tracker's zero-shot accuracy on an unseen (species, place) can be
+\emph{predicted in advance} from properties measurable without any label of the target, and which factors govern
+that transfer --- separately for \emph{finding} the animal and \emph{following} it. We study this concretely on
+SAM\,3 as the primary case, measuring novelty against the SA-FARI reference split (Section~\ref{sec:bg-safari}),
+and then test whether the answer generalises beyond one dataset and one model --- to two further datasets and,
+via a controlled model swap, to two other promptable trackers (Section~\ref{sec:model_swap}).
 
 \section{Hypotheses}
 % TODO: motivate each hypothesis from the background.
@@ -35,18 +40,22 @@ into \textbf{detection} (\texttt{pDetA}) and \textbf{association} (\texttt{pAssA
 from label-free performance prediction for classifiers, which estimates a single scalar from the model's own
 outputs on the target~\cite{aotl,agl,atc}, and from the very recent static-image detector/segmenter
 estimators~\cite{pcr,rca}; and from camera-trap shift studies, which measure but do not forecast per-site
-reliability~\cite{terra,panaf,jeon}. Concretely we deliver: (i) a rigorous, out-of-sample \emph{negative}
-result --- under a deliberately powerful test (whole-species and whole-location hold-out with
-group-cluster-bootstrap significance), label-free before-running distances do \emph{not} predict SAM\,3's
-transfer; (ii) the detection-versus-association decomposition, tested on two near-orthogonal splits --- a
-constructed species hold-out (novelty) and the official location hold-out (environment); (iii) a
-\emph{hardened} account of \emph{why} it fails: a follow-up intrinsic-difficulty pivot collapses to the same
-animal-size confound, so the only label-free property that predicts detection is object size --- the very
-nuisance the analysis controls for --- and that positive control confirms the test detects signal when it
-exists; and (iv) evidence that the null is not an artefact of \emph{one} dataset or \emph{one} model: it holds
-across three datasets (SA-FARI, MammAlps, BURST) and, in a controlled model swap on BURST, across two
-architecturally distinct promptable trackers (GLEE and Florence-2\,+\,SAM\,2), so it is task-general rather than
-a quirk of SAM\,3.
+reliability~\cite{terra,panaf,jeon}. Concretely we deliver:
+\begin{enumerate}[label=(\roman*),leftmargin=2.4em]
+  \item a rigorous, out-of-sample \emph{negative} result --- under a deliberately powerful test (whole-species
+    and whole-location hold-out with group-cluster-bootstrap significance), label-free before-running distances
+    do \emph{not} predict SAM\,3's transfer;
+  \item the detection-versus-association decomposition, tested on two near-orthogonal splits --- a constructed
+    species hold-out (novelty) and the official location hold-out (environment);
+  \item a \emph{hardened} account of \emph{why} it fails: a follow-up intrinsic-difficulty pivot collapses to the
+    same animal-size confound, so the only label-free property that predicts detection is object size --- the
+    very nuisance the analysis controls for --- and that positive control confirms the test detects signal when
+    it exists;
+  \item evidence that the null is not an artefact of \emph{one} dataset or \emph{one} model: it holds across
+    three datasets (SA-FARI, MammAlps, BURST) and, in a controlled model swap on BURST, across two
+    architecturally distinct promptable trackers (GLEE and Florence-2\,+\,SAM\,2), so it is task-general rather
+    than a quirk of SAM\,3.
+\end{enumerate}
 
 \section{Dissertation outline}
 % TODO: update page/chapter cross-references as chapters are written.
