@@ -57,59 +57,68 @@ present species of both official splits into $1{,}025$ scored cells across the $
 
 \begin{figure}[htbp]
 \centering
-\begin{tikzpicture}[>=Latex, every node/.style={font=\scriptsize},
-  b/.style={draw, rounded corners, align=center, inner sep=3pt, minimum height=0.8cm},
+\begin{tikzpicture}[>=Latex, node distance=0.9cm, every node/.style={font=\scriptsize},
+  b/.style={draw, rounded corners, align=center, inner sep=3pt, minimum height=0.85cm},
   d/.style={b, fill=black!5}, m/.style={b, fill=blue!12},
   f/.style={b, fill=green!16}, g/.style={b, fill=orange!20}]
-  \node[d, text width=1.7cm] (vid) {SA-FARI videos};
-  \node[m, text width=2.0cm, right=0.6cm of vid] (sam) {frozen SAM\,3 $\to$ VEval};
-  \node[d, text width=2.0cm, right=0.6cm of sam] (y) {per-cell \texttt{pDetA} / \texttt{pAssA} ($Y$)};
-  \node[f, text width=3.4cm, below=1.0cm of sam] (dist)
+  % top row: the frozen measurement path X-fixed, producing the target Y
+  \node[d, text width=1.8cm] (vid) {tracking videos + ground truth};
+  \node[m, text width=2.2cm, right=0.7cm of vid] (sam) {frozen promptable tracker $\to$ official evaluator};
+  \node[d, text width=2.1cm, right=0.7cm of sam] (y) {per-cell \texttt{pDetA} / \texttt{pAssA} ($Y$)};
+  % bottom row: the label-free predictor path
+  \node[f, text width=3.6cm, below=1.05cm of sam] (dist)
     {four label-free distances (taxonomic, visual, environment, temporal) vs the \textbf{frozen reference} ($X$)};
-  \node[g, text width=2.1cm, right=1.1cm of y, yshift=-0.8cm] (glm) {support-weighted logit GLM};
-  \node[g, text width=2.1cm, below=0.5cm of glm] (cv) {out-of-sample validation (species / location)};
-  \node[d, text width=1.5cm, right=0.8cm of glm, yshift=-0.55cm] (res) {\textbf{result:} H0};
+  % modelling column on the right
+  \node[g, text width=2.3cm, right=1.0cm of y, yshift=-0.9cm] (glm) {support-weighted logit GLM \;($X\!\to\!Y$)};
+  \node[g, text width=2.3cm, below=0.55cm of glm] (cv)
+    {out-of-sample validation: hold out whole species / locations};
   \draw[->] (vid) -- (sam);   \draw[->] (sam) -- (y);
   \draw[->] (vid.south) |- (dist.west);
-  \draw[->] (y.east)   -| ([xshift=-1pt]glm.north);
+  \draw[->] (y.east)    -| ([xshift=-1pt]glm.north);
   \draw[->] (dist.east) -| ([xshift=-1pt]glm.south);
   \draw[->] (glm) -- (cv);
-  \draw[->] (glm.east) -| ([xshift=-1pt]res.north);
-  \draw[->] (cv.east)  -| ([xshift=-1pt]res.south);
 \end{tikzpicture}
-\caption[The measurement-and-modelling pipeline]{The pipeline. \emph{Top:} frozen SAM\,3 is run over the
-videos and scored by the official evaluator into per-cell detection/association scores (the target $Y$).
-\emph{Bottom:} four label-free distances are computed from the videos and ground-truth masks against a frozen
-reference set (the predictors $X$). A support-weighted logit GLM relates $X$ to $Y$ and is validated out of
-sample by holding out whole species and whole locations; SAM\,3 is never trained.}
+\caption[The measurement-and-modelling pipeline]{The measurement-and-modelling pipeline, shown for the primary
+case (SAM\,3 on SA-FARI) but identical for every dataset and tracker we study. \emph{Top:} the frozen tracker is
+run over the videos and scored by the official evaluator into per-cell detection/association scores (the target
+$Y$). \emph{Bottom:} four label-free distances are computed from the videos and ground-truth masks against a
+frozen reference set (the predictors $X$). A support-weighted logit GLM relates $X$ to $Y$ and is validated out
+of sample by holding out whole species and whole locations. Only the GLM is ever fitted; the tracker is never
+trained. The same pipeline is re-run unchanged on the external replication dataset and, in the model swap, with
+the tracker substituted.}
 \label{fig:pipeline}
 \end{figure}
 
-SAM\,3~\cite{sam3} is run frozen over the probe videos (species-specific prompts as the primary condition,
-a generic ``animal'' prompt for robustness) and scored with the official \texttt{VEval} evaluator --- the
-metric is never re-implemented --- giving per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA}~\cite{hota}
-with their support. A single inference pass over the union of Split~A and Split~B probes serves both
-experiments; predictions are stored per (video, species) so that the several
-species-prompts issued on one video do not collide, and the harness is resumable at per-video granularity and
-never updates a weight. We aggregate two ways and keep them distinct: the \emph{micro} dataset-level
-\texttt{VEval} score (the published SA-FARI operating point, $\approx\!0.65$ mask-\texttt{pHOTA}) and the
-per-cell support-weighted \emph{macro} mean over positive cells that is our modelling target. Because the
-macro mean is a positives-only per-cell average it sits lower ($\approx\!0.53$), and every Gate~1 number we
-quote is the macro value, labelled as such.
+SAM\,3~\cite{sam3} is run frozen over the probe videos --- species-specific prompts as the primary condition,
+a generic ``animal'' prompt for robustness --- and scored with the official \texttt{VEval} evaluator, which we
+never re-implement. This yields a per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA}~\cite{hota} with its
+support. A single inference pass over the union of the Split~A and Split~B probes serves both experiments.
+Predictions are stored per (video, species) so that the several species-prompts issued on one video do not
+collide; the harness is resumable at per-video granularity and never updates a weight.
 
-\paragraph{No retraining; validity of the frozen protocol.} It bears stating plainly, as it is easily
-misread: \textbf{SAM\,3 is never retrained or fine-tuned in this work.} The single object we fit is the small
-support-weighted logistic regression that maps the label-free distances $X$ onto the observed scores $Y$; the
-tracker itself is the public checkpoint, run once, its weights untouched. Reusing that one inference across
-both splits is therefore sound rather than a leak: because the model is frozen, a cell's score does not depend
-on which reference partition we later overlay to compute its distances. This also fixes the benchmark's status
-here. SA-FARI is a held-out, \emph{zero-shot} benchmark for the released SAM\,3: the SAM\,3
-report~\cite{sam3} does not list SA-FARI among its training sources, and the SA-FARI paper~\cite{safari}
-reports the released checkpoint zero-shot (the $\approx\!0.65$ mask-\texttt{pHOTA} ballpark we reproduce at
-Gate~1) \emph{alongside} separately fine-tuned rows whose gain we deliberately forgo. We can therefore verify
-non-membership at the \emph{dataset} level; we cannot verify it frame-by-frame, since SAM\,3's full
-pretraining corpus is undisclosed. We do not claim otherwise: every distance is measured against the SA-FARI
-\emph{train reference}, not against SAM\,3's true (unknown) pretraining distribution, and the familiarity
+We aggregate the frame-level scores two ways and keep the two distinct. The \emph{micro} score is the
+dataset-level \texttt{VEval} figure --- the published SA-FARI operating point, $\approx\!0.65$
+mask-\texttt{pHOTA} --- which we report only to confirm we reproduce the benchmark. The \emph{macro} score is
+the per-cell, support-weighted mean over positive cells, and it is our modelling target: the law is fit
+cell-by-cell, so the cell is the unit that must carry the score. Because the macro mean is a positives-only
+per-cell average it sits lower ($\approx\!0.53$); every Gate~1 number we quote is the macro value, labelled as
+such.
+
+\paragraph{No retraining; validity of the frozen protocol.} One point is worth stating plainly, because it is
+easily misread: \textbf{SAM\,3 is never retrained or fine-tuned in this work.} The only object we fit is the
+small support-weighted logistic regression that maps the label-free distances $X$ onto the observed scores
+$Y$; the tracker is the public checkpoint, run once, its weights untouched. Reusing that one inference across
+both splits is therefore sound rather than a leak --- because the model is frozen, a cell's score cannot depend
+on which reference partition we later overlay to compute its distances.
+
+This also settles the benchmark's status. SA-FARI is a held-out, \emph{zero-shot} benchmark for the released
+SAM\,3: the SAM\,3 report~\cite{sam3} does not list SA-FARI among its training sources, and the SA-FARI
+paper~\cite{safari} reports the released checkpoint zero-shot (the $\approx\!0.65$ mask-\texttt{pHOTA} ballpark
+we reproduce at Gate~1) \emph{alongside} separately fine-tuned rows whose gain we deliberately forgo. We can
+therefore verify non-membership at the \emph{dataset} level; we cannot verify it frame-by-frame, since SAM\,3's
+full pretraining corpus is undisclosed. We do not claim otherwise: every distance is measured against the
+SA-FARI \emph{train reference}, not against SAM\,3's true (unknown) pretraining distribution, and the
+familiarity
 proxy (Section~\ref{sec:meth-familiarity}) is the hedge for exactly this gap.
 
 \section{The frozen reference (leakage firewall)}
