@@ -1,8 +1,17 @@
 """MammAlps → SA-Co adapter (R7 independent replication; box-only Alpine camera-trap tracker).
 
-MammAlps ships one JSON per video clip: an ``info`` block (site/cam/fps/file_path/resolution) and a ``frames``
-list where each frame carries ``detections`` with a ``track_id``, an ``bbox`` (**xyxy** absolute pixels), and
-``attributes.species`` (one of 5 Alpine mammals). There are **no masks** and the clips are 30 fps.
+This adapter reads one dense-annotation JSON per clip from ``data_root/<mammalps.raw_dir>/`` (default
+``dense/``): an ``info`` block (site/cam/fps/file_path/resolution) and a ``frames`` list where each frame
+carries ``detections`` with a ``track_id``, a ``bbox`` (**xyxy** absolute pixels), and ``attributes.species``
+(one of 5 Alpine mammals). There are **no masks** and the clips are 30 fps.
+
+REPRODUCIBILITY NOTE: those per-clip ``dense/*.json`` are a **prerequisite this repo does not build**. The
+public Zenodo record (15588220) ships *segmentation maps* (``benchmark_1/segmaps/*.npz``) + video metadata
+(``raw_videos_mammalps_v1.csv``), **not** per-frame box/track/species records — so the dense JSONs consumed by
+the original SAM 3 replication were produced by an offline, un-committed conversion. To reproduce MammAlps you
+must first regenerate them (segmaps/metadata → the ``frames[].detections[]`` structure above) or restore them
+from the original run. This is why the cross-model swap (§ dissertation) uses BURST, not MammAlps: BURST's
+annotations are fully reproducible from its committed acquisition, MammAlps' dense prep is not.
 
 This converter emits the SA-Co ``_ext`` schema the pipeline already reads, with two box-specific choices
 (validated against the loader/scorer contract): each GT box becomes a **filled-rectangle RLE** in

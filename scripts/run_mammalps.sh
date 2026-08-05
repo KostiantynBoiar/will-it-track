@@ -2,8 +2,18 @@
 # R7 MammAlps end-to-end (pod): extract frames → SAM 3 inference → box-HOTA score → distances → GLM/CV → report.
 # Split A (leave-species-out) on the pooled probe set; leave-camera-out is the environment scheme.
 # Frames are streamed from the Zenodo zip via HTTP range (remotezip) — no 82 GiB local download needed.
-# Prereqs: dense annotations converted (src.adapters.mammalps), remotezip + SA-FARI env + the VEval scorer,
-# HF token set (SAM 3 checkpoint).
+#
+# PREREQ (REPRODUCIBILITY NOTE — this step is NOT in the committed pipeline): src.adapters.mammalps
+# *reads* per-clip dense-annotation JSONs from data_root/<mammalps.raw_dir>/ (default "dense/"), each with
+# {file_path, resolution, num_frames, frames:[{frame_id, detections:[{track_id, bbox, attributes.species}]}]}.
+# The public Zenodo record (15588220) does NOT ship these JSONs — it ships segmentation maps
+# (benchmark_1/segmaps/*.npz) + video metadata (raw_videos_mammalps_v1.csv), not per-frame box/track/species
+# records. So the dense/*.json used by the original SAM 3 replication were produced by an OFFLINE, un-committed
+# conversion (segmaps/metadata -> boxes+tracks+species). To reproduce MammAlps you must first regenerate those
+# dense/*.json (or restore them from the original run); the frame-extraction + adapter steps below assume they
+# already exist. Without them, extract_mammalps_frames.py fails at read_text() on the missing test _ext.
+#
+# Other prereqs: remotezip + SA-FARI env + the VEval scorer, HF token set (SAM 3 checkpoint).
 set -euo pipefail
 
 cd "$(cd "$(dirname "$0")/.." && pwd)"  # repo root, so `python3 scripts/...` can import `src`
