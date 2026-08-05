@@ -256,17 +256,9 @@ Every SA-FARI result reuses one frozen inference pass on one dataset, so the two
 not statistically independent. To test whether the before-running null is a property of the transfer problem
 rather than of SA-FARI, we re-run the \emph{entire} pipeline --- unchanged frozen SAM\,3, the same official
 scorer, the same distances, and the same leave-species-out cross-validation and paired group bootstrap --- on
-two independent tracking datasets. The abstraction boundary that makes this cheap is the annotation schema, not
-the loader: an offline adapter converts each dataset into the SA-Co annotation JSON (the SA-FARI/VEval schema)
+an independent tracking dataset. The abstraction boundary that makes this cheap is the annotation schema, not
+the loader: an offline adapter converts the dataset into the SA-Co annotation JSON (the SA-FARI/VEval schema)
 the loader and evaluator already read, so nothing downstream changes. Only the small logit GLM is ever fitted; SAM\,3 is frozen throughout.
-
-\paragraph{MammAlps (box-only, small).} An Alpine camera-trap tracker~\cite{mammalps}: 5 species over 3 sites /
-9 cameras, box-only ground truth. The adapter emits each box as a filled-rectangle RLE (so the mask-cropped visual, size
-and environment features run) together with the native box, and the scorer reads box-HOTA rather than mask-HOTA
-(against a filled rectangle a tight predicted mask has near-zero IoU, so box-IoU is the honest metric). The
-$30$\,fps clips are subsampled to $3$\,fps and capped per (species, camera) cell; the per-camera site metadata
-supports both leave-species-out and leave-camera-out. Only three of the four distances are testable
-(temporal is degenerate over the six-week window; taxonomic is near-constant across five species).
 
 \paragraph{BURST (mask-native, many-species).} The animal subset of the BURST validation split~\cite{burst}
 (built on TAO~\cite{tao}): $41$ animal species across $132$ video\,$\times$\,class cells, with native COCO-RLE
@@ -277,16 +269,16 @@ the per-video sequence and leave-species-out is the only valid grouping; the ass
 non-degenerate here, so both components are tested. Masks stream from the RWTH server and TAO frames from the
 Hugging Face mirror by HTTP range, so only the annotated frames of the capped animal videos are fetched.
 
-\paragraph{Interpreting the replications.} Both datasets are held to the exact same out-of-sample bar as
+\paragraph{Interpreting the replication.} BURST is held to the exact same out-of-sample bar as
 SA-FARI, with the animal-size confound as the positive control --- it validates out-of-sample on SA-FARI, so a
 test that stays flat for the distances there is genuinely finding no signal; where it too fails to fire (as on
-the $20$-cell MammAlps and on BURST) the design is simply too small to certify power, marking the result as
-consistency rather than confirmation. We report convergence across datasets, not independent proof: BURST is
-better powered by cell count but still cannot exclude a small before-running distance effect (Section~\ref{sec:burst}).
+BURST) the design is simply too small to certify power, marking the result as
+consistency rather than confirmation. We report convergence, not independent proof: BURST is
+better powered by cell count than the SA-FARI location split but still cannot exclude a small before-running distance effect (Section~\ref{sec:burst}).
 
 \subsection{The controlled model swap}
 \label{sec:meth-swap}
-The dataset replications vary the data while holding the tracker fixed; to test whether the null is a property
+The dataset-level analysis varies the data while holding the tracker fixed; to test whether the null is a property
 of SAM\,3 specifically we also vary the \emph{tracker}. A \emph{controlled model swap} holds everything else
 constant --- the same cells, the same ground truth, the same four label-free distances, and the same
 support-weighted GLM under leave-species-out cross-validation --- and substitutes SAM\,3 with a second

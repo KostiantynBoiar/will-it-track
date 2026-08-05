@@ -121,10 +121,9 @@ proxy for the actual corpus nonetheless remains untested. Second, the analysis i
 frozen backbone,
 and --- since one inference pass is reused across both splits --- the species and location experiments are two
 overlays on the \emph{same} scored cells, not independent replications; they give near-orthogonal but not
-statistically independent evidence. We take three steps against this. Against the \emph{dataset} threat we
-re-run the whole pipeline on two independent datasets: on MammAlps (\S\ref{sec:mammalps}) the distance null
-holds but the $20$-cell design is underpowered, and on the larger, mask-native BURST (\S\ref{sec:burst}, $132$
-cells / $41$ species) it holds again and better-powered, giving a third convergent null (neither is positive
+statistically independent evidence. We take two steps against this. Against the \emph{dataset} threat we
+re-run the whole pipeline on an independent dataset: on the larger, mask-native BURST (\S\ref{sec:burst}, $132$
+cells / $41$ species) the distance null holds again, giving a second convergent null (not positive
 proof --- BURST detects only a large between-species predictor and remains underpowered for a small
 species-constant distance effect --- so we report convergence, not independent confirmation of any positive).
 Against the \emph{model} threat --- the ``single frozen backbone'' --- we run the controlled model swap

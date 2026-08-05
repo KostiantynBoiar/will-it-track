@@ -142,101 +142,58 @@ size-entangled visual-distinctness signal that was already H0, and closes the ``
 true training set'' loophole in the null.
 \IfFileExists{tables/familiarity.tex}{\input{tables/familiarity}}{}
 
-\section{Independent replication (MammAlps)}
-\label{sec:mammalps}
-Every result so far reuses one frozen inference pass on one dataset, so the species and location experiments
-are near-orthogonal overlays rather than statistically independent replications. To test the null on genuinely
-independent data we re-ran the whole pipeline on \textbf{MammAlps}~\cite{mammalps} --- an Alpine camera-trap
-tracker with a different continent, species pool, and (uniquely) real per-camera environment metadata. MammAlps ships box-only
-ground truth, so an offline adapter emits each box as a filled-rectangle mask and the scorer reads bbox-HOTA
-(\texttt{eval.prefer\_bbox}); mask-IoU against filled rectangles is near-zero (dataset mask mAP\,$\approx0.002$),
-so box-IoU is the honest metric. The run yields $20$ cells over $5$ species (red deer, roe deer, hare, wolf,
-and a single-cell fox) and $9$ cameras. Zero-shot SAM\,3 is non-degenerate here (pHOTA\,$\approx0.44$,
-Table~\ref{tab:gate1_mammalps}); as on SA-FARI, association tracks detection almost exactly
-($\mathrm{corr}(\texttt{pDetA},\texttt{pAssA})=0.999$, $13/20$ cells identical), so the replication is a
-detection story.
-
-\paragraph{The distance null holds, but as a consistency check --- not confirmation.} The pre-registered
-label-free distance model (taxonomic\,+\,visual\,+\,environment) does not predict detection transfer
-out-of-sample under either hold-out (leave-camera-out $\Delta\mathrm{MAE}=+0.067$, $95\%$~CI
-$[-0.043,+0.144]$, $p=0.099$; leave-species-out $+0.014$, $p=0.410$; both intervals span zero,
-Table~\ref{tab:replication_mammalps}), directionally consistent with the SA-FARI null. We read this as a
-consistency check rather than independent confirmation, because at $n=20$ the out-of-sample test is
-demonstrably underpowered: not even the animal-size control --- the one before-running quantity that validates
-out-of-sample on the far larger SA-FARI sample --- clears the bar here ($\Delta\mathrm{MAE}=-0.015$, $p=0.65$),
-on a design of five species with a single-cell fox fold. With the instrument this blunt, a flat distance result
-cannot be read as more than consistency.
-\IfFileExists{tables/gate1_measurement_mammalps.tex}{\input{tables/gate1_measurement_mammalps}}{}
-\IfFileExists{tables/replication_mammalps.tex}{\input{tables/replication_mammalps}}{}
-
-\paragraph{The one feature that ``validates'' is a confound, not a finding.} Visual distance alone beats the
-mean baseline on both schemes ($\Delta\mathrm{MAE}=+0.078/+0.080$, $p\approx0.01$), but this is spurious and is
-reported only to be dismissed. Its association with detection is \emph{positive}
-($r=+0.636$, $p=0.003$) --- the opposite direction to the novelty$\rightarrow$failure hypothesis
-(more-novel animals are detected \emph{better}, not worse), driven by the two
-large, high-footage deer species SAM\,3 detects best; it is confounded with support ($r=+0.60$ with
-$n_\text{frames}$); and because visual distance is species-constant with tied values (red\,=\,roe\,=\,$0.40$,
-hare\,=\,wolf\,=\,$0.15$), its leave-species-out ``validity'' reduces to a twin species standing in for the
-held-out one --- exactly the species-constant-feature artefact the double cross-validation is designed to
-reject. Removing the two rare, low-support species that anchor it (hare, wolf; $4/20$ cells) reverses the
-correlation to $r=-0.33$ (n.s.) and erases the gain on both schemes. This is the same visual/size confound diagnosed on
-SA-FARI, and it does not support H1.
-
-\paragraph{Scope.} MammAlps exercises only three of the four distances (temporal and the familiarity proxy are
-degenerate over the six-week window; taxonomic distance is near-constant across five species), scores a
-different target regime (box-HOTA at $3$\,fps), and is underpowered by construction (a single-cell fox fold).
-It therefore reinforces --- and does not contradict --- the SA-FARI null, but cannot serve as independent
-confirmation of any positive result. A larger, mask-native second dataset remains the route to that.
-
 \section{Independent replication (BURST)}
 \label{sec:burst}
-The larger, mask-native dataset MammAlps pointed to is BURST~\cite{burst}. Its animal subset --- the animal
+Every result so far reuses one frozen inference pass on one dataset, so the species and location experiments
+are near-orthogonal overlays rather than statistically independent replications. To test the null on genuinely
+independent data we re-ran the whole pipeline on \textbf{BURST}~\cite{burst}. Its animal subset --- the animal
 LVIS classes of the validation split, streamed mask-native and prompted by class name --- yields $132$ video\,$\times$\,class
-cells across $41$ species, an order of magnitude more leave-species-out groups than MammAlps, in a distinct
+cells across $41$ species, in a distinct
 regime (internet/driving/movie video, not camera traps). Zero-shot SAM\,3 is again non-degenerate
 (pHOTA\,$0.635$, Table~\ref{tab:gate1_burst}), and here the association target is genuine
 ($\mathrm{corr}(\texttt{pDetA},\texttt{pAssA})=0.76$; of the $71$ multi-object cells, none has \texttt{pAssA}
 exactly equal to \texttt{pDetA}), so both components are testable.
 
-\paragraph{A third convergent null.} Under leakage-free leave-species-out cross-validation the before-running
+\paragraph{A second convergent null.} Under leakage-free leave-species-out cross-validation the before-running
 distances again fail to predict detection transfer: the combined distance model improves out-of-sample MAE by
 only $+0.002$ ($p=0.374$), with visual ($+0.003$, $p=0.257$), taxonomic (full-taxonomy subset $-0.006$,
 $p=0.952$) and environment ($-0.001$, $p=0.747$) all individually null, and the association specs null likewise
 (Table~\ref{tab:replication_burst}). The result is robust to dropping the $19$ single-cell species and to a
 size control. The lone near-signal, visual distance, is the familiar artefact: its correlation with detection
 is $+0.17$ --- in the \emph{opposite} direction to the novelty hypothesis (more-novel animals detected better),
-and a size confound (partial correlation given $\log$-area $+0.08$, $p=0.35$). Three datasets --- SA-FARI, MammAlps and BURST --- now converge on the same
+and a size confound (partial correlation given $\log$-area $+0.08$, $p=0.35$). Both datasets --- SA-FARI and BURST --- now converge on the same
 before-running distance null.
 \IfFileExists{tables/gate1_measurement_burst.tex}{\input{tables/gate1_measurement_burst}}{}
 \IfFileExists{tables/replication_burst.tex}{\input{tables/replication_burst}}{}
 
-\paragraph{Convergent, but not proof.} At $132$ cells BURST is far better powered than MammAlps, and the
-distance null holds throughout. It is not, however, positive proof: no before-running quantity --- not even the
-animal-size control that validates on SA-FARI --- reaches significance here, so we cannot independently certify
-that this test could have caught a small species-level effect. The lone near-signal, visual distance, is again
-the wrong-direction size confound (its correlation with detection is $+0.37$ between species, the opposite sign
-to novelty). We therefore read BURST as a third convergent null --- no moderate-or-large before-running distance
-signal, in a better-powered mask-native regime with a non-degenerate association target --- rather than positive
-proof, and note that a small species-constant effect cannot be excluded.
+\paragraph{Convergent, but not proof.} At $132$ cells BURST supplies a mask-native regime with a genuinely
+non-degenerate association target, and the distance null holds throughout. It is not, however, positive proof:
+no before-running quantity --- not even the animal-size control that validates on SA-FARI --- reaches
+significance here, so we cannot independently certify that this test could have caught a small species-level
+effect. The lone near-signal, visual distance, is again the wrong-direction size confound (its correlation with
+detection is $+0.37$ between species, the opposite sign to novelty). We therefore read BURST as a second
+convergent null --- no moderate-or-large before-running distance signal, in an independent mask-native regime
+with a non-degenerate association target --- rather than positive proof, and note that a small species-constant
+effect cannot be excluded.
 
 \section{Cross-dataset synthesis}
 \label{sec:cross_dataset}
 Table~\ref{tab:cross_dataset} collects every feature tested, its numerical out-of-sample result, and the
-dataset it was measured on. The pattern is consistent across all three: no before-running label-free distance
+dataset it was measured on. The pattern is consistent across both: no before-running label-free distance
 --- taxonomic, visual, or environment, alone or combined --- predicts detection or association transfer out of
 sample; every gain over a mean predictor is within bootstrap noise of zero. The only near-signal, visual
 distance, appears in the \emph{opposite} direction to the novelty hypothesis (more-novel animals detected
 better, not worse) and dissolves under an animal-size control wherever it is examined. The only before-running
 quantity that ever reaches significance is the animal-size confound itself --- and only modestly, on the large
 SA-FARI sample --- which doubles as the positive control that keeps the null honest: the same test that stays
-flat for the distances does pick up size out-of-sample. The contribution is this robust, thrice-replicated
+flat for the distances does pick up size out-of-sample. The contribution is this robust, twice-replicated
 null, honestly bounded: consistent across a camera-trap and an internet-video dataset, and powered enough on
 SA-FARI to exclude a moderate effect, but not a small one.
 \IfFileExists{tables/cross_dataset_comparison.tex}{\input{tables/cross_dataset_comparison}}{}
 
 \section{Cross-model replication: the model swap}
 \label{sec:model_swap}
-The three datasets above all vary the \emph{data} while holding the tracker fixed at SAM\,3, so they leave one
+The two datasets above both vary the \emph{data} while holding the tracker fixed at SAM\,3, so they leave one
 threat open: the null might be a quirk of SAM\,3 rather than a property of the prediction problem. A
 \emph{controlled model swap} closes it --- hold the cells, the ground truth, the four distances and the GLM
 fixed, and change \emph{only the tracker}. If the before-running distances fail to predict a \emph{different}
@@ -254,8 +211,7 @@ own co-released benchmark, and its exotic, nocturnal species are out-of-distribu
 challengers --- and the domain, not merely the species, is what breaks them: run GLEE on SA-FARI's
 \emph{everyday} species (jaguar, cow, fox) and it localises them well (oracle IoU up to $0.90$) yet its
 confidence still collapses below any usable operating point on the dark, cluttered camera-trap footage. SA-FARI
-therefore cannot yield a fair, non-degenerate challenger score. (MammAlps is likewise unavailable for the swap:
-its per-clip dense annotations are an offline preprocessing artefact not reproducible from the public release.)
+therefore cannot yield a fair, non-degenerate challenger score.
 
 \paragraph{BURST hosts a fair swap, and both challengers work.} BURST is neither SAM\,3's benchmark nor
 camera-trap footage, and SAM\,3 scores \emph{higher} on it ($\text{pDetA}\,0.607$) than on its own SA-FARI
@@ -281,5 +237,5 @@ replication: it reuses BURST's cells, ground truth, distances and GLM, changing 
 two models on one fair dataset ($n=132$, underpowered for a small species-level effect, exactly as the SAM\,3
 BURST run), and Florence-2's combined interval sits closer to zero-exclusion than GLEE's --- so we read it as a
 \emph{convergent, confound-free} cross-model replication that removes the ``single frozen backbone'' threat, not
-as an independently-powered certification. Combined with the three datasets, the null now holds across both axes
+as an independently-powered certification. Combined with the two datasets, the null now holds across both axes
 that could have confounded it --- the dataset and the model.
