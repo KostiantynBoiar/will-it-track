@@ -284,6 +284,32 @@ the $20$-cell MammAlps and on BURST) the design is simply too small to certify p
 consistency rather than confirmation. We report convergence across datasets, not independent proof: BURST is
 better powered by cell count but still cannot exclude a small before-running distance effect (Section~\ref{sec:burst}).
 
+\subsection{The controlled model swap}
+\label{sec:meth-swap}
+The dataset replications vary the data while holding the tracker fixed; to test whether the null is a property
+of SAM\,3 specifically we also vary the \emph{tracker}. A \emph{controlled model swap} holds everything else
+constant --- the same cells, the same ground truth, the same four label-free distances, and the same
+support-weighted GLM under leave-species-out cross-validation --- and substitutes SAM\,3 with a second
+open-vocabulary, text-promptable tracker; only the target \texttt{pDetA} changes, since the distances are
+functions of the data and ground truth, not of the tracker. This is a controlled swap, not an independent
+replication: it reuses the same cells and ground truth, so it isolates the tracker as the sole varying factor.
+We swap in two challengers of deliberately different architecture --- GLEE~\cite{glee}, a single unified
+detect--segment--track model, and Florence-2~\cite{florence2}\,+\,SAM\,2~\cite{sam2}, a caption-style box
+generator with no confidence score followed by a mask-propagating tracker.
+
+Two safeguards keep the swap fair and honest. First, a \emph{measurement gate}: before fitting any regression on
+a challenger's scores we require its per-cell \texttt{pDetA} to be non-degenerate (real spread across cells,
+not floored at zero); a regression on degenerate scores has no variance to explain and would report a spurious
+``null,'' so a challenger that scores $\approx 0$ on a dataset is dropped from the swap on that dataset rather
+than modelled. Second, \emph{scoring fairness}: because open-vocabulary detectors' confidence scores are
+calibrated to their own training domain, we verify that any near-zero challenger score is a genuine detection
+failure and not an artefact of the evaluator's fixed confidence gate --- by re-scoring under a box-based metric
+and under a threshold-free average-precision metric with no gate at all. This gate is why the swap runs on
+BURST, not SA-FARI: SA-FARI is SAM\,3's own co-released benchmark and its camera-trap domain collapses the
+challengers' calibration even where they localise well, so it cannot yield a fair, non-degenerate challenger
+score, whereas SAM\,3 scores no lower on the independent BURST than on SA-FARI. Every challenger configuration is
+fixed in advance from the model's own defaults, run once, and reported as-is (Section~\ref{sec:model_swap}).
+
 \section{Reproducibility, implementation, and constraints}
 \label{sec:meth-repro}
 The model is frozen and scored by the official evaluator; the reference (seen) set is frozen before any distance is

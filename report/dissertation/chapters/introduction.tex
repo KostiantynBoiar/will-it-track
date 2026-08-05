@@ -29,7 +29,6 @@ transfer beyond a trivial animal-size effect. Representational probing (does SAM
 remains the open branch for future work.
 
 \section{Contributions}
-% TODO: finalise once results exist.
 To our knowledge this is the first study to \emph{predict}, before the model is run and from label-free
 distances, the zero-shot transfer of a promptable video tracker --- and the first to split that prediction
 into \textbf{detection} (\texttt{pDetA}) and \textbf{association} (\texttt{pAssA}). This distinguishes it
@@ -40,11 +39,14 @@ reliability~\cite{terra,panaf,jeon}. Concretely we deliver: (i) a rigorous, out-
 result --- under a deliberately powerful test (whole-species and whole-location hold-out with
 group-cluster-bootstrap significance), label-free before-running distances do \emph{not} predict SAM\,3's
 transfer; (ii) the detection-versus-association decomposition, tested on two near-orthogonal splits --- a
-constructed species hold-out (novelty) and the official location hold-out (environment); and (iii) a
+constructed species hold-out (novelty) and the official location hold-out (environment); (iii) a
 \emph{hardened} account of \emph{why} it fails: a follow-up intrinsic-difficulty pivot collapses to the same
 animal-size confound, so the only label-free property that predicts detection is object size --- the very
 nuisance the analysis controls for --- and that positive control confirms the test detects signal when it
-exists.
+exists; and (iv) evidence that the null is not an artefact of \emph{one} dataset or \emph{one} model: it holds
+across three datasets (SA-FARI, MammAlps, BURST) and, in a controlled model swap on BURST, across two
+architecturally distinct promptable trackers (GLEE and Florence-2\,+\,SAM\,2), so it is task-general rather than
+a quirk of SAM\,3.
 
 \section{Dissertation outline}
 % TODO: update page/chapter cross-references as chapters are written.
