@@ -15,7 +15,7 @@ own defaults, one blind score, **no tuning-to-result**.
 |---|---|---|---|---|
 | **GLEE** (Lite-scaleup) | ✅ yes (IoU up to 0.96) | ❌ collapses | ≈ **0.02** (median 0) | **FAIL** — scores un-scoreable on camera-trap OOD |
 | **OWLv2** (base-ensemble) | ✅ partial (box-IoU up to 0.79) | ❌ mis-ranks (rank_ok 0.27) | not reached | **FAIL** — same calibration wall (stopped at Gate-0) |
-| **Florence-2 + SAM 2** | ⚠️ mixed (4/10 well, box-IoU up to 0.98) | N/A — no score to collapse | **0.29** mean (max 0.946; 3/9 cells > 0.3) | **PARTIAL** — genuinely works on a subset; not uniformly comparable |
+| **Florence-2 + SAM 2** | ⚠️ sparse/unstable (correct on a minority of frames, full-frame garbage on the rest) | N/A — no score to collapse | **0.29** frame-0 seed → **0.089** with a GT-blind median seed | **FAIL** — localization too sparse/unstable; SAM 2 can't rescue without a GT-aware seed (§3b) |
 
 ## Bottom line
 
@@ -112,3 +112,37 @@ only failure modes are localization quality and whether SAM 2 identity-tracking 
   quality, so a bad first frame poisons the whole track. A better seed (Florence's best-box frame, or
   periodic re-detection + merge) would very likely raise the mean — but changing the seeding *after* seeing
   the 10-cell number would be tuning-to-result, so it is left as a documented future improvement, not applied.
+
+### 3b. Seeding follow-up (2026-08-05) — the improvement *fails*, and reveals why
+
+A second, GT-blind seed rule was pre-registered and tested: seed SAM 2 from the frame whose Florence box is
+closest (by IoU) to the **temporal-median box** across all detected frames (a "representative detection"
+instead of a possibly-spurious frame 0). **Result: it made things WORSE — mean pDetA 0.290 → 0.089** (the
+armadillo/coati/guan that scored 0.79–0.95 all collapsed to 0; only rabbit rose, to 0.80).
+
+The diagnosis is the real finding. On the armadillo, Florence's frame-0 box `[372,411,700,681]` ≈ GT
+`[372,416,690,673]` (excellent), but the **median box is `[1,0,1277,718]` — the entire frame**: on *most*
+frames Florence emits a **full-frame garbage box** ("the whole image is a giant armadillo") and only a few
+early frames carry the tight, correct box. So the median-of-boxes is junk, and the median-seed rule seeds SAM 2
+on a whole-frame box → SAM 2 tracks garbage → 0. The overnight frame-0 score (0.95) was **partly luck** —
+frame 0 happened to be one of the few good frames for those videos.
+
+**Honest verdict — Florence-2 + SAM 2 is NOT viable for the swap.** Florence's correct detections are a
+**sparse, unidentifiable minority** among full-frame garbage boxes, and there is **no GT-blind way to pick the
+good frame** (Florence emits no confidence, and the good boxes are the minority). Two seed rules were tried
+(first-frame, median-consistency); neither is reliable, and a third selector tuned against pDetA would be
+exactly the p-hack this study refuses. So Florence+SAM 2 is bimodal/fragile by nature here, not by a fixable
+adapter detail. **Phase 2 (productionizing `Florence2Tracker`) was NOT built** — the Phase-1 gate correctly
+prevented investing in an unviable tracker.
+
+## Final bottom line (2026-08-05)
+
+**No open-vocab tracker replaces SAM 3 cleanly on SA-FARI, and the failures are informative, not a dead end:**
+GLEE and OWLv2 *find* animals but their confidence **mis-calibrates** on camera-trap OOD; Florence-2 has no
+score to miscalibrate but its **localization is sparse and unstable** (correct only on a minority of frames,
+full-frame garbage on the rest), which SAM 2 cannot rescue without a GT-aware seed. Across three
+architecturally-diverse trackers, **none is scoreable comparably to SAM 3** — so a fair cross-model swap is not
+achievable on this data with current open-vocab trackers. The **SAM-3-only robust null stands as the
+contribution**, now with an honest, decomposed account of *why* the model-swap route does not work here
+(calibration for detectors; localization stability for the caption-style detector). Every step was
+pre-registered and reported as-is; no seed/threshold was tuned to manufacture a passing number.
