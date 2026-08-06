@@ -1,15 +1,15 @@
 """Ablations & robustness.
 
 Factor ablations show what each distance contributes by refitting and re-validating with one factor
-dropped at a time (pseudo-R^2 + out-of-sample gain), plus the ``+size`` and ``-support`` design variants —
-written to ``outputs/ablations/factor_ablation.csv``. The variance partition (LMG/Shapley unique R^2 + VIF,
-from :mod:`src.analysis.variance`) is written alongside. Together they show the null is not an artifact of a
+dropped at a time (pseudo-R^2 + out-of-sample gain), plus the +size and -support design variants —
+written to outputs/ablations/factor_ablation.csv. The variance partition (LMG/Shapley unique R^2 + VIF,
+from src.analysis.variance) is written alongside. Together they show the null is not an artifact of a
 single factor or covariate: no distance carries unique variance, and only animal size moves the score.
 
 The heavier design robustness (DINOv2 vs CLIP, mask-crop vs whole-frame, species vs generic prompt) needs
-fresh GPU inference/embedding passes and is run separately (:meth:`robustness_sweep`).
+fresh GPU inference/embedding passes and is run separately (robustness_sweep).
 
-Run: ``PYTHONPATH=. python -m src.analysis.ablations [--config configs/default.yaml]``
+Run: PYTHONPATH=. python -m src.analysis.ablations [--config configs/default.yaml]
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ import pandas as pd
 from src.analysis import regression as R
 from src.analysis.cross_val import _SCHEME_COLUMN, _summarise, oos_predictions
 from src.analysis.regression import DISTANCE_COLS, TARGETS, DesignBuilder, _num, _pseudo_r2, fit_glm
+from src.analysis.robustness_experiment import run as _run_robustness
 from src.analysis.variance import VariancePartition
 from src.config import Config
 from src.io import read_parquet
@@ -69,10 +70,10 @@ class Ablations:
         return p if p.exists() else outputs / "features.parquet"
 
     def factor_ablation(self, target: str = "pDetA") -> Path:
-        """Refit/re-validate dropping each factor (+ ``+size`` / ``-support``); write the ablation CSV.
+        """Refit/re-validate dropping each factor (+ +size / -support); write the ablation CSV.
 
         Returns:
-            Path to ``outputs/ablations/factor_ablation.csv``.
+            Path to outputs/ablations/factor_ablation.csv.
         """
         df = read_parquet(self._table())
         designs = [
@@ -115,13 +116,11 @@ class Ablations:
     def robustness_sweep(self) -> Path:
         """Re-run under alternative design choices (encoder/crop/prompt/distance) — needs fresh GPU passes.
 
-        The per-variant feature tables are built on the GPU pod (``scripts/run_robustness.sh``) and dropped
-        as ``outputs/features_<variant>.parquet``; this delegates to the robustness experiment driver, which
+        The per-variant feature tables are built on the GPU pod (scripts/run_robustness.sh) and dropped
+        as outputs/features_<variant>.parquet; this delegates to the robustness experiment driver, which
         fits the standing 4-distance GLM through the unchanged CV core and writes the comparison summary JSON.
         """
-        from src.analysis.robustness_experiment import run
-
-        return run(self.config)
+        return _run_robustness(self.config)
 
 
 def main() -> None:
