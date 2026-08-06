@@ -160,8 +160,8 @@ class EvalConfig(BaseModel):
         metrics: Reported metrics (computed by the vendored VEval scorer).
         veval_script: Path to the vendored evaluator, under ``paths.third_party_root``.
         prefer_bbox: Read VEval's ``bbox_*`` HOTA metrics before ``mask_*``. On for a box-only dataset
-            (e.g. MammAlps), whose GT is emitted as filled-rectangle masks: a tight predicted mask vs a
-            rectangle GT would deflate mask-IoU, so box-IoU HOTA (``bbox_*``) is the honest score there.
+            whose GT is emitted as filled-rectangle masks: a tight predicted mask vs a rectangle GT would
+            deflate mask-IoU, so box-IoU HOTA (``bbox_*``) is the honest score there.
     """
 
     metrics: tuple[str, ...] = ("pHOTA", "pDetA", "pAssA")
@@ -275,33 +275,6 @@ class CVConfig(BaseModel):
     n_bootstrap: int = 1000
 
 
-class MammAlpsConfig(BaseModel):
-    """MammAlps → SA-Co adapter (R7 independent replication; box-only Alpine camera-trap tracker).
-
-    MammAlps ships per-clip JSONs of bounding-box tracks (5 species, 9 cameras / 3 sites, 30 fps MP4s, no
-    masks). The adapter emits each box as a filled-rectangle RLE (segmentations) plus the native box (bboxes),
-    subsamples the 30 fps clips to ``target_fps`` and caps per ``(species, camera)`` cell so the SAM 3
-    inference stays tractable; scoring uses ``eval.prefer_bbox`` (box-HOTA).
-
-    Attributes:
-        raw_dir: Directory of the extracted dense-annotation JSONs, relative to ``data_root``.
-        taxonomy_csv: Optional override for the packaged ``src/adapters/mammalps_taxonomy.csv``.
-        target_fps: Subsample the 30 fps clips to this rate (step = round(clip_fps / target_fps)).
-        max_frames_per_clip: Cap on kept (subsampled) frames per clip.
-        max_clips_per_cell: Cap on clips per ``(species, camera)`` cell (bounds red-deer dominance).
-        min_frames: Skip clips with fewer than this many kept frames.
-        location_by: ``"site_cam"`` (S1_C1 …, the cell/location key) or ``"site"`` (S1/S2/S3, coarser).
-    """
-
-    raw_dir: str = "dense"
-    taxonomy_csv: str = ""  # empty ⇒ packaged src/adapters/mammalps_taxonomy.csv
-    target_fps: float = 3.0
-    max_frames_per_clip: int = 120
-    max_clips_per_cell: int = 12
-    min_frames: int = 4
-    location_by: str = "site_cam"
-
-
 class BurstConfig(BaseModel):
     """BURST → SA-Co adapter (R7 many-species replication; mask-native LVIS-class tracker).
 
@@ -363,7 +336,6 @@ class Config(BaseSettings):
     features: FeaturesConfig = Field(default_factory=FeaturesConfig)
     model: ModelConfig = Field(default_factory=ModelConfig)
     cv: CVConfig = Field(default_factory=CVConfig)
-    mammalps: MammAlpsConfig = Field(default_factory=MammAlpsConfig)
     burst: BurstConfig = Field(default_factory=BurstConfig)
     seed: int = 0
     experiment: str = "location"

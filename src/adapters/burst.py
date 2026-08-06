@@ -3,14 +3,14 @@
 BURST ships one ``all_classes.json`` per split: a list of ``sequences``, each with a source ``dataset`` +
 ``seq_name`` (which locate the TAO frames), ``annotated_image_paths``, per-annotated-frame COCO-RLE
 ``segmentations`` keyed by track id, and ``track_category_ids`` (track → LVIS category). Masks are native, so
-unlike the box-only MammAlps adapter this emits the RLE directly and scores mask-HOTA (``eval.prefer_bbox`` off).
+this emits the RLE directly and scores mask-HOTA (``eval.prefer_bbox`` off).
 
 The adapter keeps only the **animal** categories — those present in the packaged ``burst_taxonomy.csv``, a
 WordNet-derived whitelist of the 41 animal LVIS classes in BURST val — prompts SAM 3 with each class name, and
 caps sequences per category so inference stays tractable (``dog``/``person``-style dominance). BURST carries no
 site or timestamp metadata, so the cell/location key is the per-video ``seq_name`` and time is empty; only
-leave-species-out is meaningful (set ``cv.group_schemes = ("species",)``), which is exactly the many-species
-detection↔novelty test MammAlps was too small to power. Extra per-video fields ``source_dataset`` and
+leave-species-out is meaningful (set ``cv.group_schemes = ("species",)``), giving a well-powered many-species
+detection↔novelty test. Extra per-video fields ``source_dataset`` and
 ``source_seq`` are carried for the frame-extraction script; the loader ignores them.
 
 All probes go to the ``test`` file; the reference (``train``) file is emitted empty (Split A draws
