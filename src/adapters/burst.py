@@ -1,22 +1,15 @@
-"""BURST → SA-Co adapter (R7 many-species replication; mask-native LVIS-class tracker).
+"""BURST → SA-Co adapter (many-species replication; mask-native LVIS-class tracker).
 
-BURST ships one ``all_classes.json`` per split: a list of ``sequences``, each with a source ``dataset`` +
-``seq_name`` (which locate the TAO frames), ``annotated_image_paths``, per-annotated-frame COCO-RLE
-``segmentations`` keyed by track id, and ``track_category_ids`` (track → LVIS category). Masks are native, so
-this emits the RLE directly and scores mask-HOTA (``eval.prefer_bbox`` off).
+Reads BURST's per-split all_classes.json (sequences with native COCO-RLE segmentations per LVIS category) and
+emits the SA-Co _ext schema, scored with mask-HOTA. Only the animal categories are kept — the 41 in the
+packaged burst_taxonomy.csv — each prompted to SAM 3 by class name, with sequences capped per category to keep
+inference tractable.
 
-The adapter keeps only the **animal** categories — those present in the packaged ``burst_taxonomy.csv``, a
-WordNet-derived whitelist of the 41 animal LVIS classes in BURST val — prompts SAM 3 with each class name, and
-caps sequences per category so inference stays tractable (``dog``/``person``-style dominance). BURST carries no
-site or timestamp metadata, so the cell/location key is the per-video ``seq_name`` and time is empty; only
-leave-species-out is meaningful (set ``cv.group_schemes = ("species",)``), giving a well-powered many-species
-detection↔novelty test. Extra per-video fields ``source_dataset`` and
-``source_seq`` are carried for the frame-extraction script; the loader ignores them.
+BURST has no site or timestamp metadata, so the cell key is the per-video seq_name and only leave-species-out
+cross-validation is meaningful (cv.group_schemes = ("species",)). All probes go to the test file; the reference
+(train) file is empty (Split A draws reference=probe from origins=("test",)).
 
-All probes go to the ``test`` file; the reference (``train``) file is emitted empty (Split A draws
-reference=probe from ``origins=("test",)``).
-
-Run: ``PYTHONPATH=. python -m src.adapters.burst --config configs/burst.yaml``
+Run: PYTHONPATH=. python -m src.adapters.burst --config configs/burst.yaml
 """
 
 from __future__ import annotations
@@ -36,7 +29,7 @@ _PACKAGED_CSV = Path(__file__).parent / "burst_taxonomy.csv"
 
 
 class BurstAdapter:
-    """Emit ``burst_{train,test}_ext.json`` (test=capped animal probes; train=empty) in the SA-Co schema."""
+    """Emit burst_{train,test}_ext.json (test=capped animal probes; train=empty) in the SA-Co schema."""
 
     def __init__(self, config: Config | None = None) -> None:
         """Initialize (loads the animal-class taxonomy whitelist)."""
@@ -50,12 +43,12 @@ class BurstAdapter:
         self._animals = self.taxonomy.names()  # normalised animal class names
 
     def _load(self) -> dict:
-        """Read the BURST ``all_classes.json`` (list-of-sequences dict)."""
+        """Read the BURST all_classes.json (list-of-sequences dict)."""
         path = self.config.paths.data_root / self.config.data.annotations_subdir / self.config.burst.ann_file
         return json.loads(path.read_text())
 
     def _kept_frame_indices(self, seq: dict) -> list[int]:
-        """Evenly-spaced annotated-frame indices, capped to ``max_frames_per_video``."""
+        """Evenly-spaced annotated-frame indices, capped to max_frames_per_video."""
         n = len(seq["annotated_image_paths"])
         cap = self.config.burst.max_frames_per_video
         if n <= cap:
@@ -63,7 +56,7 @@ class BurstAdapter:
         return sorted({round(i * (n - 1) / (cap - 1)) for i in range(cap)})
 
     def _rle(self, entry: dict, h: int, w: int) -> dict | None:
-        """A BURST segmentation entry → a COCO-RLE ``{size, counts}`` dict (``None`` if empty)."""
+        """A BURST segmentation entry → a COCO-RLE {size, counts} dict (None if empty)."""
         counts = entry.get("rle") if isinstance(entry, dict) else None
         if not counts:
             return None
@@ -101,7 +94,7 @@ class BurstAdapter:
         return annotations
 
     def convert(self) -> dict:
-        """Parse + cap the BURST animal sequences into one SA-Co ``_ext`` dict (the probe set)."""
+        """Parse + cap the BURST animal sequences into one SA-Co _ext dict (the probe set)."""
         data = self._load()
         id_to_name = {int(c["id"]): c["name"] for c in data["categories"]}
         videos, annotations, pairs = [], [], []
@@ -172,7 +165,7 @@ class BurstAdapter:
         return out
 
     def run(self) -> tuple[Path, Path]:
-        """Write ``data.test_ann`` (animal probes) + an empty ``data.train_ann``; return the two paths."""
+        """Write data.test_ann (animal probes) + an empty data.train_ann; return the two paths."""
         out_dir = self.config.paths.data_root / self.config.data.annotations_subdir
         out_dir.mkdir(parents=True, exist_ok=True)
         probe = self.convert()
