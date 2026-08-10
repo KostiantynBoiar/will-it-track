@@ -5,9 +5,8 @@
 % The \IfFileExists guards let the dissertation build whether or not they have been generated yet.
 
 \section{Measurement}
-% TODO: per-cell pDetA/pAssA distributions; sanity vs the SA-FARI SAM 3 ballpark (Phase-1 gate).
-Zero-shot SAM\,3 on the SA-FARI test split reproduces the published ballpark (Gate~1); the
-support-weighted per-cell aggregate is in Table~\ref{tab:gate1}.
+As an initial score-sanity check, zero-shot SAM\,3 on the SA-FARI test split reproduces the published
+SAM\,3 ballpark; the support-weighted per-cell aggregate is in Table~\ref{tab:gate1}.
 \IfFileExists{tables/gate1_measurement.tex}{\input{tables/gate1_measurement}}{}
 
 \section{The fitted law}

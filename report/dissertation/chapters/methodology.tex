@@ -47,7 +47,7 @@ use two near-orthogonal experiments and run inference only once (scoring is per-
     view, so a held-out species' distance is to the nearest \emph{other} species; species-distance varies while
     the environment stays largely familiar, isolating H1. Validated by leave-species-out cross-validation.
   \item[Split B --- location hold-out (secondary).] The official train/test split, whose unseen locations
-    isolate H2 and whose benchmark comparability carries the Gate~1 score-sanity check.
+    isolate H2 and whose benchmark comparability carries the initial score-sanity check.
 \end{description}
 Split A is a \emph{constructed} hold-out --- legitimate because the model is frozen, and reported as such.
 At the scale we work with, the location split (Split~B) yields $1{,}447$ scored cells over $113$
@@ -105,8 +105,8 @@ dataset-level \texttt{VEval} figure --- the published SA-FARI operating point, $
 mask-\texttt{pHOTA} --- which we report only to confirm we reproduce the benchmark. The \emph{macro} score is
 the per-cell, support-weighted mean over positive cells, and it is our modelling target: the law is fit
 cell-by-cell, so the cell is the unit that must carry the score. Because the macro mean is a positives-only
-per-cell average it sits lower ($\approx\!0.53$); every Gate~1 number we quote is the macro value, labelled as
-such.
+per-cell average it sits lower ($\approx\!0.53$); every measurement number we quote is the macro value,
+labelled as such.
 
 \paragraph{No retraining; validity of the frozen protocol.} One point is worth stating plainly, because it is
 easily misread: \textbf{SAM\,3 is never retrained or fine-tuned in this work.} The only object we fit is the
@@ -118,7 +118,7 @@ on which reference partition we later overlay to compute its distances.
 This also settles the benchmark's status. SA-FARI is a held-out, \emph{zero-shot} benchmark for the released
 SAM\,3: the SAM\,3 report~\cite{sam3} does not list SA-FARI among its training sources, and the SA-FARI
 paper~\cite{safari} reports the released checkpoint zero-shot (the $\approx\!0.65$ mask-\texttt{pHOTA} ballpark
-we reproduce at Gate~1) \emph{alongside} separately fine-tuned rows whose gain we deliberately forgo. We can
+we reproduce in measurement) \emph{alongside} separately fine-tuned rows whose gain we deliberately forgo. We can
 therefore verify non-membership at the \emph{dataset} level; we cannot verify it frame-by-frame, since SAM\,3's
 full pretraining corpus is undisclosed. We do not claim otherwise: every distance is measured against the
 SA-FARI \emph{train reference}, not against SAM\,3's true (unknown) pretraining distribution, and the
