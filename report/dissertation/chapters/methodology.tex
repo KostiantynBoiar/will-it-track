@@ -14,7 +14,7 @@ The intended deliverable is a \emph{validated, out-of-sample} predictor of \text
 from label-free distances, with honest confidence intervals. A distance is taken to predict transfer only if
 it satisfies \textbf{both} criteria:
 \begin{enumerate}[label=(\roman*),leftmargin=2.4em]
-  \item its coefficient's group-cluster-bootstrap 95\% confidence interval excludes zero; \emph{and}
+  \item its coefficient's group-cluster-bootstrap 95\% confidence interval (CI) excludes zero; \emph{and}
   \item the grouped cross-validated model beats a mean-predictor baseline by a margin that is significant under
     a paired group-bootstrap.
 \end{enumerate}
