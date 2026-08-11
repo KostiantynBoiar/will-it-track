@@ -49,11 +49,11 @@ predicting the average score (Table~\ref{tab:cv}). The result is a \textbf{null}
 that trivial average. The improvement in error over the baseline ($\Delta\mathrm{MAE}$, the drop in mean
 absolute error) is within noise of zero in every case, and none is statistically significant.
 
-\textbf{This is not just a weak, underpowered test.} The very same procedure, on the very same cases, \emph{does}
-pick up a real effect when there is one: animal size beats the baseline out of sample at the identical bar
-($\Delta\mathrm{MAE}=+0.017$, significant on both schemes; Table~\ref{tab:difficulty}). A test that fires for
-size but stays flat for the distances is evidence that the distances genuinely carry \emph{no} predictive
-signal --- not that the test was too weak to find one.
+The null holds up because the test demonstrably works. Run unchanged on the same cases, it \emph{does} recover a
+real effect: animal size beats the baseline out of sample at the identical bar ($\Delta\mathrm{MAE}=+0.017$,
+significant on both schemes; Table~\ref{tab:difficulty}). A test that fires for size while staying flat for the
+distances tells us the distances genuinely carry \emph{no} predictive signal --- the flat result is an absence
+of signal, and the size result is what confirms it.
 \IfFileExists{tables/cv_validation.tex}{\input{tables/cv_validation}}{}
 \begin{figure}[htbp]
 \centering
