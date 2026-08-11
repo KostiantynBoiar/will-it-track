@@ -2,31 +2,32 @@
 % per-dataset tables/docs and the BURST replication analysis. See docs/{label_free_prediction_null,
 % burst_replication}.md.
 \begin{table}[htbp]\centering
-  \caption{Cross-dataset synthesis: every feature tested, its out-of-sample result on each dataset, and the
-  verdict. Unless noted, results are the leave-species-out $\Delta$MAE over a mean predictor with a one-sided
-  bootstrap $p$; the individual SA-FARI distances instead report the standardised GLM coefficient with its 95\%
-  CI. A feature ``predicts transfer'' only if it is positive \emph{and} significant. Only the animal-size
-  confound clears the bar, and only on SA-FARI (the positive control); every label-free distance is null on both
-  datasets.}
+  \caption{Cross-dataset synthesis: every feature tested, its value on each dataset, and the verdict. Each
+  column is reported in one metric, stated in its header: on \textbf{BURST} every entry is the out-of-sample
+  $\Delta$MAE\,($p$) over a mean predictor; on \textbf{SA-FARI} the individual distances are the standardised
+  GLM coefficient with its 95\% CI, while the two rows marked $\dagger$ (combined distances, animal size) are
+  $\Delta$MAE\,($p$) like BURST. A feature ``predicts transfer'' only if it is positive \emph{and} significant.
+  Only the animal-size confound clears the bar, and only on SA-FARI (the positive control); every label-free
+  distance is null on both datasets.}
   \label{tab:cross_dataset}
   \footnotesize
   \setlength{\tabcolsep}{5pt}
-  \begin{tabular}{>{\raggedright\arraybackslash}p{3.3cm}ll>{\raggedright\arraybackslash}p{3.0cm}}
+  \begin{tabular}{>{\raggedright\arraybackslash}p{3.0cm}ll>{\raggedright\arraybackslash}p{2.8cm}}
     \toprule
-    Feature & SA-FARI & BURST & Verdict \\
+    Feature & SA-FARI (coef.\ [CI]) & BURST ($\Delta$MAE, $p$) & Verdict \\
     \midrule
     \multicolumn{4}{l}{\emph{Before-running label-free distances (the research question)}} \\
-    Combined distances        & $\Delta$MAE $-0.004$ ($p{=}0.74$) & $\Delta$MAE $+0.002$ ($p{=}0.37$) & null on both \\
-    Visual alone              & coef.\ $-0.14$ [$-0.50$,\,$0.14$] & $\Delta$MAE $+0.003$ ($p{=}0.26$) & null; wrong direction \\
-    Taxonomic alone           & coef.\ $-0.36$ [$-3.87$,\,$0.09$] & $\Delta$MAE $-0.006$ ($p{=}0.95$) & null on both \\
-    Environment alone         & coef.\ $+0.04$ [$-0.19$,\,$0.24$] & $\Delta$MAE $-0.001$ ($p{=}0.75$) & null on both \\
-    Temporal gap              & $32/1447$ cells, all $=0$         & no timestamps                     & untested (no variance) \\
+    Combined distances$^\dagger$ & $-0.004$ ($0.74$)          & $+0.002$ ($0.37$) & null on both \\
+    Visual alone                 & $-0.14$ [$-0.50$,\,$0.14$] & $+0.003$ ($0.26$) & null; wrong direction \\
+    Taxonomic alone              & $-0.36$ [$-3.87$,\,$0.09$] & $-0.006$ ($0.95$) & null on both \\
+    Environment alone            & $+0.04$ [$-0.19$,\,$0.24$] & $-0.001$ ($0.75$) & null on both \\
+    Temporal gap                 & $32/1447$, all $=0$        & no timestamps     & untested \\
     \midrule
     \multicolumn{4}{l}{\emph{Confound control}} \\
-    Animal size ($\log$-area) & $\Delta$MAE $+0.015$ ($p{=}0.01$) & $\Delta$MAE $+0.005$ ($p{=}0.14$) & \textbf{validates} (SA-FARI) \\
+    Animal size ($\log$-area)$^\dagger$ & $+0.015$ ($0.01$) & $+0.005$ ($0.14$) & \textbf{validates} (SA-FARI) \\
     \midrule
     \multicolumn{4}{l}{\emph{Detection precision (hard negatives)}} \\
-    Hallucination vs.\ visual & $r{=}-0.33$; $\Delta$MAE $+0.008$ ($p{=}0.053$) & --- & marginal correlate \\
+    Hallucination vs.\ visual & $r{=}-0.33$; $+0.008$ ($0.053$) & --- & marginal correlate \\
     \bottomrule
   \end{tabular}
 \end{table}
