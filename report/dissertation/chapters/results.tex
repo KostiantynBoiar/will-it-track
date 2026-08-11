@@ -133,7 +133,7 @@ vision-encoder feature space --- three separability metrics on the $346$ positiv
 three clears the Bonferroni threshold ($\alpha=0.017$) --- the strongest, silhouette, reaches only $p=0.034$
 ($\Delta\mathrm{MAE}=+0.012$), and nearest-prototype and Mahalanobis do not come close ($p=0.068$, $0.085$). All
 three are dominated by the DINOv2 visual distance they re-encode ($r=0.63$--$0.85$), and in the head-to-head
-none adds out-of-sample gain over \texttt{visual\_distance}\,$+$\,size. The one curiosity is that silhouette,
+none adds out-of-sample gain over the visual distance\,$+$\,size. The one curiosity is that silhouette,
 unlike the visual distance, is \emph{not} a size artefact ($r_\text{size}=-0.16$) --- it is the size-independent
 half of visual distinctness --- yet it still fails to predict transfer.
 
