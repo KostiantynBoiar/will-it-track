@@ -47,7 +47,8 @@ for \emph{held-out} ones it never saw, and compare its error to the simplest pos
 predicting the average score (Table~\ref{tab:cv}). The result is a \textbf{null}: on both hold-out schemes
 (hold out whole species; hold out whole locations) and for both targets, the distance model does no better than
 that trivial average. The improvement in error over the baseline ($\Delta\mathrm{MAE}$, the drop in mean
-absolute error) is within noise of zero in every case, and none is statistically significant.
+absolute error) is within noise of zero in every case, and none is statistically significant: the predictions
+collapse onto the mean rather than tracking the truth (Figure~\ref{fig:predvsactual}).
 
 The null holds up because the test demonstrably works. Run unchanged on the same cases, it \emph{does} recover a
 real effect: animal size beats the baseline out of sample at the identical bar ($\Delta\mathrm{MAE}=+0.017$,
