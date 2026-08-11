@@ -145,12 +145,13 @@ Each species is fingerprinted by a \emph{prototype} --- the re-normalised mean D
 of its \emph{ground-truth-mask-cropped} animals --- and the visual distance is the cosine gap from a probe
 species' prototype to that of the nearest \emph{other} reference species (leave-species-out on Split~A),
 with a CLIP~\cite{clip} encoder as a robustness check. Using the dataset's ground-truth masks means this
-feature needs no SAM\,3.
+feature needs no SAM\,3 (Figure~\ref{fig:features}b).
 \subsection{Environment distance}
 Embedding distance between the animal-masked-out background scene and the nearest reference location, plus
 interpretable scene covariates from the same frames: a day/night--infrared (IR) flag and a low-light fraction
 (both from per-channel colour statistics of the frame), and a clutter score given by the variance of a
-Laplacian over the masked background --- a cheap measure of local edge/texture density, not a colour statistic.
+Laplacian over the masked background --- a cheap measure of local edge/texture density, not a colour statistic
+(the animal-erased scene is Figure~\ref{fig:features}c).
 
 \begin{figure}[htbp]
 \centering
