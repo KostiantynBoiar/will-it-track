@@ -16,8 +16,8 @@ association.
 \IfFileExists{tables/coefficients.tex}{\input{tables/coefficients}}{}
 
 \section{How much do the distances explain, and is difficulty any better?}
-We first ask how much of the variation in detection the four distances account for. A \emph{dominance
-analysis} (the LMG/Shapley method, which fairly splits shared explanatory power between correlated
+We first ask how much of the variation in detection the four distances account for. A dominance
+analysis (the LMG/Shapley method, which fairly splits shared explanatory power between correlated
 predictors rather than double-counting it) shows they account for almost nothing: together the four explain
 only $\approx 3\%$ of the variation in detection, and no single distance stands out (Table~\ref{tab:variance}).
 A natural worry is that the distances might be so correlated with one another that a real effect is hidden by
@@ -25,17 +25,17 @@ them cancelling out; the VIF column rules this out (VIF, the variance inflation 
 each predictor is with the others --- a value near $1$ means ``essentially independent''). Every VIF is
 $\approx 1$, so the $3\%$ is genuinely all there is, not a masked signal.
 \IfFileExists{tables/variance.tex}{\input{tables/variance}}{}
-The one distance that \emph{looked} predictive (visual distance) turned out to be explained by animal size ---
+The one distance that looked predictive (visual distance) turned out to be explained by animal size ---
 visually distinctive species tend to be larger, and larger animals are easier to detect, so ``novelty'' was
-really ``size'' in disguise (a \emph{confound}). This prompts a different question: rather than how
-\emph{novel} the animal is, does how \emph{hard the scene is} predict detection? We therefore test three
+really ``size'' in disguise (a confound). This prompts a different question: rather than how
+novel the animal is, does how hard the scene is predict detection? We therefore test three
 label-free scene properties --- low light, visual clutter, and a night/infrared flag, each measured directly
 from the frames with no SAM\,3 run and no target label --- against the same bar (Table~\ref{tab:difficulty}).
-Bundled together with animal size, these difficulty signals \emph{appear} to work (they beat the baseline by
+Bundled together with animal size, these difficulty signals appear to work (they beat the baseline by
 $\approx+0.017$ on both hold-outs). But when we separate the contributions, the entire gain comes from size:
 size \emph{on its own} carries it, while low light \emph{on its own} does not beat the baseline and adds almost
 nothing once size is accounted for. The apparent night/IR effect is also inflated by looking at it the wrong
-way: measured per \emph{location} the correlation with detection looks moderate ($r=-0.377$), but that is an
+way: measured per location the correlation with detection looks moderate ($r=-0.377$), but that is an
 averaging artefact --- measured at the level of the individual cell, where the model actually operates, it
 shrinks to $-0.13$, and clutter's is $0.00$. So the difficulty idea is \textbf{also null}: the only label-free
 property that predicts detection is animal size.
@@ -43,7 +43,7 @@ property that predicts detection is animal size.
 
 \section{The headline test: can the distances predict unseen cases?}
 This is the decisive test. We train the model on some species and locations, then ask it to predict detection
-for \emph{held-out} ones it never saw, and compare its error to the simplest possible guess --- always
+for held-out ones it never saw, and compare its error to the simplest possible guess --- always
 predicting the average score (Table~\ref{tab:cv}). The result is a \textbf{null}: on both hold-out schemes
 (hold out whole species; hold out whole locations) and for both targets, the distance model does no better than
 that trivial average. The improvement in error over the baseline ($\Delta\mathrm{MAE}$, the drop in mean
@@ -69,7 +69,7 @@ carry no predictive power.}
 The primary novelty test --- leave-one-species-out over the pooled train+test species (99 species,
 1025 scored cells) --- is in Tables~\ref{tab:gate1_species}--\ref{tab:cv_species}. Out-of-sample
 prediction is not significant on any hold-out (Table~\ref{tab:cv_species}). The only coefficient whose CI
-excludes zero, \emph{visual distance} (Table~\ref{tab:coefficients_species}), is positive --- meaning
+excludes zero, visual distance (Table~\ref{tab:coefficients_species}), is positive --- meaning
 more-novel species are detected \emph{better}, the reverse of what H1 predicts --- and is a \textbf{confound}:
 visually-distinctive species are larger
 (visual~$\leftrightarrow$~$\log$-area $r=0.22$) and larger animals score higher
@@ -90,10 +90,10 @@ novelty is flat ($r\approx0.00$). Novelty does not predict transfer.
 
 \section{False positives / hallucination}
 The detection score conditions on the animal being present, so it measures recall, not hallucination. The
-$1486$ \emph{hard negatives} (queries for absent species) ask the complementary question, and are the
+$1486$ hard negatives (queries for absent species) ask the complementary question, and are the
 closest the study comes to a validated before-running signal. SAM\,3 returns a masklet anyway about
 $\mathbf{9.8\%}$ of the time. This hallucination rate does \emph{not} rise with taxonomic novelty
-($r\approx+0.06$, n.s.); it \emph{falls} with visual distinctiveness ($r\approx-0.33$), and this survives an
+($r\approx+0.06$, n.s.); it falls with visual distinctiveness ($r\approx-0.33$), and this survives an
 animal-size control (partial $-0.37$) --- a genuine, size-independent, label-free correlate, though its
 direction (``distinctive $=$ safer'') is the \emph{opposite} of ``novelty hurts''. Crucially it is a
 \textbf{correlate, not a predictor}: predicting a held-out species' hallucination rate from visual distance
@@ -137,7 +137,7 @@ none adds out-of-sample gain over \texttt{visual\_distance}\,$+$\,size. The one 
 unlike the visual distance, is \emph{not} a size artefact ($r_\text{size}=-0.16$) --- it is the size-independent
 half of visual distinctness --- yet it still fails to predict transfer.
 
-The metrics do reach significance under leave-\emph{location}-out ($p\le0.01$), but this is not a novelty test:
+The metrics do reach significance under leave-location-out ($p\le0.01$), but this is not a novelty test:
 the familiarity value is species-constant (within-species variance $=0$), and on the location split the
 held-out locations' species are shared with the training locations, so a species-constant feature is never
 tested on an unseen species. Crucially, on these same $346$ cells the before-running animal-size control does
@@ -200,49 +200,49 @@ SA-FARI to exclude a moderate effect, but not a small one.
 
 \section{Cross-model replication: the model swap}
 \label{sec:model_swap}
-The two datasets above both vary the \emph{data} while holding the tracker fixed at SAM\,3, so they leave one
+The two datasets above both vary the data while holding the tracker fixed at SAM\,3, so they leave one
 threat open: the null might be a quirk of SAM\,3 rather than a property of the prediction problem. A
-\emph{controlled model swap} closes it --- hold the cells, the ground truth, the four distances and the GLM
-fixed, and change \emph{only the tracker}. If the before-running distances fail to predict a \emph{different}
+controlled model swap closes it --- hold the cells, the ground truth, the four distances and the GLM
+fixed, and change only the tracker. If the before-running distances fail to predict a different
 tracker's transfer too, the null is task-general. We swap in two open-vocabulary, text-promptable trackers of
 deliberately different architecture: \textbf{GLEE}~\cite{glee}, a single unified detect--segment--track model,
 and \textbf{Florence-2}~\cite{florence2}\,+\,SAM\,2~\cite{sam2}, a two-stage pipeline in which a caption-style
-generator emits boxes (with \emph{no} confidence score) and SAM\,2 turns them into tracked masks.
+generator emits boxes (with no confidence score) and SAM\,2 turns them into tracked masks.
 
 \paragraph{SA-FARI cannot host the swap --- and it is not the scorer.} On SA-FARI both challengers score
 $\text{pDetA}\approx 0$ and cannot be modelled at all. This is not a rigged evaluator: the zeros survive
 box-HOTA (scoring the box models on boxes, GLEE $0.033$) and a threshold-free average-precision metric with no
 confidence gate at all (GLEE $0.000$, Florence-2 $0.017$--$0.022$); Florence-2, which emits no score, is
-unaffected by the gate and still scores $\sim\!0$. The cause is a \emph{double confound}. SA-FARI is SAM\,3's
+unaffected by the gate and still scores $\sim\!0$. The cause is a double confound. SA-FARI is SAM\,3's
 own co-released benchmark, and its exotic, nocturnal species are out-of-distribution for internet-trained
 challengers --- and the domain, not merely the species, is what breaks them: run GLEE on SA-FARI's
-\emph{everyday} species (jaguar, cow, fox) and it localises them well (oracle IoU up to $0.90$) yet its
+everyday species (jaguar, cow, fox) and it localises them well (oracle IoU up to $0.90$) yet its
 confidence still collapses below any usable operating point on the dark, cluttered camera-trap footage. SA-FARI
 therefore cannot yield a fair, non-degenerate challenger score.
 
 \paragraph{BURST hosts a fair swap, and both challengers work.} BURST is neither SAM\,3's benchmark nor
-camera-trap footage, and SAM\,3 scores \emph{higher} on it ($\text{pDetA}\,0.607$) than on its own SA-FARI
+camera-trap footage, and SAM\,3 scores higher on it ($\text{pDetA}\,0.607$) than on its own SA-FARI
 ($0.537$) --- so there is no home-turf inflation, and the arena is fair. There, both challengers genuinely track:
 GLEE reaches $\text{pDetA}\,0.340$ (median $0.31$, spread $0$--$0.98$, $67/132$ cells $>0.3$) and
 Florence-2\,+\,SAM\,2 reaches $0.394$ (median $0.33$, $72/132$ cells $>0.3$), both non-degenerate with the real
 spread the regression needs (Table~\ref{tab:model_swap}).
 
 \paragraph{The null replicates across models.} Under the same leakage-free leave-species-out cross-validation,
-size-controlled, the combined four-distance model fails to predict \emph{either} challenger's detection transfer:
+size-controlled, the combined four-distance model fails to predict either challenger's detection transfer:
 $+0.011$ ($95\%$ CI $[-0.004,+0.027]$, $p=0.088$) for GLEE and $+0.034$ ($[-0.001,+0.068]$, $p=0.030$) for
 Florence-2 --- both confidence intervals spanning zero, neither clearing the Bonferroni bar
 ($\alpha=0.0125$). As on SA-FARI, a few individual distances flicker (for Florence-2, environment $p=0.006$ and
 temporal $p=0.015$), but the discounts are identical: BURST has no locations, so ``leave-species-out'' is the
 only valid scheme and an apparent two-scheme pass is one partition counted twice; the flickers route through the
-animal-size confound the driver controls; and the \emph{combined} model --- what a deployment gate would use ---
+animal-size confound the driver controls; and the combined model --- what a deployment gate would use ---
 is null in both. Two architecturally distinct trackers thus both (i) genuinely track BURST animals and (ii) show
 the before-running distance null. \textbf{The null is task-general across trackers, not a SAM-3 artefact.}
 \IfFileExists{tables/model_swap.tex}{\input{tables/model_swap}}{}
 
-\paragraph{Convergent, honestly bounded.} This is a \emph{controlled model swap}, not an independent
+\paragraph{Convergent, honestly bounded.} This is a controlled model swap, not an independent
 replication: it reuses BURST's cells, ground truth, distances and GLM, changing only the tracker. Its scope is
 two models on one fair dataset ($n=132$, underpowered for a small species-level effect, exactly as the SAM\,3
 BURST run), and Florence-2's combined interval sits closer to zero-exclusion than GLEE's --- so we read it as a
-\emph{convergent, confound-free} cross-model replication that removes the ``single frozen backbone'' threat, not
+convergent, confound-free cross-model replication that removes the ``single frozen backbone'' threat, not
 as an independently-powered certification. Combined with the two datasets, the null now holds across both axes
 that could have confounded it --- the dataset and the model.

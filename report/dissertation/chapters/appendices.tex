@@ -20,8 +20,8 @@ term~\cite{hota}:
   \mathrm{pHOTA} \;=\; \frac{1}{|\mathcal{A}|}\sum_{\alpha\in\mathcal{A}} \mathrm{HOTA}_\alpha ,
 \end{equation}
 with $\mathcal{A}=\{0.05,0.10,\dots,0.95\}$. We analyse the two components separately as the targets
-$\texttt{pDetA}=\mathrm{DetA}$ (did it \emph{find} the animals?) and $\texttt{pAssA}=\mathrm{AssA}$ (did it
-\emph{keep} each identity?), both bounded in $[0,1]$. Scores are computed per cell by the vendored
+$\texttt{pDetA}=\mathrm{DetA}$ (did it find the animals?) and $\texttt{pAssA}=\mathrm{AssA}$ (did it
+keep each identity?), both bounded in $[0,1]$. Scores are computed per cell by the vendored
 \texttt{VEval} evaluator.
 
 \section{Label-free distances}
@@ -31,7 +31,7 @@ reference only.
 
 \paragraph{Taxonomic distance.}
 Write each species' seven-level path $\pi(s)=(\text{kingdom},\dots,\text{species})$, defined only for species
-with a complete taxonomy. Let $\mathrm{shared}(a,b)$ be the length of the longest common \emph{non-empty}
+with a complete taxonomy. Let $\mathrm{shared}(a,b)$ be the length of the longest common non-empty
 prefix of two paths. The tree-step distance and the nearest-reference distance are
 \begin{equation}
   \tau(a,b)=L-\mathrm{shared}(a,b)\;\;(L=7),
@@ -52,9 +52,9 @@ $v$ to a set of prototypes $\{p_j\}$ (optionally excluding an index $e$) are
 Because $v$ and each $p_j$ are unit-norm, $v^{\!\top}p_j$ is the cosine similarity, so $d\in[0,2]$.
 
 \paragraph{Visual and environment distance.}
-Both use DINOv2 embeddings. The \emph{visual} distance embeds the ground-truth-mask-cropped animal (the
+Both use DINOv2 embeddings. The visual distance embeds the ground-truth-mask-cropped animal (the
 background is zeroed before cropping), forms one prototype per species, and sets $d_{\mathrm{vis}}(s)$ to the
-nearest \emph{other} species' prototype. The \emph{environment} distance embeds the animal-masked-out
+nearest other species' prototype. The environment distance embeds the animal-masked-out
 background (the animal union is replaced by the mean colour of the remaining pixels), forms one prototype per
 location, and sets $d_{\mathrm{env}}(\ell)$ to the nearest other location. Two interpretable scene covariates
 accompany the environment distance:
@@ -74,7 +74,7 @@ For a cell with footage year $y$ and reference years $\mathcal{Y}$, and for the 
   \mathrm{log\_area}(s)=\ln\!\big(1+\overline{\mathrm{area}(s)}\big),
 \end{equation}
 where $\overline{\mathrm{area}(s)}$ is the mean ground-truth mask pixel-count over sampled masklets of species
-$s$. Size is a \emph{nuisance} covariate, not a hypothesis variable.
+$s$. Size is a nuisance covariate, not a hypothesis variable.
 
 \section{Model and statistics}
 \label{app:stats}
@@ -110,8 +110,8 @@ For the species-level false-positive analysis, with weights $w$ (per-species pro
 \chapter{Algorithms}
 \label{app:algorithms}
 Pseudocode for the four non-obvious procedures. The two bootstraps differ deliberately: the
-cross-validation gain (Alg.~\ref{alg:cvsig}) is tested \emph{one-sided} (does the model beat the mean?),
-whereas the false-positive correlation (Alg.~\ref{alg:fp}) is tested \emph{two-sided} (does hallucination
+cross-validation gain (Alg.~\ref{alg:cvsig}) is tested one-sided (does the model beat the mean?),
+whereas the false-positive correlation (Alg.~\ref{alg:fp}) is tested two-sided (does hallucination
 change with novelty, in either direction?).
 
 \begin{algorithm}
@@ -143,7 +143,7 @@ $\mathit{misses}\gets[\,\text{item}: \text{cache.get(item.key)}=\varnothing\,]$\
 \ForEach{grouping column $g\in\mathcal{G}$ present in the data}{
   $U\gets$ unique groups of $g$; \textbf{if} $|U|<2$ \textbf{then} skip\;
   \For{$b\gets1$ \KwTo $B$}{
-    draw $|U|$ groups from $U$ \emph{with replacement}; sample $\gets$ all rows of the drawn groups\;
+    draw $|U|$ groups from $U$ with replacement; sample $\gets$ all rows of the drawn groups\;
     refit the GLM on sample; record its coefficient vector \tcp*{skip a singular resample}
   }
   $\mathrm{lo}_g\gets$ percentile $\tfrac{\alpha}{2}$, $\;\mathrm{hi}_g\gets$ percentile $1-\tfrac{\alpha}{2}$, per coefficient\;
