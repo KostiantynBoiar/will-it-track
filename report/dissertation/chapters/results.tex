@@ -15,37 +15,45 @@ Table~\ref{tab:coefficients} gives the standardised logit-GLM coefficients for d
 association.
 \IfFileExists{tables/coefficients.tex}{\input{tables/coefficients}}{}
 
-\section{Variance partitioning and the intrinsic-difficulty decomposition}
-A dominance (LMG/Shapley) analysis confirms the distances carry almost nothing: together the four explain only
-$\approx 3\%$ of the variance in detection, no single factor dominates, and every VIF is $\approx 1$
-(Table~\ref{tab:variance}) --- so the null is not an artefact of collinearity masking a real effect.
+\section{How much do the distances explain, and is difficulty any better?}
+We first ask how much of the variation in detection the four distances account for. A \emph{dominance
+analysis} (the LMG/Shapley method, which fairly splits shared explanatory power between correlated
+predictors rather than double-counting it) shows they account for almost nothing: together the four explain
+only $\approx 3\%$ of the variation in detection, and no single distance stands out (Table~\ref{tab:variance}).
+A natural worry is that the distances might be so correlated with one another that a real effect is hidden by
+them cancelling out; the VIF column rules this out (VIF, the variance inflation factor, measures how entangled
+each predictor is with the others --- a value near $1$ means ``essentially independent''). Every VIF is
+$\approx 1$, so the $3\%$ is genuinely all there is, not a masked signal.
 \IfFileExists{tables/variance.tex}{\input{tables/variance}}{}
-Because the one apparent effect (visual
-distance, below) turned out to be an animal-size confound, we pivot the hypothesis from \emph{novelty} to
-intrinsic \emph{difficulty}: we promote the label-free scene properties --- low-light/IR
-(\texttt{achromatic\_fraction}), clutter, and the night/IR flag, each computed per location from the frames
-with no SAM\,3 run and no target label --- from nuisance covariates to predictors of interest, and test them
-at the same bar. Table~\ref{tab:difficulty} decomposes the outcome. Taken \emph{with} an animal-size covariate
-each difficulty signal \emph{appears} to validate (leave-species-out and leave-location-out
-$\Delta\mathrm{MAE}\approx+0.017$, both significant), but a nested decomposition shows the gain is entirely
-the size covariate: $\log$-area \emph{alone} carries it ($\Delta\mathrm{MAE}=+0.017$, $p=0.001/0.014$), while
-low-light \emph{alone} does \emph{not} validate ($p=0.12/0.23$) and adds only $\approx+0.002$ over size. The
-low-light effect is also far weaker than it first looks: the location-level night/IR--\texttt{pDetA}
-correlation of $r=-0.377$ is an aggregation artefact (the ecological-correlation fallacy) --- at the cell level
-it is only $-0.13$, and clutter's cell-level correlation is $0.00$. The intrinsic-difficulty pivot is
-therefore \textbf{also null}: the only label-free property that predicts detection is animal size.
+The one distance that \emph{looked} predictive (visual distance) turned out to be explained by animal size ---
+visually distinctive species tend to be larger, and larger animals are easier to detect, so ``novelty'' was
+really ``size'' in disguise (a \emph{confound}). This prompts a different question: rather than how
+\emph{novel} the animal is, does how \emph{hard the scene is} predict detection? We therefore test three
+label-free scene properties --- low light, visual clutter, and a night/infrared flag, each measured directly
+from the frames with no SAM\,3 run and no target label --- against the same bar (Table~\ref{tab:difficulty}).
+Bundled together with animal size, these difficulty signals \emph{appear} to work (they beat the baseline by
+$\approx+0.017$ on both hold-outs). But when we separate the contributions, the entire gain comes from size:
+size \emph{on its own} carries it, while low light \emph{on its own} does not beat the baseline and adds almost
+nothing once size is accounted for. The apparent night/IR effect is also inflated by looking at it the wrong
+way: measured per \emph{location} the correlation with detection looks moderate ($r=-0.377$), but that is an
+averaging artefact --- measured at the level of the individual cell, where the model actually operates, it
+shrinks to $-0.13$, and clutter's is $0.00$. So the difficulty idea is \textbf{also null}: the only label-free
+property that predicts detection is animal size.
 \IfFileExists{tables/difficulty.tex}{\input{tables/difficulty}}{}
 
-\section{Out-of-sample validation}
-% TODO: predictive-line figures.
-Table~\ref{tab:cv} reports whole-group hold-out error against a mean-predictor baseline. This is the headline
-result and it is a \textbf{null}: on both the location and the species schemes, and for both targets, no
-distance model beats simply predicting the mean --- every $\Delta\mathrm{MAE}$ is within noise of zero and no
-gain is significant under the paired group-bootstrap. \textbf{This is not an underpowered test.} The same GLM
-and grouped cross-validation, on the same cells, \emph{do} detect a real signal when one exists: animal size
-($\log$-area) validates out of sample at the identical bar ($\Delta\mathrm{MAE}=+0.017$, $p<0.017$ on both
-schemes; Table~\ref{tab:difficulty}). A test that fires for size yet stays flat for the distances is evidence
-of a genuine \emph{absence} of before-running label-free signal, not of low power.
+\section{The headline test: can the distances predict unseen cases?}
+This is the decisive test. We train the model on some species and locations, then ask it to predict detection
+for \emph{held-out} ones it never saw, and compare its error to the simplest possible guess --- always
+predicting the average score (Table~\ref{tab:cv}). The result is a \textbf{null}: on both hold-out schemes
+(hold out whole species; hold out whole locations) and for both targets, the distance model does no better than
+that trivial average. The improvement in error over the baseline ($\Delta\mathrm{MAE}$, the drop in mean
+absolute error) is within noise of zero in every case, and none is statistically significant.
+
+\textbf{This is not just a weak, underpowered test.} The very same procedure, on the very same cases, \emph{does}
+pick up a real effect when there is one: animal size beats the baseline out of sample at the identical bar
+($\Delta\mathrm{MAE}=+0.017$, significant on both schemes; Table~\ref{tab:difficulty}). A test that fires for
+size but stays flat for the distances is evidence that the distances genuinely carry \emph{no} predictive
+signal --- not that the test was too weak to find one.
 \IfFileExists{tables/cv_validation.tex}{\input{tables/cv_validation}}{}
 \begin{figure}[htbp]
 \centering
