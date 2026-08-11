@@ -2,16 +2,17 @@
 % source report/second_model_comparison.md (Phase 0 runs).
 \begin{table}[htbp]\centering
   \caption{Cross-model swap on BURST (132 cells, 41 species, mask-HOTA): zero-shot detection per tracker ---
-  SAM\,3 and two architecturally distinct challengers. All three are non-degenerate, with the real per-cell
-  spread the regression needs. Their distance-model results are in Table~\ref{tab:model_swap_cv}.}
+  SAM\,3 and two architecturally distinct challengers. All three are non-degenerate: both challengers show the
+  real per-cell spread the regression needs (GLEE median $0.31$, $67/132$ cells $>0.3$; Florence-2\,+\,SAM\,2
+  median $0.33$, $72/132$ cells $>0.3$). Their distance-model results are in Table~\ref{tab:model_swap_cv}.}
   \label{tab:model_swap}
-  \begin{tabular}{lrrr}
+  \begin{tabular}{lr}
     \toprule
-    Tracker & mean \texttt{pDetA} & median & cells $>$0.3 \\
+    Tracker & mean \texttt{pDetA} \\
     \midrule
-    SAM\,3 (reference)              & 0.607 & --- & --- \\
-    GLEE (unified query)            & 0.340 & 0.31 & 67 of 132 \\
-    Florence-2\,+\,SAM\,2 (caption) & 0.394 & 0.33 & 72 of 132 \\
+    SAM\,3 (reference)              & 0.607 \\
+    GLEE (unified query)            & 0.340 \\
+    Florence-2\,+\,SAM\,2 (caption) & 0.394 \\
     \bottomrule
   \end{tabular}
 \end{table}
