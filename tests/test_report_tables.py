@@ -48,7 +48,8 @@ def test_robustness_table_renders_the_null_survives_story(tmp_path) -> None:
     }))
     summary, tex = _robustness(tmp_path)
     assert "\\label{tab:robustness}" in tex
-    assert "CLIP encoder" in tex and "(baseline)" in tex
+    assert "CLIP encoder" in tex and "baseline" in tex
+    assert "\\begin{table}" in tex  # upright, not sidewaystable
     assert "The null holds throughout" in tex  # honest conclusion driven by the (null) verdict
     assert "n.s." in tex and summary["bonferroni_m"] == 2
 

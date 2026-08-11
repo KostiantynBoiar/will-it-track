@@ -117,9 +117,7 @@ distributional Fr\'echet or MMD rather than nearest-prototype distance each leav
 indistinguishable from the baseline (all $\Delta\mathrm{MAE}\le0.007$, $p\ge0.10$, every 95\% CI spanning
 zero). A generic ``animal'' prompt is included for completeness: prompting non-specifically collapses
 per-species detection to a near-constant, mostly-zero target (mean \texttt{pDetA}$\approx0.14$, $73\%$ of cells
-exactly zero),\footnote{A minority of clips were additionally skipped for GPU memory on the $16$\,GB card used
-for this pass; they are scored as misses and add noise but do not drive the collapse, which is intrinsic to the
-non-specific prompt.} so the distance model cannot beat --- and, fitting a degenerate target, underperforms ---
+exactly zero), so the distance model cannot beat --- and, fitting a degenerate target, underperforms ---
 a mean predictor. Across every variant the label-free distances fail identically, confirming the null is a
 property of the transfer problem, not of one modelling choice.
 \IfFileExists{tables/robustness.tex}{\input{tables/robustness}}{}
