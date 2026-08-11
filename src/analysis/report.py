@@ -150,7 +150,7 @@ def _cv(outputs: Path, config: Config | None = None, tag: str = "") -> tuple[pd.
 
 _DIFFICULTY_LABELS = {
     "log_support_only": "$\\log$(support) only",
-    "log_area_only": "$\\log$(area) only \\emph{[size]}",
+    "log_area_only": "$\\log$(area) only (size)",
     "lowlight_only_no_size": "Low-light only (no size)",
     "lowlight_plus_size": "Low-light $+$ size",
 }
