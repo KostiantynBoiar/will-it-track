@@ -1,0 +1,17 @@
+% Cross-model swap on BURST --- combined-distance-model null per challenger. Hand-maintained;
+% source report/second_model_comparison.md (Phase 0 runs).
+\begin{table}[htbp]\centering
+  \caption{Cross-model swap on BURST: out-of-sample error of the combined four-distance model (leave-species-out,
+  size-controlled) vs a mean predictor, per challenger; $\Delta$MAE with a 95\% CI and one-sided $p$
+  (Bonferroni $\alpha=0.0125$). Both challengers track BURST animals (Table~\ref{tab:model_swap}) yet the
+  distance model is null for each --- the label-free distance null replicates across trackers.}
+  \label{tab:model_swap_cv}
+  \begin{tabular}{lrrr}
+    \toprule
+    Challenger & $\Delta$MAE & 95\% CI & $p$ \\
+    \midrule
+    GLEE                  & +0.011 & [$-$0.004,\,+0.027] & 0.088 \\
+    Florence-2\,+\,SAM\,2 & +0.034 & [$-$0.001,\,+0.068] & 0.030 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

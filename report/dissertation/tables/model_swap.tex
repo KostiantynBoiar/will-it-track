@@ -1,25 +1,17 @@
-% Cross-model swap on BURST --- hand-maintained; source report/second_model_comparison.md (Phase 0 runs).
+% Cross-model swap on BURST --- zero-shot scores per tracker. Hand-maintained;
+% source report/second_model_comparison.md (Phase 0 runs).
 \begin{table}[htbp]\centering
-  \caption{Cross-model swap on BURST (132 cells, 41 species, mask-HOTA). \emph{Top:} zero-shot \texttt{pDetA}
-  per tracker --- SAM\,3 and two architecturally distinct challengers, all non-degenerate. \emph{Bottom:}
-  out-of-sample error of the combined four-distance model (leave-species-out, size-controlled) vs a mean
-  predictor; $\Delta$MAE [95\% CI]~($p$), Bonferroni $\alpha=0.0125$. Both challengers track BURST animals yet
-  the distance model is null for each --- the null replicates across trackers.}
+  \caption{Cross-model swap on BURST (132 cells, 41 species, mask-HOTA): zero-shot detection per tracker ---
+  SAM\,3 and two architecturally distinct challengers. All three are non-degenerate, with the real per-cell
+  spread the regression needs. Their distance-model results are in Table~\ref{tab:model_swap_cv}.}
   \label{tab:model_swap}
   \begin{tabular}{lrrr}
     \toprule
-    \multicolumn{4}{l}{\emph{Zero-shot detection on BURST}} \\
-    Tracker & \multicolumn{3}{r}{\texttt{pDetA} (mean\,/\,median\,/\,cells $>$0.3)} \\
+    Tracker & mean \texttt{pDetA} & median & cells $>$0.3 \\
     \midrule
-    SAM\,3 (reference)              & \multicolumn{3}{r}{0.607} \\
-    GLEE (unified query)            & \multicolumn{3}{r}{0.340\,/\,0.31\,/\,67 of 132} \\
-    Florence-2\,+\,SAM\,2 (caption) & \multicolumn{3}{r}{0.394\,/\,0.33\,/\,72 of 132} \\
-    \midrule
-    \multicolumn{4}{l}{\emph{Combined four-distance model $\rightarrow$ \texttt{pDetA} (leave-species-out)}} \\
-    Challenger & $\Delta$MAE & 95\% CI & $p$ \\
-    \midrule
-    GLEE                  & +0.011 & [$-$0.004,\,+0.027] & 0.088 \\
-    Florence-2\,+\,SAM\,2 & +0.034 & [$-$0.001,\,+0.068] & 0.030 \\
+    SAM\,3 (reference)              & 0.607 & --- & --- \\
+    GLEE (unified query)            & 0.340 & 0.31 & 67 of 132 \\
+    Florence-2\,+\,SAM\,2 (caption) & 0.394 & 0.33 & 72 of 132 \\
     \bottomrule
   \end{tabular}
 \end{table}

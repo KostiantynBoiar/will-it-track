@@ -224,6 +224,7 @@ camera-trap footage, and SAM\,3 scores higher on it ($\text{pDetA}\,0.607$) than
 GLEE reaches $\text{pDetA}\,0.340$ (median $0.31$, spread $0$--$0.98$, $67/132$ cells $>0.3$) and
 Florence-2\,+\,SAM\,2 reaches $0.394$ (median $0.33$, $72/132$ cells $>0.3$), both non-degenerate with the real
 spread the regression needs (Table~\ref{tab:model_swap}).
+\IfFileExists{tables/model_swap.tex}{\input{tables/model_swap}}{}
 
 \paragraph{The null replicates across models.} Under the same leakage-free leave-species-out cross-validation,
 size-controlled, the combined four-distance model fails to predict either challenger's detection transfer:
@@ -235,7 +236,7 @@ only valid scheme and an apparent two-scheme pass is one partition counted twice
 animal-size confound the driver controls; and the combined model --- what a deployment gate would use ---
 is null in both. Two architecturally distinct trackers thus both (i) genuinely track BURST animals and (ii) show
 the before-running distance null. \textbf{The null is task-general across trackers, not a SAM-3 artefact.}
-\IfFileExists{tables/model_swap.tex}{\input{tables/model_swap}}{}
+\IfFileExists{tables/model_swap_cv.tex}{\input{tables/model_swap_cv}}{}
 
 \paragraph{Convergent, honestly bounded.} This is a controlled model swap, not an independent
 replication: it reuses BURST's cells, ground truth, distances and GLM, changing only the tracker. Its scope is
