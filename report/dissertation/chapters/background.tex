@@ -44,7 +44,7 @@ on a distribution-shift feature --- the Fr\'echet distance between train and tes
 which is the closest methodological cousin to our own ``regress the score on a distance'' approach.
 
 Two properties characterise essentially all of this work, and both are limitations we depart from. First,
-it targets \textbf{image classifiers} with a single scalar accuracy. The idea has only recently reached
+it targets image classifiers with a single scalar accuracy. The idea has only recently reached
 structured outputs: \citet{pcr} estimate object-detection performance without ground truth from the spatial
 consistency and confidence reliability of pre-NMS boxes, and reverse classification accuracy~\cite{rca}
 predicts per-image segmentation quality by training a reverse model against a labelled reference. These are
@@ -76,7 +76,7 @@ more robust models rely on background \emph{less} --- which anticipates our resu
 prompt-anchored zero-shot model, and to which we return in Chapter~\ref{ch:discussion}.
 These works are the empirical backdrop for our environment axis --- but they share two features that mark the
 gap. They \textbf{measure or mitigate} degradation after the fact rather than predicting per-site or
-per-species reliability in advance, and they study \textbf{classifiers or behaviour recognisers}, not
+per-species reliability in advance, and they study classifiers or behaviour recognisers, not
 promptable trackers, scored by a single accuracy with no detection/association split. Most tellingly, a
 recent unified study of camera-trap recognition over time~\cite{jeon} explicitly names ``predicting when
 zero-shot models will succeed at a new site'' as an open question --- and stops at naming it. This
@@ -100,7 +100,7 @@ annotated videos spanning $99$ species with a seven-level taxonomy, $741$ locati
 per-video timestamps), released with SAM\,3 and scored by the official \texttt{VEval} evaluator. It ships with abundant hard negatives --- prompts for absent species that must return
 nothing --- which we keep, as they drive the false-positive side of detection. Two properties of the shipped
 split shape our design and merit a precise statement. Inspection of the released annotations shows the
-train/test split is disjoint by \textbf{location} (test camera sites are unseen) but that its \emph{species
+train/test split is disjoint by location (test camera sites are unseen) but that its \emph{species
 are largely shared} across the split; a genuine ``unseen species'' axis is therefore not directly available
 from the official split. Because SAM\,3 is frozen and zero-shot on all of SA-FARI, however, the split
 reflects nothing the model learned --- it is only our choice of a reference distribution against which
@@ -115,8 +115,8 @@ Predictable OOD generalisation is established for classifiers scored by a scalar
 and, very recently, for static detectors and segmenters~\cite{pcr,rca}; camera-trap vision has thoroughly
 documented, but not forecast, location-driven degradation~\cite{terra,wilds,panaf,jeon}. No prior work
 predicts, \emph{before running the model} and from label-free distances, the zero-shot transfer of a
-\textbf{promptable video tracker}, and none separates that prediction into \textbf{detection} and
-\textbf{association}. Asking that question rigorously --- an out-of-sample test, over SA-FARI's
+promptable video tracker, and none separates that prediction into detection and
+association. Asking that question rigorously --- an out-of-sample test, over SA-FARI's
 species-\allowbreak by-\allowbreak place-\allowbreak by-\allowbreak time structure, of whether label-free distances
 predict SAM\,3's transfer, decomposed into \texttt{pDetA} and \texttt{pAssA} --- is the contribution of this
 dissertation. As Chapter~\ref{ch:results} reports, the honest answer is negative: transfer is not

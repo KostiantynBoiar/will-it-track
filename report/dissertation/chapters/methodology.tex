@@ -12,7 +12,7 @@ weighted regression with group-aware, out-of-sample validation rather than a tun
 \paragraph{Definition of success and the decision rule.}
 The intended deliverable is a validated, out-of-sample predictor of \texttt{pDetA}/\texttt{pAssA}
 from label-free distances, with honest confidence intervals. A distance is taken to predict transfer only if
-it satisfies \textbf{both} criteria:
+it satisfies both criteria:
 \begin{enumerate}[label=(\roman*),leftmargin=2.4em]
   \item its coefficient's group-cluster-bootstrap 95\% confidence interval (CI) excludes zero; and
   \item the grouped cross-validated model beats a mean-predictor baseline by a margin that is significant under
@@ -190,8 +190,8 @@ vision-encoder feature space. The same mask-cropped animals used for the visual 
 SAM\,3's image encoder, mean-pooling the patch-token features to a $1024$-d vector, and each species is scored
 three ways --- silhouette (own-cluster compactness vs the nearest other species), nearest-prototype
 (the visual distance recomputed with SAM\,3's encoder rather than DINOv2), and Mahalanobis typicality
-against the reference feature Gaussian. Like the other distances it is \textbf{before-running} (an image
-property, not a function of SAM\,3's tracking output, so it is non-circular) and \textbf{label-free}. Each metric
+against the reference feature Gaussian. Like the other distances it is before-running (an image
+property, not a function of SAM\,3's tracking output, so it is non-circular) and label-free. Each metric
 is validated at the exact leave-species-out bar (Bonferroni over the three), size-controlled, and put in a
 head-to-head against the DINOv2 visual distance: the decisive question is whether it adds any out-of-sample gain
 over the visual distance $+$ size (Section~\ref{sec:familiarity}).

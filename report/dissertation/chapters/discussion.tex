@@ -37,13 +37,13 @@ and it too fails to yield a graded predictor --- so it re-derives the hypothesis
 \section{Relation to prior label-free evaluation}
 \label{sec:disc-related}
 The null sits against a literature of positive results, and two axes separate every one of those results
-from ours --- which is why the disagreement is only apparent. The first axis is the \textbf{signal}. Accuracy-
+from ours --- which is why the disagreement is only apparent. The first axis is the signal. Accuracy-
 and Agreement-on-the-Line~\cite{aotl,agl}, ATC~\cite{atc} and AutoEval~\cite{autoeval} all read the model's
 own behaviour on the target --- its confidence, its agreement across a model pair, or (for AutoEval) a
 feature-distribution distance computed after passing the target images through the network. Those are
 \emph{after-running} estimators. We instead forecast from external, label-free distances known
 \emph{before} a single frame is processed --- the strictly harder, and for a practitioner deciding whether to
-spend compute, the more useful regime. The second axis is the \textbf{output}. Every predecessor targets a
+spend compute, the more useful regime. The second axis is the output. Every predecessor targets a
 scalar classifier accuracy~\cite{aotl,agl,atc,autoeval} or the quality of a static
 detector/segmenter~\cite{pcr,rca}; none concerns identity maintained over time, and none is decomposed. Ours is
 the first study to ask the question of a promptable video tracker, split into detection
