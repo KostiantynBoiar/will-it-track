@@ -2,7 +2,6 @@
 \label{ch:discussion}
 
 \section{Interpretation}
-% TODO: expand.
 Neither hypothesis is supported. H1 (detection falls with species novelty) and H2 (association falls with
 environment difficulty) both fail the pre-registered bar: no label-free distance beats a mean predictor out of
 sample, and the one coefficient that reached significance --- visual distance, running in the opposite
@@ -101,7 +100,6 @@ concerns background distance as a predictor of detection transfer for a promptab
 blanket ``background is irrelevant'', which would wrongly contradict \cite{terra,xiao,panaf}.
 
 \section{Why label-free distances do not yield a deployment estimator}
-% TODO: expand.
 The field problem that motivated this work --- telling a practitioner, before spending compute, whether SAM\,3
 is trustworthy for a new (species, place) --- is not solved by label-free distances. That is a negative but
 useful answer: the intuition that ``far-from-training implies unreliable'' does not hold for a promptable video
@@ -111,7 +109,6 @@ as such a gate. What the negative result does establish is a rigorous baseline: 
 estimator must clear the same whole-group hold-out bar that these well-motivated distances failed.
 
 \section{Limitations and threats to validity}
-% TODO: expand.
 Three limitations bound the claim. First, distances are measured against the SA-FARI train split, \emph{not}
 SAM\,3's true pretraining corpus (Meta's SA-Co), which is undisclosed; the null is scoped to
 distance-from-SA-FARI. We test one hedge against this --- the familiarity proxy (\S\ref{sec:familiarity}),
@@ -152,7 +149,6 @@ average-precision metric with no gate at all (\S\ref{sec:model_swap}). The measu
 model-fair, and the challenger failures on SA-FARI are genuine detection failures, not scoring artefacts.
 
 \section{Ethical considerations}
-% TODO: expand.
 The data are anonymised camera-trap footage released under a non-commercial licence; location identifiers are
 already anonymised in SA-FARI. The negative result carries a responsible-deployment message: because label-free
 distance does \emph{not} reliably flag when SAM\,3 will fail, conservation teams should not treat
