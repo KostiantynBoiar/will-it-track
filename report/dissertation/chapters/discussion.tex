@@ -108,6 +108,17 @@ reference set alone. The one predictive label-free signal, animal size, is too c
 as such a gate. What the negative result does establish is a rigorous baseline: any future before-running
 estimator must clear the same whole-group hold-out bar that these well-motivated distances failed.
 
+One \emph{after-running} signal does clear that bar, and we state it plainly rather than leave it implicit. If a
+practitioner is willing to run the tracker first, an ATC-style estimator~\cite{atc} --- reading SAM\,3's own
+detection confidence on the target and thresholding it --- predicts \texttt{pDetA} out of sample on both
+cross-validation schemes, where every label-free distance failed. We deliberately keep this outside the
+contribution for three honest reasons: it is \emph{after-running}, a strictly weaker operating point than the
+before-running question we set out to answer; it is confirmatory of an established label-free-accuracy family
+rather than novel; and it is mechanistically close to circular, since its feature and its target are both
+functions of SAM\,3's own output (a cell with no confident masklet trivially has zero detection accuracy). It
+is a real, validated estimator for the after-running, before-labelling operating point --- but not the
+before-running predictor this dissertation asks for, and not part of the null it reports.
+
 \section{Limitations and threats to validity}
 Three limitations bound the claim. First, distances are measured against the SA-FARI train split, \emph{not}
 SAM\,3's true pretraining corpus (Meta's SA-Co), which is undisclosed; the null is scoped to
@@ -123,6 +134,10 @@ re-run the whole pipeline on an independent dataset: on the larger, mask-native 
 cells / $41$ species) the distance null holds again, giving a second convergent null (not positive
 proof --- BURST detects only a large between-species predictor and remains underpowered for a small
 species-constant distance effect --- so we report convergence, not independent confirmation of any positive).
+We also ran a third dataset, MammAlps, in an earlier pass; it is directionally consistent with the null but we
+do not count it here, because at roughly $20$ cells over $5$ species it is too small to certify a null and its
+per-clip annotations are not reproducible from the public release. We report it as excluded rather than
+silently drop it.
 Against the model threat --- the ``single frozen backbone'' --- we run the controlled model swap
 (\S\ref{sec:model_swap}): two architecturally distinct open-vocabulary trackers, GLEE and Florence-2\,+\,SAM\,2,
 both track BURST's animals non-degenerately ($\text{pDetA}\,0.34$ and $0.39$) yet the combined distance model is

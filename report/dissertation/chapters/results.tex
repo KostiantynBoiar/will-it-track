@@ -50,8 +50,8 @@ absolute error) is within noise of zero in every case, and none is statistically
 collapse onto the mean rather than tracking the truth (Figure~\ref{fig:predvsactual}).
 
 The null holds up because the test demonstrably works. Run unchanged on the same cases, it \emph{does} recover a
-real effect: animal size beats the baseline out of sample at the identical bar ($\Delta\mathrm{MAE}=+0.017$,
-significant on both schemes; Table~\ref{tab:difficulty}). A test that fires for size while staying flat for the
+real effect: animal size beats the baseline out of sample at the identical bar, significant on both schemes
+($\Delta\mathrm{MAE}=+0.015$ leave-species-out, $+0.017$ leave-location-out; Table~\ref{tab:difficulty}). A test that fires for size while staying flat for the
 distances tells us the distances genuinely carry \emph{no} predictive signal --- the flat result is an absence
 of signal, and the size result is what confirms it.
 \IfFileExists{tables/cv_validation.tex}{\input{tables/cv_validation}}{}
