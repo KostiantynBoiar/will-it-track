@@ -6,7 +6,11 @@
 
 \section{Measurement}
 As an initial score-sanity check, zero-shot SAM\,3 on the SA-FARI test split reproduces the published
-SAM\,3 ballpark; the support-weighted per-cell aggregate is in Table~\ref{tab:gate1}.
+SAM\,3 ballpark: the dataset-level (micro) \texttt{VEval} score is $\approx\!0.65$ mask-\texttt{pHOTA},
+matching the operating point reported with the benchmark. Table~\ref{tab:gate1} reports a different and
+lower quantity --- the per-cell, support-weighted (macro) mean over positive cells, which is the target we
+model. It sits at $\approx\!0.53$ because it averages positives-only within each cell rather than pooling
+over the whole dataset (Section~\ref{sec:meth-measure}); the two are not in conflict.
 \IfFileExists{tables/gate1_measurement.tex}{\input{tables/gate1_measurement}}{}
 
 \section{The fitted law}
@@ -101,6 +105,7 @@ Table~\ref{tab:fp}). Even the study's best signal does not clear the bar.
 \IfFileExists{tables/false_positives.tex}{\input{tables/false_positives}}{}
 
 \section{Ablations and robustness}
+\label{sec:robustness}
 \paragraph{Factor ablation.} Refitting detection with each distance dropped in turn barely moves the fit or
 the (null) out-of-sample gain (Table~\ref{tab:ablation}): no single distance carries signal. The only design
 that changes anything is adding the animal-size covariate, which alone lifts the out-of-sample gain to

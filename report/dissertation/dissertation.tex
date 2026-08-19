@@ -84,7 +84,7 @@ that species, yet no rule tells a practitioner in advance whether the model is r
 animal in a given place. This dissertation asks whether such a rule exists. On the SA-FARI benchmark we
 measure SAM\,3's zero-shot promptable-tracking accuracy with the official evaluator, decompose it into
 detection (\texttt{pDetA}) and association (\texttt{pAssA}), and test whether each is predicted, before
-running the model and without any target label, by four distances (taxonomic, visual, environment,
+running the model and without scoring its output, by four distances (taxonomic, visual, environment,
 temporal). Because SA-FARI's shipped split is disjoint by location but shares species, we build a
 constructed species hold-out for novelty alongside the official location hold-out for environment. Under a
 deliberately powerful test --- whole-species and whole-location hold-out with group-cluster-bootstrap
@@ -100,7 +100,6 @@ validated by a test shown to detect the one real signal (object size) when it is
 % -------------------------------------------------------------- acknowledgements
 \chapter*{Acknowledgements}
 \addcontentsline{toc}{chapter}{Acknowledgements}
-% TODO: thank supervisor, dataset providers, etc.
 I thank my supervisor, Dr Marwa Mahmoud, for guidance throughout this project.
 
 % -------------------------------------------------------------- contents
@@ -126,9 +125,7 @@ I thank my supervisor, Dr Marwa Mahmoud, for guidance throughout this project.
 \bibliography{references}
 
 % -------------------------------------------------------------- appendices
-% Appendices are excluded from the dissertation for now. The content is kept in
-% chapters/appendices.tex; to re-include, uncomment the two lines below.
-% \appendix
-% \input{chapters/appendices}
+\appendix
+\input{chapters/appendices}
 
 \end{document}

@@ -53,7 +53,7 @@ between a Fr\'echet distribution-shift distance and classifier accuracy. That di
 from the model's own penultimate features \emph{after} the target images are passed through the network, and
 predicts a scalar classifier accuracy. We test AutoEval's exact functional in our own regime --- the Fr\'echet
 and MMD distributional distances on cached DINOv2 embeddings, computed \emph{before} running SAM\,3
-(\S\ref{sec:burst}, Table~\ref{tab:robustness}) --- and it stays null ($\Delta\mathrm{MAE}\le0.007$,
+(\S\ref{sec:robustness}, Table~\ref{tab:robustness}) --- and it stays null ($\Delta\mathrm{MAE}\le0.007$,
 $p\ge0.10$, every confidence interval spanning zero), so the failure is not an artefact of a lazy
 nearest-prototype distance: even the strongest AutoEval-style distance carries no before-running transfer
 signal. The contrast is not merely one of magnitude but of sign: our nearest analogue, the visual
@@ -120,7 +120,8 @@ is a real, validated estimator for the after-running, before-labelling operating
 before-running predictor this dissertation asks for, and not part of the null it reports.
 
 \section{Limitations and threats to validity}
-Three limitations bound the claim. First, distances are measured against the SA-FARI train split, \emph{not}
+\label{sec:limitations}
+Several limitations bound the claim. First, distances are measured against the SA-FARI train split, \emph{not}
 SAM\,3's true pretraining corpus (Meta's SA-Co), which is undisclosed; the null is scoped to
 distance-from-SA-FARI. We test one hedge against this --- the familiarity proxy (\S\ref{sec:familiarity}),
 which reads separability directly from SAM\,3's own features --- and it too is null, recovering the same

@@ -135,7 +135,15 @@ overlap honestly rather than asserting it away.
 
 \section{Label-free distance features}
 \label{sec:meth-features}
-All distances are label-free for the target and computed against the frozen reference.
+All distances are computed against the frozen reference and require no measurement of the tracker's
+performance on the target --- no \texttt{pDetA}, no \texttt{pAssA}, no annotation of how well SAM\,3 did.
+That is the sense in which they are \emph{label-free}, and it is the sense the research question needs: they
+are available \emph{before} the model is run. One qualification belongs here rather than in a footnote. As
+implemented on an annotated benchmark, the visual, environment and size features read the dataset's
+ground-truth masks to separate animal from scene. That is a convenience of working on SA-FARI, not a
+requirement of the method --- in deployment the same species prototype would be built from the handful of
+exemplar images a practitioner already has for a named species --- but it does bound the claim, and we
+return to it in Section~\ref{sec:limitations}.
 \subsection{Taxonomic distance}
 Lowest-common-ancestor tree steps from the probe's species to the nearest reference species (shared genus
 $=1$, family $=2$, order $=3$, \dots); the leave-species-out reference keeps this non-trivial for shared
@@ -201,7 +209,14 @@ over the visual distance $+$ size (Section~\ref{sec:familiarity}).
 \subsection{Per-target regression}
 Each bounded target (\texttt{pDetA}, \texttt{pAssA}) is modelled separately with a support-weighted
 logit-link (fractional-logit) regression over the standardised distances plus the scene covariates and a
-$\log(n_\text{frames})$ covariate, so that ``rare'' is never mistaken for ``far''. Detection and association
+$\log(n_\text{frames})$ covariate, so that ``rare'' is never mistaken for ``far'':
+\begin{equation}
+  \operatorname{logit}\mathbb{E}[y]=x^{\!\top}\beta,
+  \qquad\text{fit with variance weights } w=n_{\mathrm{frames}},
+  \label{eq:glm}
+\end{equation}
+with $y\in[0,1]$ the cell's score and $x$ the standardised design (Appendix~\ref{app:stats}).
+Detection and association
 are analysed apart because their decomposition is the intellectual core of the project. In practice
 association is a near-degenerate target on this data --- most cells contain a single object, so
 \texttt{pAssA} tracks \texttt{pDetA} almost exactly --- and it is therefore reported as such rather than as an
@@ -264,7 +279,7 @@ the prediction directly, flag any returned masklet above a score threshold as a 
 species' taxonomic and visual distance, and test --- at the species level, to avoid pseudo-replication ---
 whether the hallucination rate rises with novelty.
 
-\section{Independent replication on external datasets}
+\section{Independent replication on an external dataset}
 \label{sec:meth-replication}
 Every SA-FARI result reuses one frozen inference pass on one dataset, so the two splits are near-orthogonal but
 not statistically independent. To test whether the before-running null is a property of the transfer problem

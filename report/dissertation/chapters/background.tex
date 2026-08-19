@@ -23,8 +23,15 @@ its behaviour.
 \section{The tracking metric and its decomposition}
 \label{sec:bg-hota}
 Higher Order Tracking Accuracy (HOTA)~\cite{hota} evaluates multi-object tracking by combining, over a
-range of localisation thresholds, a detection term (\texttt{DetA}: were the right objects found?)
-and an association term (\texttt{AssA}: were identities kept consistent over time?). SA-FARI scores
+range of localisation thresholds $\alpha$, a detection term (\texttt{DetA}: were the right objects found?)
+and an association term (\texttt{AssA}: were identities kept consistent over time?):
+\begin{equation}
+  \mathrm{HOTA}_\alpha=\sqrt{\mathrm{DetA}_\alpha\cdot\mathrm{AssA}_\alpha},
+  \qquad
+  \mathrm{pHOTA}=\frac{1}{|\mathcal{A}|}\sum_{\alpha\in\mathcal{A}}\mathrm{HOTA}_\alpha ,
+  \label{eq:phota}
+\end{equation}
+over the threshold set $\mathcal{A}=\{0.05,0.10,\dots,0.95\}$ (Appendix~\ref{app:metric}). SA-FARI scores
 promptable tracking with a promptable variant, \texttt{pHOTA}, that decomposes identically into
 \texttt{pDetA} and \texttt{pAssA}. This decomposition is the intellectual core of the dissertation: rather
 than predict a single scalar, we ask whether finding and following an animal transfer for
@@ -80,7 +87,8 @@ per-species reliability in advance, and they study classifiers or behaviour reco
 promptable trackers, scored by a single accuracy with no detection/association split. Most tellingly, a
 recent unified study of camera-trap recognition over time~\cite{jeon} explicitly names ``predicting when
 zero-shot models will succeed at a new site'' as an open question --- and stops at naming it. This
-dissertation builds the predictor that question asks for.
+dissertation puts that question to the test --- and reports that the before-running predictor it asks for
+does not exist.
 
 \section{What should predict transfer}
 \label{sec:bg-predictors}
@@ -89,9 +97,9 @@ taxonomic structure across the tree of life~\cite{bioclip}, which motivates a ta
 because appearance and phylogeny are correlated, a visual distance; we compute the latter from
 mask-cropped DINOv2~\cite{dinov2} embeddings, with CLIP~\cite{clip} as a robustness variant. The camera-trap
 location results above~\cite{terra,panaf} motivate an environment distance from the scene background,
-and per-video timestamps motivate a temporal gap. Crucially, all four are computable without any label
-of the target animal, and all are measured against a frozen reference set, so no target information can leak
-into a predictor.
+and per-video timestamps motivate a temporal gap. Crucially, all four are computable without ever running the
+tracker or scoring its output, and all are measured against a frozen reference set, so no information about
+the tracker's performance can leak into a predictor.
 
 \section{The SA-FARI benchmark}
 \label{sec:bg-safari}

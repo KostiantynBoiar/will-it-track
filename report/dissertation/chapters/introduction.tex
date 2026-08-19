@@ -13,7 +13,8 @@ alternative, manual annotation, is still required. This dissertation studies tha
 
 \section{Problem statement and research question}
 This dissertation asks whether a promptable tracker's zero-shot accuracy on an unseen (species, place) can be
-predicted in advance from properties measurable without any label of the target, and which factors govern
+predicted in advance from properties measurable without running the model or scoring its output, and which
+factors govern
 that transfer --- separately for finding the animal and following it. We study this concretely on
 SAM\,3 as the primary case, measuring novelty against the SA-FARI reference split (Section~\ref{sec:bg-safari}),
 and then test whether the answer generalises beyond one dataset and one model --- to two further datasets and,
@@ -24,8 +25,8 @@ via a controlled model swap, to two other promptable trackers (Section~\ref{sec:
   \item[H0 (null)] the label-free distances carry no predictive information about
     \texttt{pDetA}/\texttt{pAssA} --- transfer is not distance-driven.
   \item[H1 (detection)] \texttt{pDetA} falls with species novelty (taxonomic + visual distance).
-  \item[H2 (association)] \texttt{pAssA} falls with environment difficulty (scene, day/night/IR,
-    clutter, camera motion).
+  \item[H2 (association)] \texttt{pAssA} falls with environment difficulty (scene distance,
+    day/night/IR, clutter).
 \end{description}
 Failing to reject H0 is itself an informative result --- and, as Chapter~\ref{ch:results} shows, it is
 what we find: neither a novelty distance nor a follow-up intrinsic-difficulty pivot predicts
@@ -34,9 +35,9 @@ null; a fuller representational probe --- of what those features structurally en
 branch for future work.
 
 \section{Contributions}
-To our knowledge this is the first study to predict, before the model is run and from label-free
-distances, the zero-shot transfer of a promptable video tracker --- and the first to split that prediction
-into detection (\texttt{pDetA}) and association (\texttt{pAssA}). This distinguishes it
+To our knowledge this is the first study to test, out of sample, whether the zero-shot transfer of a
+promptable video tracker can be predicted before the model is run and from label-free distances --- and the
+first to split that question into detection (\texttt{pDetA}) and association (\texttt{pAssA}). This distinguishes it
 from label-free performance prediction for classifiers, which estimates a single scalar from the model's own
 outputs on the target~\cite{aotl,agl,atc}, and from the very recent static-image detector/segmenter
 estimators~\cite{pcr,rca}; and from camera-trap shift studies, which measure but do not forecast per-site
