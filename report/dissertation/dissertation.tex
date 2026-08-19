@@ -41,8 +41,8 @@
 {\LARGE\bfseries Predicting the Zero-Shot Transfer of a\\[4pt]
 Promptable Video Tracker\par}
 \vspace{6pt}
-{\large Forecasting per-species, per-place reliability ---\\
-for detection and association --- from label-free distances\par}
+{\large A decomposed, cross-model null result for label-free,\\
+before-running distances --- for detection and association\par}
 \vspace{2cm}
 {\large\bfseries Kostiantyn Boiar\par}
 {\normalsize Student ID: \texttt{2917685}\par}
@@ -106,6 +106,33 @@ I thank my supervisor, Dr Marwa Mahmoud, for guidance throughout this project.
 \tableofcontents
 \listoffigures
 \listoftables
+
+% -------------------------------------------------------------- abbreviations
+\chapter*{List of Abbreviations}
+\addcontentsline{toc}{chapter}{List of Abbreviations}
+\begin{tabular}{@{}p{2.7cm}p{12.2cm}@{}}
+\texttt{pHOTA}   & Promptable Higher Order Tracking Accuracy --- the benchmark's tracking score \\
+\texttt{pDetA}   & Its \emph{detection} half: were the right animals found? (our primary target) \\
+\texttt{pAssA}   & Its \emph{association} half: was each identity kept over time? \\
+HOTA             & Higher Order Tracking Accuracy, the metric \texttt{pHOTA} derives from \\
+IoU              & Intersection over Union, the mask/box overlap measure \\
+\addlinespace
+GLM              & Generalised Linear Model (here a support-weighted logit-link regression) \\
+CI               & Confidence Interval (throughout, a $95\%$ group-cluster-bootstrap interval) \\
+MAE              & Mean Absolute Error \\
+$\Delta$MAE      & Out-of-sample MAE gain over a mean predictor; positive $=$ better than guessing the mean \\
+LSO / LLO        & Leave-Species-Out / Leave-Location-Out cross-validation \\
+VIF              & Variance Inflation Factor, a collinearity diagnostic \\
+LMG              & Lindeman--Merenda--Gold, the dominance-analysis variance split \\
+MMD              & Maximum Mean Discrepancy, a distributional distance \\
+\addlinespace
+OOD              & Out-Of-Distribution \\
+ATC              & Average Thresholded Confidence, an after-running accuracy estimator \\
+GT               & Ground Truth \\
+IR               & Infrared (night-time camera-trap imagery) \\
+RLE              & Run-Length Encoding, the COCO mask format \\
+LVIS             & Large Vocabulary Instance Segmentation, the class vocabulary BURST uses \\
+\end{tabular}
 
 % -------------------------------------------------------------- body
 \clearpage

@@ -13,12 +13,12 @@ model. It sits at $\approx\!0.53$ because it averages positives-only within each
 over the whole dataset (Section~\ref{sec:meth-measure}); the two are not in conflict.
 \IfFileExists{tables/gate1_measurement.tex}{\input{tables/gate1_measurement}}{}
 
-\section{The fitted law}
+\section{Fitted coefficients}
 Table~\ref{tab:coefficients} gives the standardised logit-GLM coefficients for detection and
 association.
 \IfFileExists{tables/coefficients.tex}{\input{tables/coefficients}}{}
 
-\section{How much do the distances explain, and is difficulty any better?}
+\section{How much the distances explain, and the difficulty pivot}
 We first ask how much of the variation in detection the four distances account for. A dominance
 analysis (the LMG/Shapley method, which fairly splits shared explanatory power between correlated
 predictors rather than double-counting it) shows they account for almost nothing: together the four explain
@@ -44,7 +44,7 @@ shrinks to $-0.13$, and clutter's is $0.00$. So the difficulty idea is \textbf{a
 property that predicts detection is animal size.
 \IfFileExists{tables/difficulty.tex}{\input{tables/difficulty}}{}
 
-\section{The headline test: can the distances predict unseen cases?}
+\section{The headline test: predicting unseen species and locations}
 This is the decisive test. We train the model on some species and locations, then ask it to predict detection
 for held-out ones it never saw, and compare its error to the simplest possible guess --- always
 predicting the average score (Table~\ref{tab:cv}). The result is a \textbf{null}: on both hold-out schemes
@@ -196,7 +196,7 @@ better, not worse) and dissolves under an animal-size control wherever it is exa
 quantity that ever reaches significance is the animal-size confound itself --- and only modestly, on the large
 SA-FARI sample --- which doubles as the positive control that keeps the null honest: the same test that stays
 flat for the distances does pick up size out-of-sample. The contribution is this robust, twice-replicated
-null, honestly bounded: consistent across a camera-trap and an internet-video dataset, and powered enough on
+null, with its bounds stated: consistent across a camera-trap and an internet-video dataset, and powered enough on
 SA-FARI to exclude a moderate effect, but not a small one.
 \IfFileExists{tables/cross_dataset_comparison.tex}{\input{tables/cross_dataset_comparison}}{}
 
@@ -242,7 +242,7 @@ is null in both. Two architecturally distinct trackers thus both (i) genuinely t
 the before-running distance null. \textbf{The null is task-general across trackers, not a SAM-3 artefact.}
 \IfFileExists{tables/model_swap_cv.tex}{\input{tables/model_swap_cv}}{}
 
-\paragraph{Convergent, honestly bounded.} This is a controlled model swap, not an independent
+\paragraph{Convergent, but bounded.} This is a controlled model swap, not an independent
 replication: it reuses BURST's cells, ground truth, distances and GLM, changing only the tracker. Its scope is
 two models on one fair dataset ($n=132$, underpowered for a small species-level effect, exactly as the SAM\,3
 BURST run), and Florence-2's combined interval sits closer to zero-exclusion than GLEE's --- so we read it as a

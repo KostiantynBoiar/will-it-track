@@ -6,14 +6,14 @@ Neither hypothesis is supported. H1 (detection falls with species novelty) and H
 environment difficulty) both fail the pre-registered bar: no label-free distance beats a mean predictor out of
 sample, and the one coefficient that reached significance --- visual distance, running in the opposite
 direction to the hypothesis (more-novel species detected better, not worse) --- is an animal-size artefact. The follow-up intrinsic-difficulty pivot fares no better: low-light, clutter and night/IR
-predict detection only by proxying animal size, which alone carries the out-of-sample gain. So the honest
-reading is H0: transfer is \emph{not} distance-driven, and the only label-free property that predicts detection
+predict detection only by proxying animal size, which alone carries the out-of-sample gain. So H0 is what the data
+support: transfer is \emph{not} distance-driven, and the only label-free property that predicts detection
 is object size --- the very quantity introduced as a nuisance control.
 
 The detection--association decomposition, the intellectual core of the design, has a second, quieter finding:
 association is a near-degenerate target on this data. Because most cells contain a single object,
 \texttt{pAssA} tracks \texttt{pDetA} almost exactly, leaving little identity-specific variance for any feature
-to predict. The decomposition is therefore honestly a detection story; we report the association null with
+to predict. The decomposition is therefore a detection story; we report the association null with
 those divergence figures as its explanation rather than as a separate failed search.
 
 \subsection{Novelty at the extremes versus graded prediction}
@@ -60,7 +60,7 @@ signal. The contrast is not merely one of magnitude but of sign: our nearest ana
 distance, correlates with detection in the \emph{opposite} (wrong) direction and dissolves under an
 animal-size control. Our result therefore does not contradict AutoEval's positive; it extends the recipe to a
 regime --- distance measured before running, target a decomposed video tracker --- where the shortcut stops
-working, and reports honestly that it does. A final bridge makes the boundary concrete:
+working, and reports that it does. A final bridge makes the boundary concrete:
 Accuracy-on-the-Line~\cite{aotl} was validated on iWildCam, the same camera-trap shift this dissertation cites
 via WILDS and Terra Incognita~\cite{wilds,terra} --- so the exact wildlife shift where a classifier's OOD
 accuracy \emph{is} predictable label-free is where our before-running distances are \emph{not}, across both the
@@ -90,7 +90,7 @@ which a spuriously correlated background is a usable shortcut. SAM\,3 is told wh
 direction \citet{xiao}'s own finding predicts (better, less-shortcut-prone models close the background gap).
 PanAf's target compounds this --- fine-grained behaviour is intrinsically background-correlated (a chimp
 nests in trees, drinks at water), whereas ours is finding and following the named animal itself, where
-naming it short-circuits the context dependence. The honest reading is thus an extension, not a refutation: the
+naming it short-circuits the context dependence. The result is thus an extension, not a refutation: the
 very backgrounds that causally drive a camera-trap classifier's location drop do not, once surgically isolated
 from the animal and used as a before-running distance, forecast a promptable tracker's transfer --- and because
 we isolate the scene from the animal explicitly (a step none of the label-free-prediction methods take), this
@@ -112,7 +112,7 @@ One \emph{after-running} signal does clear that bar, and we state it plainly rat
 practitioner is willing to run the tracker first, an ATC-style estimator~\cite{atc} --- reading SAM\,3's own
 detection confidence on the target and thresholding it --- predicts \texttt{pDetA} out of sample on both
 cross-validation schemes, where every label-free distance failed. We deliberately keep this outside the
-contribution for three honest reasons: it is \emph{after-running}, a strictly weaker operating point than the
+contribution for three reasons: it is \emph{after-running}, a strictly weaker operating point than the
 before-running question we set out to answer; it is confirmatory of an established label-free-accuracy family
 rather than novel; and it is mechanistically close to circular, since its feature and its target are both
 functions of SAM\,3's own output (a cell with no confident masklet trivially has zero detection accuracy). It
@@ -144,7 +144,7 @@ Against the model threat --- the ``single frozen backbone'' --- we run the contr
 both track BURST's animals non-degenerately ($\text{pDetA}\,0.34$ and $0.39$) yet the combined distance model is
 null for each (CIs span zero, neither clears the Bonferroni bar), so the null is task-general rather than a SAM\,3
 artefact --- a convergent, confound-free cross-model replication (again not an independently-powered
-certification: two models on one fair dataset). That swap could not run on SA-FARI itself, and honestly so:
+certification: two models on one fair dataset). That swap could not run on SA-FARI itself, and for good reason:
 SA-FARI is SAM\,3's own co-released benchmark, and its camera-trap domain collapses the challengers' confidence
 calibration even where they localise well, so BURST is the fair-swap ceiling. Third, the effective sample is
 tens of

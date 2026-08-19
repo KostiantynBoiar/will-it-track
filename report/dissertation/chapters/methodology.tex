@@ -11,7 +11,7 @@ weighted regression with group-aware, out-of-sample validation rather than a tun
 
 \paragraph{Definition of success and the decision rule.}
 The intended deliverable is a validated, out-of-sample predictor of \texttt{pDetA}/\texttt{pAssA}
-from label-free distances, with honest confidence intervals. A distance is taken to predict transfer only if
+from label-free distances, with confidence intervals that respect the group structure. A distance is taken to predict transfer only if
 it satisfies both criteria:
 \begin{enumerate}[label=(\roman*),leftmargin=2.4em]
   \item its coefficient's group-cluster-bootstrap 95\% confidence interval (CI) excludes zero; and
@@ -103,7 +103,7 @@ collide; the harness is resumable at per-video granularity and never updates a w
 We aggregate the frame-level scores two ways and keep the two distinct. The micro score is the
 dataset-level \texttt{VEval} figure --- the published SA-FARI operating point, $\approx\!0.65$
 mask-\texttt{pHOTA} --- which we report only to confirm we reproduce the benchmark. The macro score is
-the per-cell, support-weighted mean over positive cells, and it is our modelling target: the law is fit
+the per-cell, support-weighted mean over positive cells, and it is our modelling target: the model is fit
 cell-by-cell, so the cell is the unit that must carry the score. Because the macro mean is a positives-only
 per-cell average it sits lower ($\approx\!0.53$); every measurement number we quote is the macro value,
 labelled as such.
@@ -131,7 +131,7 @@ For each split the reference (``seen'') species, locations, and taxonomy are fro
 then computed against that reference only, so no probe information can enter a feature --- verified by a unit
 test that swaps the reference and checks the distances move as expected. We assert the axis that is genuinely
 disjoint (location for Split~B; the held-out species for Split~A) and report any residual species
-overlap honestly rather than asserting it away.
+overlap rather than asserting it away.
 
 \section{Label-free distance features}
 \label{sec:meth-features}
@@ -318,7 +318,7 @@ We swap in two challengers of deliberately different architecture --- GLEE~\cite
 detect--segment--track model, and Florence-2~\cite{florence2}\,+\,SAM\,2~\cite{sam2}, a caption-style box
 generator with no confidence score followed by a mask-propagating tracker.
 
-Two safeguards keep the swap fair and honest. First, a measurement gate: before fitting any regression on
+Two safeguards keep the swap fair. First, a measurement gate: before fitting any regression on
 a challenger's scores we require its per-cell \texttt{pDetA} to be non-degenerate (real spread across cells,
 not floored at zero); a regression on degenerate scores has no variance to explain and would report a spurious
 ``null,'' so a challenger that scores $\approx 0$ on a dataset is dropped from the swap on that dataset rather
@@ -338,6 +338,6 @@ computed; hard negatives are retained; and all inference is single-GPU and infer
 config-driven (every constraint is a toggle, so an ablation flips config, not code) and covered by hermetic
 tests; every reported number is regenerated from the repository, and split definitions, seeds, and reference
 sets are persisted so both experiments are reproducible end to end. The engineering safeguards that keep the
-measurement honest --- memory-lean feature assembly, per-(video, species) prediction
+measurement sound --- memory-lean feature assembly, per-(video, species) prediction
 keying, trimming the ground truth to the scored videos before evaluation, and the size-confound control ---
 are implemented in the pipeline and covered by the test suite, each framed as a validity safeguard.

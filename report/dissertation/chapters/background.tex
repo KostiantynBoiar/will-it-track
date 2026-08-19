@@ -16,7 +16,7 @@ tracks every matching instance across a video with no training on that category 
 open-vocabulary detect--segment--track capability. It is exactly this capability that conservation teams
 now deploy on new species and regions, and it is the (frozen) model whose transfer we predict. SAM\,3 was
 released alongside SA-FARI~\cite{safari}, a large multi-animal camera-trap tracking dataset that we use as
-the substrate for our natural experiment (Section~\ref{sec:bg-safari}). We treat SAM\,3 strictly as a
+the substrate for our observational study (Section~\ref{sec:bg-safari}). We treat SAM\,3 strictly as a
 fixed black box: we never fine-tune it, and the only quantity we fit is a small regression about
 its behaviour.
 
@@ -127,5 +127,5 @@ promptable video tracker, and none separates that prediction into detection and
 association. Asking that question rigorously --- an out-of-sample test, over SA-FARI's
 species-\allowbreak by-\allowbreak place-\allowbreak by-\allowbreak time structure, of whether label-free distances
 predict SAM\,3's transfer, decomposed into \texttt{pDetA} and \texttt{pAssA} --- is the contribution of this
-dissertation. As Chapter~\ref{ch:results} reports, the honest answer is negative: transfer is not
+dissertation. As Chapter~\ref{ch:results} reports, the answer is negative: transfer is not
 distance-driven.
