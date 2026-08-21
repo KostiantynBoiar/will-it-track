@@ -1,72 +1,72 @@
 # Q&A prep
 
-Two questions, answered the way I'd say them out loud.
+Four questions, written the way I'd actually say them out loud.
 
 ---
 
 ## Q1. "What is Section 4.2 for?"
 
-This section is the first sanity check, before the real test.
+It's the first check I do, before the real test.
 
-For each distance I ask a very basic question: **is its effect distinguishable from zero at all?** The answer is no — every confidence interval crosses zero, so I can't tell any of them apart from having no effect whatsoever.
+The question there is dead simple: does any of these distances have an effect I can even tell apart from zero? And the answer is no — every single interval includes zero, so I can't distinguish any of them from having no effect at all.
 
-So the distances fail at the easiest hurdle. That's why the out-of-sample test in the next section isn't a surprise — nothing here ever looked promising enough to survive it.
+So they fall over at the easiest possible hurdle. That's why the proper out-of-sample test in the next section isn't a surprise — nothing here ever looked good enough to survive it.
 
-**If she asks why the taxonomy row has that huge interval `[−3.87, +0.09]`:**
+**If she asks about the taxonomy row with the huge interval `[−3.87, +0.09]`:**
 
-Short answer: that row isn't *measured and refuted* — it's barely measured at all, and the width of the interval is the model honestly telling me so.
+Honestly, that row isn't really a result. I just couldn't measure it properly on this split, and the width of the interval is the model telling me exactly that.
 
-Here's the mechanism. A regression coefficient answers "when this factor changes, how much does the score change?" — so it can only be estimated from cells where the factor actually *does* change. On this split it almost never does. Of the 840 cells that have a taxonomic distance at all, **778 of them — 92.6% — are exactly zero**. The variable takes only three distinct values across the whole split (0, 2 and 3), and just **62 cells are non-zero**.
+The reason is that a coefficient only means something if the thing you're measuring actually varies — and here it barely does. Out of the 840 cells that have a taxonomic distance at all, 778 of them are exactly zero. That's 92.6%. There are only three different values in the entire split: 0, 2 and 3. So only 62 cells are non-zero.
 
-Worse, taxonomic distance is constant within a species, so what matters isn't the cell count but how many *independent species* carry a non-zero value. That number is **7**. Four of them sit at distance 2 and three at distance 3. So the entire taxonomy coefficient is being estimated from seven species, spread over two levels.
+And it gets worse, because taxonomic distance is identical for every cell of the same species. So what actually matters isn't how many cells I have, it's how many *species* have a non-zero value. That number is seven. Seven animals, spread across two values. That's the whole basis for the coefficient.
 
-That's exactly why the interval explodes. My confidence intervals resample whole species rather than individual cells (because cells within a species aren't independent), and when only seven species carry any signal, a resample will sometimes draw hardly any of them. The coefficient swings wildly from one resample to the next, and `[−3.87, +0.09]` is the honest record of that instability.
+Which is why the interval blows up. When I build these intervals I resample whole species rather than individual cells, because cells from the same species aren't independent. And when only seven species carry anything at all, plenty of those resamples come back with almost none of them — so the estimate jumps around wildly from one to the next. That interval is just an honest record of the jumping.
 
-The reason it happens is structural, not accidental: SA-FARI's official split is disjoint by **location**, and deliberately shares species across train and test. Species novelty is the one thing that split holds fixed — so asking it to measure species novelty is asking the wrong question of the wrong data.
-
-Which is precisely why I built the species hold-out. It repartitions the same videos so that species novelty genuinely varies, and on that split the taxonomy coefficient is estimated from real variation — and comes back flat, and visual distance comes back positive, the opposite of H1.
+And it's not bad luck, it's baked into the split. SA-FARI's official split separates by location and deliberately keeps the same species on both sides. Species novelty is the one thing it holds constant. So asking it about species novelty is asking the wrong question of the wrong data — which is exactly why I built the species hold-out.
 
 ---
 
 ## Q2. "What is a species hold-out?"
 
-The general idea: you hide part of the data, then test on the hidden part.
+The basic idea is that you hide part of your data and then test on the hidden part.
 
-**A species hold-out** means the thing you hide is a whole species. I take one species out completely, build the reference from the remaining ones, and then ask: how far is that species from everything I kept, and does the tracker actually do worse on it? Then I repeat it for every species in turn.
+With a species hold-out, the thing you hide is a whole species. So I take one species out completely — say impala — build my reference from the other 98, and then ask: how far is impala from everything I kept, and does SAM 3 actually do worse on it? Then I do the same for the next species, and so on through all of them.
 
-**Why I had to build one.** SA-FARI's official split hides *locations*, not species — the same animals appear on both sides. So every species is already "seen", the novelty distance is ≈0 everywhere, and there's simply no variation to test H1 against.
+I had to build it because SA-FARI's official split hides locations, not species. The same animals turn up on both sides. So every species is already "seen", novelty comes out as basically zero everywhere, and there's nothing for H1 to be tested against.
 
-**Why it isn't cheating.** SAM 3 is frozen — it never trained on any of SA-FARI. So "held out" isn't a claim about what the model learned; it's only my choice of which species count as the reference for measuring distance. I'm free to redraw that line, and I say so explicitly in the methodology.
+And it isn't cheating, because SAM 3 is frozen — it never trained on any of this data. So "held out" isn't a statement about what the model has or hasn't seen. It's just my choice of which species I treat as the reference when I measure distance, and I'm free to draw that line wherever it makes sense. I say that explicitly in the methodology.
 
-**The punchline.** On that split, where novelty genuinely varies, the coefficients came back **positive** — more-novel species detected *better*, the opposite of H1 — and that turned out to be the animal-size confound.
+The interesting bit is what came out of it. On that split, where novelty actually varies, the coefficients came back positive — so more unusual species were detected *better*, not worse. That's the opposite of what H1 predicts. And when I dug into it, it was animal size doing the work.
 
 ---
 
 ## Q3. "What are the two splits, and where is that written?"
 
-**Where it's documented.** The definition is in **§3.2, "Dataset, splits, and the analysis unit"** (pages 6–7) — the paragraph headed *"Two complementary splits."* It's referred to again in §3.4 (which axis is genuinely disjoint), §3.5.2 (the visual prototype is leave-species-out on Split A), and §3.6.3 (Split A is validated by leave-species-out CV). The Split A **results** are in **§4.5**, page 16.
+It's all in Section 3.2, pages 6 to 7 — the paragraph headed "Two complementary splits". It comes up again in 3.4, 3.5.2 and 3.6.3, and the Split A results are in Section 4.5 on page 16.
 
-**Split A — species hold-out (primary).** I hide one species at a time, so a held-out species' distance is measured to the nearest *other* species. Species novelty varies while the environment stays familiar, which is what isolates H1. **1,025 cells across all 99 species.**
+There are two of them because they answer different questions.
 
-**Split B — location hold-out (secondary).** The official SA-FARI train/test split, whose unseen camera sites isolate H2, and whose comparability with the published benchmark gives me the score-sanity check. **1,447 cells — 346 positive (the species is present, so the scores are defined) and 1,101 hard negatives**, drawn from 1,486 hard-negative probes across 92 unseen locations.
+Split A is the species hold-out, and it's the primary one. I hide a species at a time, so its distance is measured to the nearest *other* species. Species novelty varies while the environment stays familiar — that's what isolates H1. It's 1,025 cells across all 99 species.
 
-**Why there are two.** The shipped split is disjoint by *location* but shares species, so on it species-distance is ≈0 for every cell and it simply cannot test species novelty. The two splits are near-orthogonal probes of the same videos: one varies the species, the other varies the place.
+Split B is the official SA-FARI train/test split, and it's the secondary one. There the unseen thing is the camera site, so it isolates H2, and because it's the published split it also lets me check my scores line up with the benchmark. That one's 1,447 cells — 346 where the species is actually present, so the scores are defined, and 1,101 hard negatives, across 92 unseen locations.
 
-**Why building Split A is allowed.** SAM 3 is frozen and was never trained on any of SA-FARI, so the official split reflects nothing the model learned — it only defines *my* reference distribution for measuring distance. That means I'm free to repartition the same videos. The dissertation says this outright: *"Split A is a constructed hold-out — legitimate because the model is frozen, and reported as such."* Inference is run **once**, over the union of both splits, so the two experiments are overlays on the same scored cells rather than two separate runs.
+The reason I need both is that the official split shares species between train and test. So on it, species-distance is basically zero for every cell and it simply can't test species novelty. The two splits end up being near-orthogonal views of the same videos: one varies the animal, the other varies the place.
+
+And building my own is fine because SAM 3 is frozen and never trained on any of SA-FARI. The official split doesn't reflect anything the model learned — it only defines which species I'm treating as my reference. So I can repartition the same videos. I put that in the text directly: it's a constructed hold-out, legitimate because the model is frozen, and reported as such. Inference only runs once, over both splits together, so the two experiments are two views of the same scored cells rather than two separate runs.
 
 ---
 
 ## Q4. "The Night/IR coefficient is the biggest in the table — doesn't that mean something?"
 
-It means something physically, but it doesn't survive testing — and I chased it deliberately rather than letting it sit there.
+It means something physically, but it doesn't hold up when I test it — and I did go after it rather than leave it sitting there.
 
-**Why it's big.** −0.405 says detection gets worse at night and in infrared, which is entirely believable: dark, monochrome, low-contrast footage is genuinely harder. It's also the closest any well-measured factor comes to significance — the interval `[−0.94, +0.11]` only just clears zero.
+It's big because it's believable. Minus 0.4 says detection gets worse at night and on infrared, and of course it does — dark, monochrome, low-contrast footage is harder. It's also the closest thing in the table to being significant; the interval only just clears zero.
 
-**But it fails in three separate ways.**
+But it falls down three times over.
 
-First, it crosses zero, so by my own pre-registered rule it fails criterion (i). "Nearly significant" isn't a result.
+The obvious one is that it still crosses zero, so by the rule I set myself in advance, it fails. "Nearly significant" isn't a result.
 
-Second, and decisively: when tested properly out of sample, it turns out to be animal size in disguise. That is exactly what the nested decomposition in Table 4.4 is for:
+The one that actually matters is that when I test it out of sample, it turns out to be animal size wearing a disguise. That's what the nested comparison in Table 4.4 is for:
 
 | Model | Leave-species-out | Leave-location-out |
 |---|---|---|
@@ -74,12 +74,12 @@ Second, and decisively: when tested properly out of sample, it turns out to be a
 | Size **alone** | +0.015 (p=0.014) ✓ | +0.017 (p=0.001) ✓ |
 | Low-light **+ size** | +0.017 (p=0.011) | +0.020 (p=0.000) |
 
-Low-light on its own does not beat guessing the mean. Size on its own does. And low-light + size is barely better than size alone — so darkness adds essentially nothing of its own.
+Low-light on its own doesn't beat just guessing the average. Size on its own does. And putting them together is barely better than size by itself — so darkness isn't contributing anything of its own.
 
-Third, the correlation that made it look exciting is an averaging artefact. Measured **per location** it's **r = −0.377**, which looks convincing. Measured at the **cell** level, where the model actually operates, it collapses to **−0.13**. Clutter does worse still: exactly **0.00**. That's the ecological-correlation fallacy, and §4.3 names it as such.
+And the third thing is that the correlation which made it look exciting in the first place was an averaging artefact. Measured per location it's −0.377, which looks convincing. Measured per cell, which is where the model actually operates, it drops to −0.13. Clutter is worse — it's exactly zero.
 
-**The line to use:** "Night/IR is the strongest hint in the whole table, and the intrinsic-difficulty pivot in §4.3 is me going after it. Once I isolate it from animal size, low-light alone doesn't beat the baseline on either scheme, and the correlation that motivated the pivot shrinks from −0.377 to −0.13 at cell level. It's a real physical effect that isn't a usable predictor."
+So the way I'd put it: night/IR is the strongest hint in the whole table, and the difficulty pivot in Section 4.3 is me chasing it. Once I separate it from animal size, low-light on its own doesn't beat the baseline on either scheme, and the correlation that motivated the pivot shrinks from −0.377 to −0.13. It's a real physical effect that isn't a usable predictor.
 
-**Why this actually helps me.** The most promising-looking signal in the document still didn't survive scrutiny. That's a much stronger position than never having had a candidate at all — it shows I pursued the best lead and reported honestly when it dissolved.
+And I'd argue that helps me rather than hurts. The most promising-looking signal in the document still didn't survive scrutiny — that's a better position than never having had a candidate at all, because it shows I went after the best lead and reported honestly when it fell apart.
 
-**One thing to concede if pushed:** I show *that* darkness and animal size are entangled, but I don't have a verified mechanism for *why*. It's an empirical entanglement, not a story I've confirmed.
+The one thing I'd concede if she pushes: I can show darkness and animal size are entangled, but I don't have a verified explanation for *why*. That's an empirical finding, not a mechanism I've confirmed.
