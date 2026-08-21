@@ -14,8 +14,35 @@ over the whole dataset (Section~\ref{sec:meth-measure}); the two are not in conf
 \IfFileExists{tables/gate1_measurement.tex}{\input{tables/gate1_measurement}}{}
 
 \section{Fitted coefficients}
-Table~\ref{tab:coefficients} gives the standardised logit-GLM coefficients for detection and
-association.
+\label{sec:coefficients}
+This section reports the first of the two criteria a distance must clear to count as predictive
+(Section~\ref{sec:meth-design}): does its coefficient's confidence interval exclude zero?
+Table~\ref{tab:coefficients} gives the standardised logit-GLM coefficients on the location split (Split~B ---
+the same $346$ positive cells as Table~\ref{tab:gate1}); the species hold-out is reported separately in
+Section~\ref{sec:species-holdout}.
+
+Two conventions make the table readable. The coefficients are \emph{standardised}: each is the change in the
+logit of the score for a one-standard-deviation increase in that factor, so magnitudes are comparable down the
+column even though the raw factors are in different units --- tree steps, cosine gaps, a binary flag. A
+\emph{negative} coefficient means the score falls as the factor rises, which is the direction H1 and H2
+predict. The intervals are not the model's own: because a distance is constant within a species or a location,
+the $346$ cells behave like only a few tens of independent groups, and an interval computed as though every
+cell were independent would be far too narrow. These are group-cluster-bootstrap intervals that resample whole
+species and whole locations (Section~\ref{sec:meth-inference}), so they are wide deliberately --- that width
+is the real uncertainty, not a defect of the data.
+
+Read that way the table says one thing: no factor clears the bar. Every interval spans zero, for detection and
+association alike, so criterion~(i) already fails --- before the out-of-sample test of
+Section~\ref{sec:headline} is even reached. Two details deserve reading rather than skipping. First, the point
+estimates for taxonomic and visual distance are negative here, nominally the direction H1 predicts; but the
+intervals are far too wide for the sign to carry information, and on the species hold-out --- where species
+novelty actually varies --- the same two coefficients come back \emph{positive}
+(Section~\ref{sec:species-holdout}), the opposite of what H1 says. Second, taxonomic distance carries by far
+the widest interval ($[-3.87,+0.09]$ for detection), and that is a property of this split rather than a
+finding about taxonomy: the official split shares species across train and test, so taxonomic distance is
+$\approx\!0$ for almost every cell here and the coefficient is estimated from almost no variation. It is
+measured imprecisely, not measured and refuted, and we count it as neither. Testing species novelty properly
+is precisely what the constructed species hold-out exists for.
 \IfFileExists{tables/coefficients.tex}{\input{tables/coefficients}}{}
 
 \section{How much the distances explain, and the difficulty pivot}
@@ -45,6 +72,7 @@ property that predicts detection is animal size.
 \IfFileExists{tables/difficulty.tex}{\input{tables/difficulty}}{}
 
 \section{The headline test: predicting unseen species and locations}
+\label{sec:headline}
 This is the decisive test. We train the model on some species and locations, then ask it to predict detection
 for held-out ones it never saw, and compare its error to the simplest possible guess --- always
 predicting the average score (Table~\ref{tab:cv}). The result is a \textbf{null}: on both hold-out schemes
@@ -69,6 +97,7 @@ carry no predictive power.}
 \end{figure}
 
 \section{Species hold-out (H1): novelty and the size confound}
+\label{sec:species-holdout}
 The primary novelty test --- leave-one-species-out over the pooled train+test species (99 species,
 1025 scored cells) --- is in Tables~\ref{tab:gate1_species}--\ref{tab:cv_species}. Out-of-sample
 prediction is not significant on any hold-out (Table~\ref{tab:cv_species}). The only coefficient whose CI
