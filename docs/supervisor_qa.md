@@ -14,7 +14,17 @@ So the distances fail at the easiest hurdle. That's why the out-of-sample test i
 
 **If she asks why the taxonomy row has that huge interval `[−3.87, +0.09]`:**
 
-That one isn't measured and refuted — it's barely measured at all. This split shares species between train and test, so taxonomic distance is near zero in almost every cell and there's nothing to estimate from. That's exactly why I built the species hold-out.
+Short answer: that row isn't *measured and refuted* — it's barely measured at all, and the width of the interval is the model honestly telling me so.
+
+Here's the mechanism. A regression coefficient answers "when this factor changes, how much does the score change?" — so it can only be estimated from cells where the factor actually *does* change. On this split it almost never does. Of the 840 cells that have a taxonomic distance at all, **778 of them — 92.6% — are exactly zero**. The variable takes only three distinct values across the whole split (0, 2 and 3), and just **62 cells are non-zero**.
+
+Worse, taxonomic distance is constant within a species, so what matters isn't the cell count but how many *independent species* carry a non-zero value. That number is **7**. Four of them sit at distance 2 and three at distance 3. So the entire taxonomy coefficient is being estimated from seven species, spread over two levels.
+
+That's exactly why the interval explodes. My confidence intervals resample whole species rather than individual cells (because cells within a species aren't independent), and when only seven species carry any signal, a resample will sometimes draw hardly any of them. The coefficient swings wildly from one resample to the next, and `[−3.87, +0.09]` is the honest record of that instability.
+
+The reason it happens is structural, not accidental: SA-FARI's official split is disjoint by **location**, and deliberately shares species across train and test. Species novelty is the one thing that split holds fixed — so asking it to measure species novelty is asking the wrong question of the wrong data.
+
+Which is precisely why I built the species hold-out. It repartitions the same videos so that species novelty genuinely varies, and on that split the taxonomy coefficient is estimated from real variation — and comes back flat, and visual distance comes back positive, the opposite of H1.
 
 ---
 
