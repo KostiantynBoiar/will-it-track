@@ -53,9 +53,9 @@ monitoring modalities with their own detection characteristics, and their proper
 daylight imagery that observation strategies are designed around them~\cite{thermalwildlife}. Motion blur is
 common, since animals are typically moving when they trigger the camera.
 
-The fourth is context. A camera trap is fixed, so the same scene recurs in every clip from that site. That
-gives a model a shortcut: it can learn the background rather than the animal, which works until the site
-changes~\cite{terra,panaf,xiao}.
+The fourth is context. A camera trap is fixed, so the same scene recurs in every clip from that site, and a
+model can come to rely on the scene rather than on the animal. This failure mode has a literature of its own,
+reviewed in Section~\ref{sec:bg-cameratrap}.
 
 The fifth applies to tracking rather than detection. Keeping an identity attached to the right animal is a
 distinct problem from finding it. Animals leave the frame and re-enter it, pass behind vegetation, and in

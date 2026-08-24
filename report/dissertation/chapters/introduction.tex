@@ -1,7 +1,7 @@
 \chapter{Introduction}
 \label{ch:introduction}
 
-\section{Background and Motivation}
+\section{Motivation}
 \label{sec:motivation}
 Finding an animal in a video and following it over time is a need shared by several fields. Ecologists use it
 to survey wild populations from camera-trap footage. Neuroscientists and behavioural biologists use it to
@@ -24,22 +24,19 @@ It is also the harder of the two.
 
 Neither is easy on real footage. Animals are camouflaged against the background they live in, appear at any
 distance and viewpoint, and are cut in half by vegetation. Much of the footage is recorded at night in
-infrared, where colour is gone and contrast is poor. And because a camera trap is fixed, the same cluttered
-scene repeats in every clip from that site, which gives a model an easy shortcut: learn the background rather
-than the animal~\cite{terra,panaf,xiao}. Section~\ref{sec:bg-challenges} sets out these difficulties in full.
+infrared. And because a camera trap is fixed, the same scene repeats in every clip from that site, which gives
+a model an easy shortcut: learn the background rather than the animal~\cite{panaf,xiao}.
+Section~\ref{sec:bg-challenges} sets these difficulties out in full.
 
 For years the standard answer was to train a detector on a fixed list of species and deploy it. It works where
-it was trained. It degrades sharply at camera sites and regions it has not seen~\cite{terra,wilds,panaf}. And
-adding a species that was not on the list means collecting and labelling more data --- precisely the cost a
-team opening a new site is trying to avoid.
+it was trained. It degrades sharply at camera sites and regions it has not seen~\cite{terra,wilds}. And adding
+a species that was not on the list means collecting and labelling more data --- precisely the cost a team
+opening a new site is trying to avoid.
 
-Promptable models change that arrangement. The \emph{Segment Anything} line replaced the fixed label set with a
-prompt: you indicate what you want and the model segments it, and SAM\,2 extended this to
-video~\cite{sam2}. SAM\,3~\cite{sam3} takes the step that matters here, because the prompt can now simply be a
-phrase. Give it \texttt{"impala"} and it finds, segments and follows every impala in the clip, having never
-been trained on that species. It is the current state of the art for the task, and it was released alongside
-SA-FARI, a large camera-trap tracking benchmark of wild animals~\cite{safari}. A team can now point a tracker
-at a species it has never seen and get an answer straight away.
+Promptable models change that arrangement, because the prompt can now be a phrase. Give
+SAM\,3~\cite{sam3} \texttt{"impala"} and it finds, segments and follows every impala in the clip, having never
+been trained on that species. A team can point a tracker at an animal it has never seen and get an answer
+straight away.
 
 That is the appeal. The liability is that the answer is not equally good everywhere. Zero-shot performance
 varies sharply from one animal to the next, and from one place to the next. No rule tells a practitioner,
@@ -80,14 +77,8 @@ apart throughout.
 
 Asking the question at all requires a demanding dataset. It needs species labels structured enough to say how
 far apart two species are, plus location metadata, timestamps, and dense per-frame tracking annotation --- all
-in one corpus. SA-FARI~\cite{safari} provides exactly that. Released alongside SAM\,3, it is the largest open
-multi-animal tracking dataset for wild animals. It holds $11{,}609$ densely annotated camera-trap videos across
-$99$ species and $741$ locations on four continents. Every species carries a full seven-level biological
-taxonomy, and every video carries a timestamp. The taxonomy is what lets ``how novel is this species'' be
-measured on a principled scale rather than guessed at. The location and time metadata do the same for place
-and era. SA-FARI also ships abundant \emph{hard negatives} --- prompts for species that are absent, which
-should return nothing --- so false alarms can be studied alongside misses. That combination is why we use it,
-and Section~\ref{sec:bg-safari} describes it in full.
+in one corpus. SA-FARI~\cite{safari} carries all four, which is why we use it;
+Section~\ref{sec:bg-safari} sets out its contents.
 
 We study SAM\,3 on SA-FARI as the primary case. We then ask whether the answer is specific to it. The analysis
 is repeated on a second, independent dataset, and two other promptable trackers are swapped in on the same
