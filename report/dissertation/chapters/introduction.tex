@@ -137,27 +137,35 @@ distance intuition, however reasonable it sounds, does not survive contact with 
 deployment gate cannot be built this way.
 
 \section{Contributions}
-To our knowledge this is the first study to test, out of sample, whether the zero-shot transfer of a
-promptable video tracker can be predicted before the model is run and from label-free distances --- and the
-first to split that question into detection (\texttt{pDetA}) and association (\texttt{pAssA}). This distinguishes it
-from label-free performance prediction for classifiers, which estimates a single scalar from the model's own
-outputs on the target~\cite{aotl,agl,atc}, and from the very recent static-image detector/segmenter
-estimators~\cite{pcr,rca}; and from camera-trap shift studies, which measure but do not forecast per-site
-reliability~\cite{terra,panaf,jeon}. Concretely we deliver:
+To our knowledge this is the first study to ask whether a promptable video tracker's zero-shot transfer can
+be predicted before the model is run, from properties that require no labelling of the target. It is also the
+first to put that question to an out-of-sample test. Section~\ref{sec:bg-gap} places that claim against the existing literature. What the
+work contributes is the following.
+
 \begin{enumerate}[label=(\roman*),leftmargin=2.4em]
-  \item a rigorous, out-of-sample negative result --- under a deliberately powerful test (whole-species
-    and whole-location hold-out with group-cluster-bootstrap significance), label-free before-running distances
-    do \emph{not} predict SAM\,3's transfer;
-  \item the detection-versus-association decomposition, tested on two near-orthogonal splits --- a constructed
-    species hold-out (novelty) and the official location hold-out (environment);
-  \item a hardened account of why it fails: a follow-up intrinsic-difficulty pivot collapses to the
-    same animal-size confound, so the only label-free property that predicts detection is object size --- the
-    very nuisance the analysis controls for --- and that positive control confirms the test detects signal when
-    it exists;
-  \item evidence that the null is not an artefact of one dataset or one model: it holds across
-    two datasets (SA-FARI and BURST) and, in a controlled model swap on BURST, across two
-    architecturally distinct promptable trackers (GLEE and Florence-2\,+\,SAM\,2), so it is task-general rather
-    than a quirk of SAM\,3.
+  \item \textbf{A testable formulation of the question, and a protocol for answering it.} Turning ``will this
+    model work on my data?'' into something that can be falsified takes a specific design. The frozen tracker
+    is scored with the official metric. Every predictor is measured against a reference fixed in advance, so
+    that no information about the target can leak in. And validation holds out whole species and whole
+    locations rather than individual clips. That protocol is not tied to the predictors tested here. Any future
+    before-running estimator can be held to the same bar, which is what makes the negative answer useful
+    rather than merely discouraging.
+
+  \item \textbf{The detection--association split brought to label-free evaluation.} Work of this kind has so
+    far predicted a single accuracy number. Asking separately whether \emph{finding} and \emph{following} an
+    animal transfer for different reasons is new, and it is what allows an answer to be attributed to one half
+    of the task instead of averaged across both.
+
+  \item \textbf{The answer, established at scope.} Label-free distance does not predict transfer. The finding
+    is reported as a bounded negative result. It is also shown not to be an artefact of one dataset or one
+    model, surviving an independent second dataset and two architecturally different trackers
+    (Chapter~\ref{ch:results}).
+
+  \item \textbf{An account of why the obvious candidate fails, and the caution that follows.} The one
+    apparent effect reduces to how large the animal appears in the frame. That is a warning for future work: any study measuring visual
+    novelty across species has to control for apparent size, or it will rediscover the same artefact. It is
+    also a caution for practice. Proximity to familiar training data is not a safety guarantee, and
+    reliability still has to be checked rather than assumed.
 \end{enumerate}
 
 \section{Dissertation outline}
