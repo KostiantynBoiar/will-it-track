@@ -2,15 +2,24 @@
 \label{ch:introduction}
 
 \section{Motivation}
-Camera traps have become a standard tool in wildlife monitoring. A single survey leaves a team with far more
-footage than anyone can watch. Somebody still has to work out which animal is in each clip, how many there
-are, and what they do. Done by hand this is slow and expensive, and it is the step that limits how much
-ecology gets done at all.
+Finding an animal in a video and following it over time is a need shared by several fields. Ecologists use it
+to survey wild populations from camera-trap footage. Neuroscientists and behavioural biologists use it to
+quantify what an animal does frame by frame in the laboratory, where the tracked trajectory is often the
+measurement the science rests on, and where a whole tool-chain now exists to recover pose and turn it into
+behavioural labels~\cite{deeplabcut,sleap,poser}. The bottleneck is the same in both cases: video is cheap to
+record and expensive to annotate.
+
+This dissertation works on the wild side of that divide, where the problem is hardest. Camera traps have
+become a standard tool in wildlife monitoring, and a single survey leaves a team with far more footage than
+anyone can watch. Somebody still has to work out which animal is in each clip, how many there are, and what
+they do. Done by hand this is slow and expensive, and it is the step that limits how much ecology gets done at
+all.
 
 Automating it means solving two problems, not one. The first is \emph{finding} the animal in a frame. The
 second is \emph{following} it from frame to frame, so the same individual keeps the same identity for as long
-as it is visible. Only the second yields the counts and behavioural sequences ecologists actually want, and it
-is the harder of the two.
+as it is visible. Only the second yields the counts and behavioural sequences both communities want: in a
+study of social behaviour, losing an identity means losing the very animal whose behaviour was being measured.
+It is also the harder of the two.
 
 Neither is easy on real footage. Animals are frequently camouflaged against the very background they live in.
 They appear at any distance and from any viewpoint, so one species may fill the frame in one clip and occupy a
