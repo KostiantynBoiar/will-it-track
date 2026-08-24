@@ -53,13 +53,46 @@ This dissertation studies that gap. It asks whether such a rule exists --- first
 whatever we find is specific to it.
 
 \section{Problem statement and research question}
-This dissertation asks whether a promptable tracker's zero-shot accuracy on an unseen (species, place) can be
-predicted in advance from properties measurable without running the model or scoring its output, and which
-factors govern
-that transfer --- separately for finding the animal and following it. We study this concretely on
-SAM\,3 as the primary case, measuring novelty against the SA-FARI reference split (Section~\ref{sec:bg-safari}),
-and then test whether the answer generalises beyond one dataset and one model --- to two further datasets and,
-via a controlled model swap, to two other promptable trackers (Section~\ref{sec:model_swap}).
+The appeal of a zero-shot model is that it skips the labelling step. That is also what makes it hard to trust.
+The normal way to check whether a model works on your data is to label some of it and measure. But a team that
+could afford to do that would have had less need for a zero-shot model in the first place. So these tools get
+deployed precisely where nobody has checked that they work.
+
+The problem is a general one. Any foundation model applied to a case nobody validated sits in the same
+position. The capability is broad, the guarantees are absent, and the user has no principled basis for
+deciding how far to trust the output. What would settle it is a rule that can be checked \emph{in advance}:
+some property of the target, cheap to measure, that says whether the model will cope.
+
+There is an obvious candidate, and practitioners already reason with it informally --- distance from the
+familiar. A model ought to do worse on things unlike what it has seen. If that intuition held quantitatively,
+it would be genuinely useful. You could measure how far a new species or place sits from the model's
+reference. That number would then act as a deployment gate, applied before spending compute and before
+annotating anything.
+
+This dissertation asks whether that rule exists. Precisely: can a promptable tracker's zero-shot accuracy on
+an unseen (species, place) be predicted in advance, from properties measurable without running the model or
+scoring its output? And which factors, if any, govern that transfer?
+
+We ask it separately for the two halves of the task, because tracking is built on detection. The model must
+first find the animal, then hold onto its identity from frame to frame. The two can fail for different
+reasons. Finding is about whether the animal is recognisable at all; following is about whether the scene lets
+an identity survive. A single accuracy number would average them together and hide the answer, so we keep them
+apart throughout.
+
+Asking the question at all requires a demanding dataset. It needs species labels structured enough to say how
+far apart two species are, plus location metadata, timestamps, and dense per-frame tracking annotation --- all
+in one corpus. SA-FARI~\cite{safari} provides exactly that. Released alongside SAM\,3, it is the largest open
+multi-animal tracking dataset for wild animals. It holds $11{,}609$ densely annotated camera-trap videos across
+$99$ species and $741$ locations on four continents. Every species carries a full seven-level biological
+taxonomy, and every video carries a timestamp. The taxonomy is what lets ``how novel is this species'' be
+measured on a principled scale rather than guessed at. The location and time metadata do the same for place
+and era. SA-FARI also ships abundant \emph{hard negatives} --- prompts for species that are absent, which
+should return nothing --- so false alarms can be studied alongside misses. That combination is why we use it,
+and Section~\ref{sec:bg-safari} describes it in full.
+
+We study SAM\,3 on SA-FARI as the primary case. We then ask whether the answer is specific to it. The analysis
+is repeated on a second, independent dataset, and two other promptable trackers are swapped in on the same
+data (Section~\ref{sec:model_swap}).
 
 \section{Hypotheses}
 \begin{description}[leftmargin=2.6em,style=nextline]
