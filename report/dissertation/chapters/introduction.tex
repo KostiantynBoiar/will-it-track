@@ -1,7 +1,7 @@
 \chapter{Introduction}
 \label{ch:introduction}
 
-\section{Motivation}
+\section{Background and Motivation}
 \label{sec:motivation}
 Finding an animal in a video and following it over time is a need shared by several fields. Ecologists use it
 to survey wild populations from camera-trap footage. Neuroscientists and behavioural biologists use it to
@@ -22,14 +22,11 @@ as it is visible. Only the second yields the counts and behavioural sequences bo
 study of social behaviour, losing an identity means losing the very animal whose behaviour was being measured.
 It is also the harder of the two.
 
-Neither is easy on real footage. Animals are frequently camouflaged against the very background they live in.
-They appear at any distance and from any viewpoint, so one species may fill the frame in one clip and occupy a
-handful of pixels in the next. Vegetation cuts them in half. Much footage is recorded at night in infrared,
-where colour is gone and contrast is poor. Motion blur is common. A box drawn around the animal is often a
-poor description of it, which is why segmentation --- labelling the pixels that belong to the animal --- is
-the more useful output. And because a camera trap is fixed, the same cluttered scene repeats in every clip
-from that site. That gives a model an easy shortcut: learn the background rather than the
-animal~\cite{terra,panaf,xiao}.
+Neither is easy on real footage. Animals are camouflaged against the background they live in, appear at any
+distance and viewpoint, and are cut in half by vegetation. Much of the footage is recorded at night in
+infrared, where colour is gone and contrast is poor. And because a camera trap is fixed, the same cluttered
+scene repeats in every clip from that site, which gives a model an easy shortcut: learn the background rather
+than the animal~\cite{terra,panaf,xiao}. Section~\ref{sec:bg-challenges} sets out these difficulties in full.
 
 For years the standard answer was to train a detector on a fixed list of species and deploy it. It works where
 it was trained. It degrades sharply at camera sites and regions it has not seen~\cite{terra,wilds,panaf}. And
@@ -129,7 +126,7 @@ H1 and H2 divide the research question between the two halves of the task, and e
 factor most likely to govern it. H1 is the one that matters most in deployment. If it held, a team could look
 up an unfamiliar species and know in advance whether detection is likely to hold up. H2 rests on a different
 intuition. Holding an identity across frames should depend on the scene rather than on which animal it is. If
-so, the difficulties catalogued in Section~\ref{sec:motivation} --- darkness, clutter, an unfamiliar
+so, the difficulties catalogued in Section~\ref{sec:bg-challenges} --- darkness, clutter, an unfamiliar
 background --- ought to bite here rather than on detection.
 
 H0 is what remains if both fail. It is not an absence of an answer but a substantive one. It would mean the
