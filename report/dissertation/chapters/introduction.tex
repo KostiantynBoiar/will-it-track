@@ -2,6 +2,7 @@
 \label{ch:introduction}
 
 \section{Motivation}
+\label{sec:motivation}
 Finding an animal in a video and following it over time is a need shared by several fields. Ecologists use it
 to survey wild populations from camera-trap footage. Neuroscientists and behavioural biologists use it to
 quantify what an animal does frame by frame in the laboratory, where the tracked trajectory is often the
@@ -53,6 +54,7 @@ This dissertation studies that gap. It asks whether such a rule exists --- first
 whatever we find is specific to it.
 
 \section{Problem statement and research question}
+\label{sec:problem}
 The appeal of a zero-shot model is that it skips the labelling step. That is also what makes it hard to trust.
 The normal way to check whether a model works on your data is to label some of it and measure. But a team that
 could afford to do that would have had less need for a zero-shot model in the first place. So these tools get
@@ -95,18 +97,44 @@ is repeated on a second, independent dataset, and two other promptable trackers 
 data (Section~\ref{sec:model_swap}).
 
 \section{Hypotheses}
+\label{sec:hypotheses}
+The research question asks two things at once: \emph{whether} transfer can be predicted, and \emph{what
+governs} it. The hypotheses below turn that into something a dataset can answer. Each names a factor, commits
+to a direction, and can be rejected by the evidence.
+
+Two terms are needed first, because the rest of the dissertation rests on them.
+
+The tracker is scored with a standard tracking metric that splits cleanly into two halves
+(Section~\ref{sec:bg-hota}). \textbf{\texttt{pDetA}}, detection accuracy, scores the finding half: were the
+right animals located? \textbf{\texttt{pAssA}}, association accuracy, scores the following half: did each
+animal keep one consistent identity for as long as it was visible? Both run from $0$ to $1$, and we model them
+separately for the reason given in Section~\ref{sec:problem}.
+
+A predictor is \textbf{label-free} if computing it needs no annotation of the target footage and no
+measurement of how the tracker performed on it. Only such a predictor can be evaluated \emph{before} the model
+is run, which is exactly what a deployment gate would require. The four tested here are all
+\emph{distances}: how far a target species or place sits from a fixed reference set, measured by taxonomy, by
+appearance, by the surrounding scene, and by time.
+
 \begin{description}[leftmargin=2.6em,style=nextline]
-  \item[H0 (null)] the label-free distances carry no predictive information about
-    \texttt{pDetA}/\texttt{pAssA} --- transfer is not distance-driven.
-  \item[H1 (detection)] \texttt{pDetA} falls with species novelty (taxonomic + visual distance).
-  \item[H2 (association)] \texttt{pAssA} falls with environment difficulty (scene distance,
-    day/night/IR, clutter).
+  \item[H0 (null)] The label-free distances carry no predictive information about \texttt{pDetA} or
+    \texttt{pAssA}. Transfer is not distance-driven.
+  \item[H1 (detection)] \texttt{pDetA} falls as the species becomes more novel --- further from the reference
+    in taxonomy and in appearance.
+  \item[H2 (association)] \texttt{pAssA} falls as the scene becomes harder --- an unfamiliar background, night
+    or infrared capture, visual clutter.
 \end{description}
-Failing to reject H0 is itself an informative result --- and, as Chapter~\ref{ch:results} shows, it is
-what we find: neither a novelty distance nor a follow-up intrinsic-difficulty pivot predicts
-transfer beyond a trivial animal-size effect. We even read familiarity from SAM\,3's own features, and it too is
-null; a fuller representational probe --- of what those features structurally encode --- remains the open
-branch for future work.
+
+H1 and H2 divide the research question between the two halves of the task, and each attaches the half to the
+factor most likely to govern it. H1 is the one that matters most in deployment. If it held, a team could look
+up an unfamiliar species and know in advance whether detection is likely to hold up. H2 rests on a different
+intuition. Holding an identity across frames should depend on the scene rather than on which animal it is. If
+so, the difficulties catalogued in Section~\ref{sec:motivation} --- darkness, clutter, an unfamiliar
+background --- ought to bite here rather than on detection.
+
+H0 is what remains if both fail. It is not an absence of an answer but a substantive one. It would mean the
+distance intuition, however reasonable it sounds, does not survive contact with the data --- and that a
+deployment gate cannot be built this way.
 
 \section{Contributions}
 To our knowledge this is the first study to test, out of sample, whether the zero-shot transfer of a
