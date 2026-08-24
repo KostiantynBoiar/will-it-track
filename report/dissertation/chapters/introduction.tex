@@ -2,14 +2,46 @@
 \label{ch:introduction}
 
 \section{Motivation}
-Promptable video trackers --- of which SAM\,3~\cite{sam3} is the current state of the art --- segment and
-track any named animal in a video with no training on that species, and conservation teams now deploy them on
-new species and regions constantly. Their appeal is exactly this zero-shot reach; their liability is that it is
-unpredictable, varying sharply from one animal or place to the next. Yet no rule tells a practitioner,
-before running the model, whether its output is trustworthy for a given animal in a given place --- so a
-team pointing a tracker at a new species cannot tell in advance whether to trust it or whether the costly
-alternative, manual annotation, is still required. This dissertation studies that gap on the leading such tracker
-(SAM\,3), and then asks whether whatever we find is specific to it.
+Camera traps have become a standard tool in wildlife monitoring. A single survey leaves a team with far more
+footage than anyone can watch. Somebody still has to work out which animal is in each clip, how many there
+are, and what they do. Done by hand this is slow and expensive, and it is the step that limits how much
+ecology gets done at all.
+
+Automating it means solving two problems, not one. The first is \emph{finding} the animal in a frame. The
+second is \emph{following} it from frame to frame, so the same individual keeps the same identity for as long
+as it is visible. Only the second yields the counts and behavioural sequences ecologists actually want, and it
+is the harder of the two.
+
+Neither is easy on real footage. Animals are frequently camouflaged against the very background they live in.
+They appear at any distance and from any viewpoint, so one species may fill the frame in one clip and occupy a
+handful of pixels in the next. Vegetation cuts them in half. Much footage is recorded at night in infrared,
+where colour is gone and contrast is poor. Motion blur is common. A box drawn around the animal is often a
+poor description of it, which is why segmentation --- labelling the pixels that belong to the animal --- is
+the more useful output. And because a camera trap is fixed, the same cluttered scene repeats in every clip
+from that site. That gives a model an easy shortcut: learn the background rather than the
+animal~\cite{terra,panaf,xiao}.
+
+For years the standard answer was to train a detector on a fixed list of species and deploy it. It works where
+it was trained. It degrades sharply at camera sites and regions it has not seen~\cite{terra,wilds,panaf}. And
+adding a species that was not on the list means collecting and labelling more data --- precisely the cost a
+team opening a new site is trying to avoid.
+
+Promptable models change that arrangement. The \emph{Segment Anything} line replaced the fixed label set with a
+prompt: you indicate what you want and the model segments it, and SAM\,2 extended this to
+video~\cite{sam2}. SAM\,3~\cite{sam3} takes the step that matters here, because the prompt can now simply be a
+phrase. Give it \texttt{"impala"} and it finds, segments and follows every impala in the clip, having never
+been trained on that species. It is the current state of the art for the task, and it was released alongside
+SA-FARI, a large camera-trap tracking benchmark of wild animals~\cite{safari}. A team can now point a tracker
+at a species it has never seen and get an answer straight away.
+
+That is the appeal. The liability is that the answer is not equally good everywhere. Zero-shot performance
+varies sharply from one animal to the next, and from one place to the next. No rule tells a practitioner,
+before running the model, whether its output can be trusted for a given animal in a given place. The choice
+left is an unattractive one: trust the output blindly, or fall back on the manual annotation the model was
+meant to replace.
+
+This dissertation studies that gap. It asks whether such a rule exists --- first for SAM\,3, and then whether
+whatever we find is specific to it.
 
 \section{Problem statement and research question}
 This dissertation asks whether a promptable tracker's zero-shot accuracy on an unseen (species, place) can be
