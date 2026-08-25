@@ -120,6 +120,9 @@ probes. Split A pools the species present in both official splits into $1{,}025$
 
 \section{Measuring transfer}
 \label{sec:meth-measure}
+Figure~\ref{fig:pipeline} sets out the pipeline as a whole. This section describes its upper path: how the
+frozen tracker is run and scored into the target $Y$. Sections~\ref{sec:meth-features}
+and~\ref{sec:meth-model} describe the lower path and the modelling.
 
 \begin{figure}[htbp]
 \centering
@@ -152,37 +155,35 @@ by holding out whole species and locations. Only the GLM is fitted; the tracker 
 \label{fig:pipeline}
 \end{figure}
 
-We now instantiate this pipeline on the primary case --- SAM\,3 on SA-FARI --- whose concrete choices,
-numbers, and benchmark status the rest of this section reports; the external replications and the model swap
-(Sections~\ref{sec:meth-replication}--\ref{sec:meth-swap}) then re-run the \emph{same} pipeline on other
-datasets and trackers. SAM\,3~\cite{sam3} is run frozen over the probe videos --- species-specific prompts as
-the primary condition, a generic ``animal'' prompt for robustness --- and scored with the official
-\texttt{VEval} evaluator, which we never re-implement. This yields a per-cell \texttt{pDetA}/\texttt{pAssA}/\texttt{pHOTA}~\cite{hota} with its
-support. A single inference pass over the union of the Split~A and Split~B probes serves both experiments.
-Predictions are stored per (video, species) so that the several species-prompts issued on one video do not
-collide; the harness is resumable at per-video granularity and never updates a weight.
+The primary case is SAM\,3 on SA-FARI, and the rest of this section gives its concrete choices and numbers.
+The replication and the model swap (Sections~\ref{sec:meth-replication}--\ref{sec:meth-swap}) later re-run the
+same pipeline on other datasets and trackers.
 
-We aggregate the frame-level scores two ways and keep the two distinct. The micro score is the
-dataset-level \texttt{VEval} figure --- the published SA-FARI operating point, $\approx\!0.65$
-mask-\texttt{pHOTA} --- which we report only to confirm we reproduce the benchmark. The macro score is
-the per-cell, support-weighted mean over positive cells, and it is our modelling target: the model is fit
-cell-by-cell, so the cell is the unit that must carry the score. Because the macro mean is a positives-only
-per-cell average it sits lower ($\approx\!0.53$); every measurement number we quote is the macro value,
-labelled as such.
+SAM\,3~\cite{sam3} is run frozen over the probe videos and scored with the official \texttt{VEval} evaluator,
+which yields a per-cell \texttt{pDetA}, \texttt{pAssA} and \texttt{pHOTA}~\cite{hota} together with its
+support. Species-specific prompts are the primary condition, and a generic ``animal'' prompt is run as a
+robustness check. One inference pass over the union of the Split~A and Split~B probes serves both experiments.
+Predictions are keyed per (video, species), so that the several prompts issued against a single video cannot
+collide, and the harness can resume video by video.
+
+The frame-level scores are aggregated two ways, and the two are kept distinct. The micro score is the
+dataset-level \texttt{VEval} figure, reported only to confirm that we reproduce the published SA-FARI operating
+point of $\approx\!0.65$ mask-\texttt{pHOTA}. The macro score is the support-weighted mean over positive cells,
+and it is the modelling target: the model is fitted cell by cell, so the cell is what must carry a score. Being
+a positives-only per-cell average, the macro mean sits lower, at $\approx\!0.53$. Every measurement number
+quoted in this dissertation is the macro value, and is labelled as such.
 
 \paragraph{Validity of the frozen protocol.} Because the tracker is frozen throughout
 (Section~\ref{sec:meth-zeroshot}), reusing that single inference pass across both splits is sound rather than a
 leak: a cell's score cannot depend on which reference partition is later overlaid to compute its distances.
 
 Freezing also settles the benchmark's status. SA-FARI is a held-out, zero-shot benchmark for the released
-SAM\,3: the SAM\,3 report~\cite{sam3} does not list SA-FARI among its training sources, and the SA-FARI
-paper~\cite{safari} reports the released checkpoint zero-shot (the $\approx\!0.65$ mask-\texttt{pHOTA} ballpark
-we reproduce in measurement) alongside separately fine-tuned rows whose gain we deliberately forgo. We can
-therefore verify non-membership at the dataset level; we cannot verify it frame-by-frame, since SAM\,3's
-full pretraining corpus is undisclosed. We do not claim otherwise: every distance is measured against the
-SA-FARI train reference, not against SAM\,3's true (unknown) pretraining distribution, and the
-familiarity
-proxy (Section~\ref{sec:meth-familiarity}) is the hedge for exactly this gap.
+SAM\,3. The SAM\,3 report~\cite{sam3} does not list SA-FARI among its training sources, and the SA-FARI
+paper~\cite{safari} reports the released checkpoint zero-shot, alongside separately fine-tuned rows whose gain
+we deliberately forgo. Non-membership can therefore be verified at the dataset level. It cannot be verified
+frame by frame, because SAM\,3's full pretraining corpus is undisclosed. That is why every distance is measured
+against the SA-FARI reference rather than against whatever SAM\,3 actually saw, and why the familiarity proxy
+of Section~\ref{sec:meth-familiarity} is included as a hedge.
 
 \section{The frozen reference (leakage firewall)}
 \label{sec:meth-reference}
