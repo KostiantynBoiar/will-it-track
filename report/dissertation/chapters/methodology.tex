@@ -4,116 +4,78 @@
 \section{Research design and evaluation criteria}
 \label{sec:meth-design}
 This chapter sets out how the question posed in Chapter~\ref{ch:introduction} was turned into something a
-dataset can answer. Three things have to be pinned down before the rest of it makes sense: what it means to run
-the tracker zero-shot, what exactly is being predicted, and what would count as having predicted it. This
-section settles all three.
+dataset can answer. It is a predictive-modelling study. On one side is a set of predictors $X$: four distances,
+each measuring how far a target species or place sits from a frozen reference, none of them requiring the
+tracker to be run or the target to be labelled. On the other is a target $Y$: the tracker's per-cell detection
+and association scores. The question is whether $X$ predicts $Y$, and which parts of it do the work, asked
+separately for the two halves of the task. Nothing here attempts to make the tracker score higher --- it is the
+fixed object of study. Three things need pinning down first: what running it zero-shot means, what the two
+scores are, and what would count as having predicted them.
 
 \subsection{What ``zero-shot'' means here}
 \label{sec:meth-zeroshot}
-The term recurs throughout this dissertation and carries a narrow, specific meaning.
-
 A model is run zero-shot on a category when it is asked to find that category without having been trained on
 labelled examples of it, and without any change to its weights at the time of asking. The only thing telling it
-what to look for is the prompt.
+what to look for is the prompt. A conventional detector, by contrast, is trained on a fixed list and can be
+asked about nothing else; a fine-tuned model has had its weights updated on target-domain data; a few-shot
+model is handed a small number of labelled examples. A zero-shot model gets the word \texttt{"impala"} and
+nothing more.
 
-It is easiest to see against the alternatives. A conventional detector is trained on a fixed list of categories
-and can be asked about nothing else. A fine-tuned model has had its weights updated on data from the target
-domain. A few-shot model is handed a small number of labelled examples of the new category. A zero-shot model
-gets none of these. It is given the word \texttt{"impala"} and nothing more.
+Three commitments follow and hold throughout. The tracker is the public released checkpoint, and its weights
+are never updated --- not fine-tuned, not adapted, not calibrated on any part of this data. The only input
+identifying the target is the text prompt. And no labelled example of the target species ever reaches the
+tracker: the ground-truth masks are read afterwards, to score what it produced and to crop images when building
+the distance features (Section~\ref{sec:meth-features}), never to tell it what to look for. The only thing
+fitted anywhere in this study is the small regression mapping distances onto scores.
 
-Three commitments follow, and they hold everywhere in this work:
-
-\begin{enumerate}[label=(\roman*),leftmargin=2.4em]
-  \item The tracker is the public released checkpoint. Its weights are never updated --- not fine-tuned, not
-    adapted, not calibrated on any part of the data used here.
-  \item The only input identifying the target is the text prompt.
-  \item No labelled example of the target species is ever shown to the tracker. The ground-truth masks are used
-    afterwards, to score what the tracker produced, and to crop images when building the distance features
-    (Section~\ref{sec:meth-features}) --- never to tell the tracker what to look for.
-\end{enumerate}
-
-The only thing fitted anywhere in this study is the small regression that maps distances onto scores. That is a
-statistical model of the tracker's behaviour, not a change to the tracker.
-
-One boundary on the term belongs here, because it bounds several later claims. Zero-shot is meant relative to
-the dataset, and to the reference set frozen inside it. It does not mean the tracker has never encountered the
-species anywhere. SAM\,3's pretraining corpus is not fully disclosed, so that stronger claim cannot be checked
-at all. Section~\ref{sec:meth-measure} states what can and cannot be verified, and
-Section~\ref{sec:meth-familiarity} describes the proxy used to hedge the gap.
+One boundary belongs here, because it bounds several later claims. Zero-shot is meant relative to the dataset
+and to the reference frozen inside it. It is not a claim that the tracker has never encountered the species
+anywhere: SAM\,3's pretraining corpus is undisclosed, so the stronger claim cannot be checked at all.
+Section~\ref{sec:meth-measure} states what can and cannot be verified, and
+Section~\ref{sec:meth-familiarity} the proxy that hedges the gap.
 
 \subsection{What is being predicted: finding and following}
 \label{sec:meth-targets}
-Everything predicted in this dissertation is one of two numbers. They deserve a precise statement, because the
-whole design rests on holding them apart.
-
 The evaluator compares what the tracker produced against what a human annotated. Both sides consist of
-masklets, a masklet being one object's mask followed through the clip frame by frame. A predicted mask counts
-as matching an annotated one when their overlap --- intersection over union --- reaches a threshold $\alpha$.
-Given that matching, the two scores measure different things:
+masklets, a masklet being one object's mask followed through the clip frame by frame, and a predicted mask
+counts as matching an annotated one when their intersection over union reaches a threshold $\alpha$. Given that
+matching, \texttt{pDetA} (detection accuracy) asks whether the right animals were found, rewarding annotated
+animals that were located and penalising both animals missed and masks invented where no animal was.
+\texttt{pAssA} (association accuracy) asks whether identities were kept, measuring across the matched
+detections how consistently one predicted identity corresponds to one annotated identity over time; it falls
+when one animal's track is split among several predicted identities, when two identities are swapped, and when
+two animals are merged into a single track.
 
-\begin{description}[leftmargin=1.6em,style=nextline]
-  \item[\texttt{pDetA} --- detection accuracy.] Were the right animals found? It rewards annotated animals that
-    were located, and penalises both animals that were missed and masks invented where no animal was.
-  \item[\texttt{pAssA} --- association accuracy.] Were identities kept? Across the detections that did match, it
-    measures how consistently one predicted identity corresponds to one annotated identity over time. It falls
-    when one animal's track is split between several predicted identities, when two animals' identities are
-    swapped, and when two animals are merged into a single track.
-\end{description}
-
-Both lie in $[0,1]$ and higher is better. Both are averaged over the full threshold set
-$\alpha\in\{0.05,\dots,0.95\}$, so neither depends on a single arbitrary choice of how much overlap counts as
-close enough (Section~\ref{sec:bg-hota}, Equation~\ref{eq:phota}). Because SA-FARI is annotated with masks, the
-mask-based variants are used throughout. Neither metric is reimplemented: the official \texttt{VEval} evaluator
-shipped with the benchmark is run as supplied and its output read.
-
-Concretely, \texttt{pDetA}$=1$ means every annotated animal was found in every frame and nothing was invented,
-while \texttt{pDetA}$=0$ means nothing the tracker produced overlapped an animal enough to count.
-\texttt{pAssA}$=1$ means every animal it found held one identity for as long as it was visible.
+Both lie in $[0,1]$, higher is better, and both are averaged over $\alpha\in\{0.05,\dots,0.95\}$, so neither
+depends on one arbitrary choice of how much overlap is close enough (Equation~\ref{eq:phota}). The mask-based
+variants are used throughout, SA-FARI being mask-annotated, and neither metric is reimplemented: the official
+\texttt{VEval} evaluator is run as supplied and its output read.
 
 The two are not symmetric, and the asymmetry matters. Association is conditional on detection, since an
-identity can only be assessed for an animal that was found in the first place. Detection can be measured on its
-own; association cannot. One consequence is honest to flag at the outset. Where a clip holds a single animal
-there is only one identity to keep, so \texttt{pAssA} is then largely determined by \texttt{pDetA}. Of the $346$
-positive cells in the primary data, $268$ ($77\%$) contain at most one annotated animal per video; across all
-positive cells the two scores correlate at $0.97$ and are exactly equal in $73\%$ of them. Association is
-therefore a far weaker target than detection on this dataset, and it is reported as such rather than as an
-independently powered test (Section~\ref{sec:meth-model} and Chapter~\ref{ch:discussion}). The external
-replication of Section~\ref{sec:meth-replication} was chosen partly because it does not have this problem.
-
-\subsection{The shape of the study}
-\label{sec:meth-shape}
-This is a predictive-modelling study. On one side is a target $Y$: the per-cell \texttt{pDetA} and
-\texttt{pAssA} just defined. On the other is a set of predictors $X$: four distances, each measuring how far a
-target species or place sits from a frozen reference, and each computable without running the tracker and
-without labelling the target. The question is whether $X$ predicts $Y$, and which parts of $X$ do the work,
-asked separately for the two halves of the task.
-
-Two properties of the data dictate the statistical treatment, and Section~\ref{sec:meth-model} implements both.
-The target is bounded in $[0,1]$, which makes ordinary linear regression the wrong instrument; a logit-link
-fractional regression is used instead. And the observations are not independent, because cells are grouped by
-species and by location and a distance is constant within such a group --- so hundreds of cells amount to only
-tens of independent units. Both the confidence intervals and the cross-validation have to respect that
-grouping, or they will report precision the data does not contain.
-
-It is worth being explicit about what this design does not do. Nothing here attempts to make the tracker score
-higher. The tracker is the fixed object of study, and improving it would be a different project.
+identity can only be assessed for an animal that was found in the first place. One consequence is honest to
+flag at the outset: where a clip holds a single animal there is only one identity to keep, so \texttt{pAssA} is
+then largely determined by \texttt{pDetA}. Of the $346$ positive cells in the primary data, $268$ ($77\%$) hold
+at most one annotated animal per video; across all of them the two scores correlate at $0.97$ and are exactly
+equal in $73\%$. Association is therefore a far weaker target than detection here, and is reported as such
+rather than as an independently powered test (Chapter~\ref{ch:discussion}); the external replication of
+Section~\ref{sec:meth-replication} was chosen partly because it does not have this problem.
 
 \subsection{Definition of success and the decision rule}
 \label{sec:meth-success}
 The intended deliverable is a validated, out-of-sample predictor of \texttt{pDetA}/\texttt{pAssA} from
-label-free distances, with confidence intervals that respect the group structure. A distance is taken to
-predict transfer only if it clears both of two bars:
+label-free distances, with confidence intervals that respect the group structure --- necessary because cells
+are grouped by species and by location and a distance is constant within such a group, so hundreds of cells
+amount to only tens of independent units. A distance is taken to predict transfer only if it clears both bars:
 \begin{enumerate}[label=(\roman*),leftmargin=2.4em]
   \item its coefficient's group-cluster-bootstrap 95\% confidence interval (CI) excludes zero; and
   \item the grouped cross-validated model beats a mean-predictor baseline by a margin that is significant under
     a paired group-bootstrap.
 \end{enumerate}
-The two bars are not redundant. Criterion~(i) says a relationship is visible in the data the model was fitted
-on. It does not say the relationship would hold for a species or a place the model has never seen, which is the
-entire practical claim. Criterion~(ii) is that second test, and the baseline it must beat is deliberately
-humble: predicting every held-out cell with the mean of the training cells, which is what a practitioner with
-no predictor at all would effectively assume. A feature clearing (i) but not (ii) has been fitted, not
-validated.
+The bars are not redundant. Criterion~(i) says a relationship is visible in the data the model was fitted on;
+it does not say that relationship holds for a species or place never seen, which is the entire practical claim.
+Criterion~(ii) is that test, and its baseline is deliberately humble --- predicting each held-out cell with the
+training mean, which is what a practitioner with no predictor would effectively assume. A feature clearing (i)
+but not (ii) has been fitted, not validated.
 
 H1 (detection $\leftarrow$ species novelty) and H2 (association $\leftarrow$ environment difficulty) are
 supported only when their respective distances meet this bar on the split that isolates them. If neither does
@@ -121,13 +83,6 @@ under tests built deliberately to be powerful, the conclusion is H0 --- distance
 which is a substantive result rather than a failure to find one, and motivates the representational-probing
 direction of Chapter~\ref{ch:discussion}.
 
-\paragraph{The rest of this chapter.} Section~\ref{sec:meth-data} describes the dataset, the two splits, and
-the unit at which everything is recorded. Section~\ref{sec:meth-measure} covers how transfer is measured, and
-Section~\ref{sec:meth-reference} the firewall that keeps target information out of the predictors.
-Section~\ref{sec:meth-features} defines the four distances and the controls;
-Section~\ref{sec:meth-model} the statistical model, the honest intervals, and the validation.
-Sections~\ref{sec:meth-fp}--\ref{sec:meth-swap} cover false positives, the external replication and the
-controlled model swap, and Section~\ref{sec:meth-repro} the reproducibility constraints.
 
 \section{Dataset, splits, and the analysis unit}
 \label{sec:meth-data}
