@@ -350,12 +350,13 @@ an independent tracking dataset. The abstraction boundary that makes this cheap 
 the loader: an offline adapter converts the dataset into the SA-Co annotation JSON (the SA-FARI/VEval schema)
 the loader and evaluator already read, so nothing downstream changes. Only the small logit GLM is ever fitted; SAM\,3 is frozen throughout.
 
-\paragraph{BURST (mask-native, many-species).} The animal subset of the BURST validation split~\cite{burst}
-(built on TAO~\cite{tao}): $41$ animal species across $132$ video\,$\times$\,class cells, with native COCO-RLE
-masks scored by mask-HOTA. The animal categories are selected from BURST's $482$ LVIS classes~\cite{lvis} by a
-WordNet filter~\cite{wordnet} (hyponyms of animal.n.01) and mapped to a seven-level biological taxonomy where resolvable ($25/41$ species full,
-the rest left undefined). BURST carries no site or timestamp metadata, so the cell key is
-the per-video sequence and leave-species-out is the only valid grouping; the association target is genuinely
+\paragraph{BURST.} The replication runs on the animal subset of the BURST validation split
+(Section~\ref{sec:bg-burst}), which gives $41$ animal species across $132$ video\,$\times$\,class cells, scored
+by mask-HOTA on the native COCO-RLE masks. Animal categories are selected from BURST's LVIS classes by a
+WordNet filter~\cite{wordnet}, taking the hyponyms of \texttt{animal.n.01}. Each is then mapped to a
+seven-level biological taxonomy where one is resolvable, which succeeds in full for $25$ of the $41$ species
+and leaves the rest undefined. Because BURST carries no site or timestamp metadata, the cell key is the
+per-video sequence, and leave-species-out is the only valid grouping. The association target is genuinely
 non-degenerate here, so both components are tested. Masks stream from the RWTH server and TAO frames from the
 Hugging Face mirror by HTTP range, so only the annotated frames of the capped animal videos are fetched.
 

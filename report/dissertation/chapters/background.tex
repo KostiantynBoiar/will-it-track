@@ -149,10 +149,13 @@ aligns images with natural-language descriptions, producing a space in which ima
 coordinates. Both are widely used as off-the-shelf feature extractors.
 
 \section{Datasets}
-\label{sec:bg-safari}
-Two datasets are central to this work.
+\label{sec:bg-datasets}
+Two datasets are central to this work: SA-FARI, on which the primary study runs, and BURST, which carries the
+independent replication.
 
-\paragraph{SA-FARI.} SA-FARI~\cite{safari} is a large open multi-animal camera-trap tracking dataset,
+\subsection{SA-FARI}
+\label{sec:bg-safari}
+SA-FARI~\cite{safari} is a large open multi-animal camera-trap tracking dataset,
 released alongside SAM\,3. It contains $11{,}609$ densely annotated videos spanning $99$ species, recorded at
 $741$ locations across four continents. Every species carries a seven-level biological taxonomy running from
 kingdom to species, and every video carries a creation timestamp. Annotations are per-frame masks with
@@ -166,7 +169,9 @@ correct run should answer with nothing. These make it possible to study false al
 SA-FARI ships a train/test partition drawn along locations, so the test camera sites are unseen while most
 species occur on both sides of it.
 
-\paragraph{BURST.} BURST~\cite{burst} is a video benchmark for object recognition, segmentation and tracking,
+\subsection{BURST}
+\label{sec:bg-burst}
+BURST~\cite{burst} is a video benchmark for object recognition, segmentation and tracking,
 built on the TAO~\cite{tao} video corpus. It annotates $482$ categories from the LVIS~\cite{lvis} vocabulary
 with per-frame masks and persistent track identities, and a portion of that vocabulary is animal categories.
 Its footage comes from internet, driving and film sources rather than camera traps, and it carries neither
