@@ -26,13 +26,9 @@ are never updated --- not fine-tuned, not adapted, not calibrated on any part of
 identifying the target is the text prompt. And no labelled example of the target species ever reaches the
 tracker: the ground-truth masks are read afterwards, to score what it produced and to crop images when building
 the distance features (Section~\ref{sec:meth-features}), never to tell it what to look for. The only thing
-fitted anywhere in this study is the small regression mapping distances onto scores.
-
-One boundary belongs here, because it bounds several later claims. Zero-shot is meant relative to the dataset
-and to the reference frozen inside it. It is not a claim that the tracker has never encountered the species
-anywhere: SAM\,3's pretraining corpus is undisclosed, so the stronger claim cannot be checked at all.
-Section~\ref{sec:meth-measure} states what can and cannot be verified, and
-Section~\ref{sec:meth-familiarity} the proxy that hedges the gap.
+fitted anywhere in this study is the small regression mapping distances onto scores. Note that zero-shot is
+meant relative to the dataset and to the reference frozen inside it, not as a claim about SAM\,3's undisclosed
+pretraining corpus --- a scope limit taken up in Section~\ref{sec:limitations}.
 
 \subsection{What is being predicted: finding and following}
 \label{sec:meth-targets}
