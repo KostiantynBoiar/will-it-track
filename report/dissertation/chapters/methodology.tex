@@ -80,37 +80,42 @@ which is a substantive result rather than a failure to find one, and motivates t
 direction of Chapter~\ref{ch:discussion}.
 
 
-\section{Dataset, splits, and the analysis unit}
+\section{Data, splits, and the analysis unit}
 \label{sec:meth-data}
-We use SA-FARI~\cite{safari} throughout. In its annotations, each test is a probe --- a
-(video, text-prompt) pair; the prompt resolves the animal's species and its seven-level taxonomy, while each
-video's location and timestamp give place and time. We aggregate scores to a cell --- a
-(species, location, time) group, keyed by a stable numeric species identifier --- and attach support
-counts ($n_\text{frames}$, $n_\text{masklets}$, $n_\text{videos}$) used for weighting and as covariates.
-Hard negatives (prompts for absent species) are kept, as they drive the false-positive side of detection;
-the one exception is the stratified per-species cap used to make the large pooled pass feasible, under which
-hard negatives are set aside from inference and analysed instead by the separate false-positive pass
-(Section~\ref{sec:meth-fp}).
+SA-FARI~\cite{safari} is the primary dataset, and everything in this section describes it. The independent
+replication runs on a second dataset, BURST, which Section~\ref{sec:meth-replication} covers separately.
+
+Each test is a probe: one video paired with one text prompt. The prompt names a species, which resolves its
+taxonomy, and the video supplies the location and the timestamp. Probes are then aggregated into cells, a cell
+being one (species, location, time) group. Each cell carries support counts ($n_\text{frames}$,
+$n_\text{masklets}$, $n_\text{videos}$), used for weighting and as covariates. The cell is the unit of
+analysis throughout: it is what carries a score, and what the regression is fitted on.
+
+Hard negatives --- prompts naming a species that is absent --- are kept, because they carry the false-positive
+side of detection. There is one exception. The large pooled inference pass uses a stratified per-species cap to
+remain feasible, and under that cap hard negatives are set aside from inference and analysed separately
+instead (Section~\ref{sec:meth-fp}).
 
 \paragraph{Two complementary splits.}
-Inspection of the annotations shows the shipped split is disjoint by location but shares species
-across train and test (Section~\ref{sec:bg-safari}); on that split species-distance is $\approx\!0$ for every
-cell, so it cannot test species novelty. Because SAM\,3 is frozen and zero-shot on all of SA-FARI, the split
-only defines our reference distribution, so we are free to repartition the same videos. We therefore
-use two near-orthogonal experiments and run inference only once (scoring is per-video and split-agnostic):
+SA-FARI's shipped split separates locations but not species (Section~\ref{sec:bg-safari}). Species-distance is
+therefore $\approx\!0$ for nearly every cell, so that split cannot test species novelty on its own. Because the
+tracker is frozen (Section~\ref{sec:meth-zeroshot}), the shipped split plays no training role and serves only
+to define our reference distribution, which leaves us free to repartition the same videos. Inference is run
+once --- scoring is per-video and split-agnostic --- and two splits are overlaid on the result:
 \begin{description}[leftmargin=1.6em,style=nextline]
-  \item[Split A --- species hold-out (primary).] Pooled species are partitioned by a leave-species-out
-    view, so a held-out species' distance is to the nearest other species; species-distance varies while
-    the environment stays largely familiar, isolating H1. Validated by leave-species-out cross-validation.
-  \item[Split B --- location hold-out (secondary).] The official train/test split, whose unseen locations
-    isolate H2 and whose benchmark comparability carries the initial score-sanity check.
+  \item[Split A --- species hold-out (primary).] Species from both official splits are pooled and held out one
+    at a time, so a held-out species' distance is measured to the nearest remaining species. Species-distance
+    varies while the environment stays familiar, which isolates H1.
+  \item[Split B --- location hold-out (secondary).] The official split, whose unseen locations isolate H2, and
+    whose comparability with the published benchmark carries the initial score-sanity check.
 \end{description}
-Split A is a constructed hold-out --- legitimate because the model is frozen, and reported as such.
-At the scale we work with, the location split (Split~B) yields $1{,}447$ scored cells over $113$
-taxonomy-bearing category identities ($99$ species) and $92$ unseen test locations: $346$ are positive
-cells --- the queried species is present, so \texttt{pDetA}/\texttt{pAssA} are defined --- and $1{,}101$ are
-hard-negative cells, drawn from $1{,}486$ hard-negative probes. The species hold-out (Split~A) pools the
-present species of both official splits into $1{,}025$ scored cells across the $99$ species.
+Split A is a constructed hold-out rather than a shipped one. That is legitimate precisely because the model is
+frozen, and it is reported as constructed throughout.
+
+Split B yields $1{,}447$ scored cells, spanning $113$ taxonomy-bearing categories and $92$ unseen test
+locations. Of those cells $346$ are positive, meaning the queried species is present so that \texttt{pDetA} and
+\texttt{pAssA} are defined; the remaining $1{,}101$ are hard negatives, drawn from $1{,}486$ hard-negative
+probes. Split A pools the species present in both official splits into $1{,}025$ scored cells.
 
 \section{Measuring transfer}
 \label{sec:meth-measure}
