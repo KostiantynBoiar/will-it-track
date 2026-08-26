@@ -452,13 +452,17 @@ swap, and it is why the swap runs on BURST rather than SA-FARI; Chapter~\ref{ch:
 behind that choice. Each challenger configuration is fixed in advance from the model's own defaults, run once,
 and reported as-is (Section~\ref{sec:model_swap}).
 
-\section{Reproducibility, implementation, and constraints}
+\section{Reproducibility and implementation}
 \label{sec:meth-repro}
-The model is frozen and scored by the official evaluator; the reference (seen) set is frozen before any distance is
-computed; hard negatives are retained; and all inference is single-GPU and inference-only. The pipeline is
-config-driven (every constraint is a toggle, so an ablation flips config, not code) and covered by hermetic
-tests; every reported number is regenerated from the repository, and split definitions, seeds, and reference
-sets are persisted so both experiments are reproducible end to end. The engineering safeguards that keep the
-measurement sound --- memory-lean feature assembly, per-(video, species) prediction
-keying, trimming the ground truth to the scored videos before evaluation, and the size-confound control ---
-are implemented in the pipeline and covered by the test suite, each framed as a validity safeguard.
+The constraints that protect validity are stated where they apply: the frozen tracker
+(Section~\ref{sec:meth-zeroshot}), the official evaluator (Section~\ref{sec:meth-targets}), the frozen
+reference (Section~\ref{sec:meth-features}), and the retained hard negatives (Section~\ref{sec:meth-data}).
+What remains is how they are enforced.
+
+Each is a configuration toggle rather than a branch in the code, so an ablation changes a config file and
+nothing else. The pipeline is covered by hermetic tests, among them the leakage check of
+Section~\ref{sec:meth-features} and the recovery of planted effects on synthetic data. Split definitions,
+random seeds and reference sets are all persisted. Every number reported in this dissertation comes from that
+pipeline, and both experiments reproduce end to end.
+
+All inference is single-GPU and inference-only, since no weights are ever updated.
