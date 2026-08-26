@@ -403,56 +403,54 @@ significance judged after a Bonferroni correction over the variant family (Table
 
 \section{Independent replication on an external dataset}
 \label{sec:meth-replication}
-Every SA-FARI result reuses one frozen inference pass on one dataset, so the two splits are near-orthogonal but
-not statistically independent. To test whether the before-running null is a property of the transfer problem
-rather than of SA-FARI, we re-run the entire pipeline --- unchanged frozen SAM\,3, the same official
-scorer, the same distances, and the same leave-species-out cross-validation and paired group bootstrap --- on
-an independent tracking dataset. The abstraction boundary that makes this cheap is the annotation schema, not
-the loader: an offline adapter converts the dataset into the SA-Co annotation JSON (the SA-FARI/VEval schema)
-the loader and evaluator already read, so nothing downstream changes. Only the small logit GLM is ever fitted; SAM\,3 is frozen throughout.
+Every SA-FARI result reuses one frozen inference pass on one dataset. The two splits are therefore
+near-orthogonal, but not statistically independent. To test whether the outcome is a property of the transfer
+problem rather than of SA-FARI, the whole pipeline is re-run on a second dataset. Nothing changes but the data:
+the same frozen SAM\,3, the same official scorer, the same distances, and the same leave-species-out
+cross-validation and paired group bootstrap.
+
+This is cheap because the pipeline is bound to an annotation schema rather than to a loader. An offline adapter
+converts the new dataset into the SA-Co JSON that the loader and evaluator already read, so nothing downstream
+changes.
 
 \paragraph{BURST.} The replication runs on the animal subset of the BURST validation split
-(Section~\ref{sec:bg-burst}), which gives $41$ animal species across $132$ video\,$\times$\,class cells, scored
-by mask-HOTA on the native COCO-RLE masks. Animal categories are selected from BURST's LVIS classes by a
-WordNet filter~\cite{wordnet}, taking the hyponyms of \texttt{animal.n.01}. Each is then mapped to a
-seven-level biological taxonomy where one is resolvable, which succeeds in full for $25$ of the $41$ species
-and leaves the rest undefined. Because BURST carries no site or timestamp metadata, the cell key is the
-per-video sequence, and leave-species-out is the only valid grouping. The association target is genuinely
-non-degenerate here, so both components are tested. Masks stream from the RWTH server and TAO frames from the
-Hugging Face mirror by HTTP range, so only the annotated frames of the capped animal videos are fetched.
+(Section~\ref{sec:bg-burst}): $41$ species across $132$ video\,$\times$\,class cells, scored by mask-HOTA on
+the native masks. Animal categories are selected by a WordNet filter~\cite{wordnet}, taking the hyponyms of
+\texttt{animal.n.01}, and mapped to the seven-level taxonomy wherever it resolves. It resolves in full for $25$
+of the $41$ species, and the rest are left undefined. BURST supplies neither of the metadata axes SA-FARI does,
+so the cell key is the per-video sequence and leave-species-out is the only valid grouping. Both
+\texttt{pDetA} and \texttt{pAssA} are tested here.
 
-\paragraph{Interpreting the replication.} BURST is held to the exact same out-of-sample bar as SA-FARI, and
-carries the same animal-size positive control. That control fixes how the replication may be read. Where it
-clears the bar, a test that stays flat for the distances is genuinely finding no signal. Where the control
-itself fails to fire, the design is too small to certify power, and any flat result counts as consistency
-rather than confirmation. Either way the replication can show convergence, not independent proof, since a
-dataset of this size cannot exclude a small before-running distance effect (Section~\ref{sec:burst}).
+\paragraph{Interpreting the replication.} BURST is held to the same bar as SA-FARI and carries the same
+animal-size positive control (Section~\ref{sec:meth-cv}). Whether that control fires is what decides how a flat
+result on BURST may be read. Either way the replication can show convergence rather than independent proof,
+because a dataset of this size cannot exclude a small effect (Section~\ref{sec:burst}).
 
 \subsection{The controlled model swap}
 \label{sec:meth-swap}
-The dataset-level analysis varies the data while holding the tracker fixed. To test whether the outcome is a
-property of SAM\,3 specifically, we also vary the tracker. A controlled model swap holds everything else
-constant --- the same cells, the same ground truth, the same four label-free distances, and the same
-support-weighted GLM under leave-species-out cross-validation --- and substitutes SAM\,3 with a second
-open-vocabulary, text-promptable tracker; only the target \texttt{pDetA} changes, since the distances are
-functions of the data and ground truth, not of the tracker. This is a controlled swap, not an independent
-replication: it reuses the same cells and ground truth, so it isolates the tracker as the sole varying factor.
-We swap in two challengers of deliberately different architecture --- GLEE~\cite{glee}, a single unified
-detect--segment--track model, and Florence-2~\cite{florence2}\,+\,SAM\,2~\cite{sam2}, a caption-style box
-generator with no confidence score followed by a mask-propagating tracker.
+The replication varies the data and holds the tracker fixed. The swap does the reverse. Everything else stays
+constant --- the same cells, the same ground truth, the same four distances, the same GLM under
+leave-species-out cross-validation --- and SAM\,3 is replaced by another open-vocabulary, text-promptable
+tracker. Only \texttt{pDetA} changes, because the distances are functions of the data and its ground truth
+rather than of the tracker. That is what isolates the tracker as the sole varying factor, and it is also why
+this is a swap rather than a replication.
 
-Two safeguards keep the swap fair. First, a measurement gate: before fitting any regression on
-a challenger's scores we require its per-cell \texttt{pDetA} to be non-degenerate (real spread across cells,
-not floored at zero); a regression on degenerate scores has no variance to explain and would report a spurious
-``null,'' so a challenger that scores $\approx 0$ on a dataset is dropped from the swap on that dataset rather
-than modelled. Second, scoring fairness: because open-vocabulary detectors' confidence scores are
-calibrated to their own training domain, we verify that any near-zero challenger score is a genuine detection
-failure and not an artefact of the evaluator's fixed confidence gate --- by re-scoring under a box-based metric
-and under a threshold-free average-precision metric with no gate at all. This gate is why the swap runs on
-BURST, not SA-FARI: SA-FARI is SAM\,3's own co-released benchmark and its camera-trap domain collapses the
-challengers' calibration even where they localise well, so it cannot yield a fair, non-degenerate challenger
-score, whereas SAM\,3 scores no lower on the independent BURST than on SA-FARI. Every challenger configuration is
-fixed in advance from the model's own defaults, run once, and reported as-is (Section~\ref{sec:model_swap}).
+Two challengers of deliberately different architecture are used. GLEE~\cite{glee} is a single unified
+detect--segment--track model. Florence-2~\cite{florence2} paired with SAM\,2~\cite{sam2} is a caption-style box
+generator, carrying no confidence score, followed by a mask-propagating tracker.
+
+Two safeguards keep the swap fair. The first is a measurement gate. A challenger's per-cell \texttt{pDetA} must
+show real spread across cells before any regression is fitted on it. A regression on scores floored at zero has
+no variance to explain and would report a spurious null, so a challenger scoring $\approx 0$ on a dataset is
+dropped there rather than modelled.
+
+The second concerns scoring fairness. Open-vocabulary detectors calibrate their confidence to their own
+training domain, so a near-zero score may reflect the evaluator's confidence gate rather than a real detection
+failure. Every such score is therefore re-checked under a box-based metric, and again under a threshold-free
+average-precision metric with no gate at all. This gate is also what decides which dataset can host a fair
+swap, and it is why the swap runs on BURST rather than SA-FARI; Chapter~\ref{ch:results} gives the measurements
+behind that choice. Each challenger configuration is fixed in advance from the model's own defaults, run once,
+and reported as-is (Section~\ref{sec:model_swap}).
 
 \section{Reproducibility, implementation, and constraints}
 \label{sec:meth-repro}
