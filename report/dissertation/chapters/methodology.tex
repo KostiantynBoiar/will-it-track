@@ -312,20 +312,21 @@ out-of-sample gain over the visual distance and size together (Section~\ref{sec:
 \section{Statistical modelling and hypothesis testing}
 \label{sec:meth-model}
 \subsection{Per-target regression}
-Each bounded target (\texttt{pDetA}, \texttt{pAssA}) is modelled separately with a support-weighted
-logit-link (fractional-logit) regression over the standardised distances plus the scene covariates and a
-$\log(n_\text{frames})$ covariate, so that ``rare'' is never mistaken for ``far'':
+Detection and association are modelled separately, because their decomposition is the intellectual core of the
+project. Section~\ref{sec:meth-targets} gives the qualification. Association may carry little variance
+independent of detection, in which case it is reported as the weaker target rather than as an independently
+powered test.
+
+Each target is bounded in $[0,1]$. Each is therefore modelled with a support-weighted logit-link, or
+fractional-logit, regression:
 \begin{equation}
   \operatorname{logit}\mathbb{E}[y]=x^{\!\top}\beta,
   \qquad\text{fit with variance weights } w=n_{\mathrm{frames}},
   \label{eq:glm}
 \end{equation}
-with $y\in[0,1]$ the cell's score and $x$ the standardised design.
-Detection and association
-are analysed apart because their decomposition is the intellectual core of the project --- with the
-qualification set out in Section~\ref{sec:meth-targets}, that association may carry little variance
-independent of detection, in which case it is reported as the weaker target rather than as an independently
-powered test (Chapter~\ref{ch:discussion}).
+where $y$ is the cell's score and $x$ the standardised design. That design carries the four distances, the
+scene covariates, and a $\log(n_\text{frames})$ term. The last of these is what keeps ``rare'' from being
+mistaken for ``far''.
 
 \subsection{Honest, group-aware inference}
 \label{sec:meth-inference}
