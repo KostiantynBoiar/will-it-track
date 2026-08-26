@@ -185,25 +185,24 @@ frame by frame, because SAM\,3's full pretraining corpus is undisclosed. That is
 against the SA-FARI reference rather than against whatever SAM\,3 actually saw, and why the familiarity proxy
 of Section~\ref{sec:meth-familiarity} is included as a hedge.
 
-\section{The frozen reference (leakage firewall)}
-\label{sec:meth-reference}
-For each split the reference (``seen'') species, locations, and taxonomy are frozen once; every distance is
-then computed against that reference only, so no probe information can enter a feature. A unit test verifies
-this, swapping the reference and checking that the distances move as expected. We assert the axis that is genuinely
-disjoint (location for Split~B; the held-out species for Split~A) and report any residual species
-overlap rather than asserting it away.
-
 \section{Label-free distance features}
 \label{sec:meth-features}
-All distances are computed against the frozen reference and require no measurement of the tracker's
-performance on the target --- no \texttt{pDetA}, no \texttt{pAssA}, no annotation of how well SAM\,3 did.
-That is the sense in which they are \emph{label-free}, and it is the sense the research question needs: they
-are available \emph{before} the model is run. One qualification belongs here rather than in a footnote. As
-implemented on an annotated benchmark, the visual, environment and size features read the dataset's
-ground-truth masks to separate animal from scene. That is a convenience of working on SA-FARI, not a
-requirement of the method --- in deployment the same species prototype would be built from the handful of
-exemplar images a practitioner already has for a named species --- but it does bound the claim, and we
-return to it in Section~\ref{sec:limitations}.
+For each split, the reference (``seen'') species, locations and taxonomy are frozen once, and every distance is
+then computed against that reference alone. This is the leakage firewall: no information about a probe can
+enter a feature. A unit test verifies it, swapping the reference and checking that the distances move as
+expected. We assert the axis that is genuinely disjoint --- location for Split~B, the held-out species for
+Split~A --- and report any residual species overlap rather than asserting it away.
+
+Because the distances are computed against that reference, they require no measurement of the tracker's
+performance on the target: no \texttt{pDetA}, no \texttt{pAssA}, no annotation of how well SAM\,3 did. That is
+the sense in which they are label-free, and it is the sense the research question needs, since it makes them
+available before the model is run.
+
+One qualification belongs here rather than in a footnote. As implemented on an annotated benchmark, the visual,
+environment and size features read the dataset's ground-truth masks to separate animal from scene. That is a
+convenience of working on SA-FARI, not a requirement of the method: in deployment the same species prototype
+would be built from the handful of exemplar images a practitioner already has for a named species. It does
+bound the claim, and Section~\ref{sec:limitations} returns to it.
 \subsection{Taxonomic distance}
 Lowest-common-ancestor tree steps from the probe's species to the nearest reference species (shared genus
 $=1$, family $=2$, order $=3$, \dots); the leave-species-out reference keeps this non-trivial for shared
