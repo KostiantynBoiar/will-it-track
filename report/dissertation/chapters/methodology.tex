@@ -212,9 +212,23 @@ convenience of working on SA-FARI, not a requirement of the method: in deploymen
 would be built from the handful of exemplar images a practitioner already has for a named species. It does
 bound the claim, and Section~\ref{sec:limitations} returns to it.
 \subsection{Taxonomic distance}
-The taxonomic distance counts lowest-common-ancestor tree steps from the probe's species to the nearest
-reference species: a shared genus scores $1$, a shared family $2$, a shared order $3$, and so on. The
-leave-species-out reference keeps the measure non-trivial for species that occur on both sides of a split.
+This distance measures how far apart two species sit on the tree of life.
+
+Every species carries a seven-level path from kingdom down to species. Write that path $\pi(s)$, and let
+$\mathrm{shared}(a,b)$ count the levels on which two paths agree, starting from the top. Two species are then
+as far apart as the number of levels they do not share. A cell's distance is the smallest such value over the
+reference set $\mathcal{R}$:
+\begin{equation}
+  \tau(a,b)=L-\mathrm{shared}(a,b)\quad (L=7),
+  \qquad
+  d_{\mathrm{tax}}(s)=\min_{s'\in\mathcal{R},\;s'\neq s}\tau\big(\pi(s),\pi(s')\big).
+  \label{eq:taxdist}
+\end{equation}
+
+So a species sharing a genus with its nearest reference neighbour scores $1$, a shared family $2$, and a shared
+order $3$. A species sharing no level at all would score $7$. The exclusion $s'\neq s$ is the leave-species-out
+rule, which keeps the measure non-trivial for species present on both sides of a split. Species whose taxonomy
+is incomplete are left undefined rather than imputed.
 \subsection{Visual distance}
 Each species is fingerprinted by a prototype --- the re-normalised mean DINOv2~\cite{dinov2} embedding
 of its ground-truth-mask-cropped animals --- and the visual distance is the cosine gap from a probe
