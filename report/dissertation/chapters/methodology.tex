@@ -312,11 +312,12 @@ out-of-sample gain over the visual distance and size together (Section~\ref{sec:
 Section~\ref{sec:meth-measure} produced the target $Y$, and Section~\ref{sec:meth-features} the predictors $X$.
 This section relates the two, and puts the decision rule of Section~\ref{sec:meth-success} into practice.
 
-Its order follows that rule. The first subsection fits the model. The second derives the confidence intervals
-that criterion~(i) tests, and the third the out-of-sample comparison that criterion~(ii) tests. The three that
-follow test no hypothesis. They exist so that a wrong conclusion cannot be drawn from whatever the first three
-return: they divide explained variance between predictors that overlap, ask whether a second family of
-label-free properties fares better, and check that the outcome does not hinge on any single design choice.
+Its order follows that rule. The first subsection fits the model, the second derives the confidence intervals
+that criterion~(i) tests, and the third the out-of-sample comparison that criterion~(ii) tests. The fourth
+divides explained variance between predictors that overlap. The fifth and sixth put two further questions that
+the four distances do not reach: whether intrinsic difficulty predicts better than novelty, and whether novelty
+predicts false alarms rather than misses. The last checks that the outcome does not hinge on any single design
+choice.
 
 \subsection{Per-target regression}
 \label{sec:meth-per-target}
@@ -351,6 +352,14 @@ fitted without a group, then predicts it. Criterion~(ii) compares the resulting 
 mean-predictor baseline, and a paired group-bootstrap resampling whole held-out groups tests that comparison.
 It returns both a confidence interval and a one-sided $p$-value on the gain.
 
+\paragraph{Distinguishing absence of signal from absence of power.}
+A null is only informative if the test could have detected an effect had one been present, so the design
+carries a positive control. The animal-size covariate is put through the identical procedure --- the same
+clustered interval, the same whole-group hold-out --- and the estimation and cross-validation machinery is
+unit-tested to recover planted effects on synthetic data. If the procedure clears the bar for size while
+staying flat for the distances, a flat result is evidence of absence of signal rather than absence of power.
+Chapter~\ref{ch:results} reports whether it does.
+
 \subsection{Variance attribution and confound control}
 \label{sec:meth-variance}
 Four univariate fits would not show how much each factor explains, because the distances overlap one another.
@@ -372,13 +381,15 @@ apparent difficulty effect that is really size (Table~\ref{tab:difficulty}). Eac
 correlation is also reported beside its location-level value, because aggregating inflates correlations. That
 is the ecological-correlation fallacy.
 
-\paragraph{Distinguishing absence of signal from absence of power.}
-A null is only informative if the test could have detected an effect had one been present, so the design
-carries a positive control. The animal-size covariate is put through the identical procedure --- the same
-clustered interval, the same whole-group hold-out --- and the estimation and cross-validation machinery is
-unit-tested to recover planted effects on synthetic data. If the procedure clears the bar for size while
-staying flat for the distances, a flat result is evidence of absence of signal rather than absence of power.
-Chapter~\ref{ch:results} reports whether it does.
+\subsection{Detection precision: false positives on hard negatives}
+\label{sec:meth-fp}
+The \texttt{pDetA} model conditions on the animal being present, so it measures recall given presence rather
+than hallucination. Hard negatives supply the other side. There the queried species is absent, so a correct run
+returns no masklet at all.
+
+The predictions are read directly, and any returned masklet scoring above a threshold is flagged as a false
+positive. Each species' taxonomic and visual distance is attached, and the test asks whether the hallucination
+rate rises with novelty. It is run at the species level rather than the cell level, to avoid pseudo-replication.
 
 \subsection{Design-robustness checks}
 \label{sec:meth-robustness}
@@ -389,14 +400,6 @@ species-specific to a generic ``animal''. And the visual-distance functional cha
 cosine to a distributional Fr\'echet or MMD distance between the target and reference embedding sets, after
 AutoEval~\cite{autoeval}. Each variant is fitted and validated at the identical whole-group bar, with
 significance judged after a Bonferroni correction over the variant family (Table~\ref{tab:robustness}).
-
-\section{Detection precision: false positives on hard negatives}
-\label{sec:meth-fp}
-The \texttt{pDetA} model conditions on the animal being present, so it measures recall-given-present, not
-hallucination. On hard negatives (the queried species is absent) a correct run returns no masklet; we read
-the prediction directly, flag any returned masklet above a score threshold as a false positive, attach each
-species' taxonomic and visual distance, and test --- at the species level, to avoid pseudo-replication ---
-whether the hallucination rate rises with novelty.
 
 \section{Independent replication on an external dataset}
 \label{sec:meth-replication}
