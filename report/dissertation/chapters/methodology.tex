@@ -361,16 +361,17 @@ that is really size is exposed as such (Chapter~\ref{ch:results}, Table~\ref{tab
 each scene property's cell-level correlation alongside its location-level value, because aggregation
 inflates correlations (the ecological-correlation fallacy).
 
-\paragraph{Detecting a signal, not asserting its absence.}
-These tests are demonstrably able to detect a real effect: the animal-size covariate not only has an interval
-excluding zero but validates out of sample at the same whole-group hold-out bar the distances fail
-(Chapter~\ref{ch:results}), and the estimation and cross-validation machinery is unit-tested to recover
-planted effects on synthetic data. A null under a test that fires for size is therefore evidence of
-\emph{absence of signal}, not of \emph{absence of power}.
+\paragraph{Distinguishing absence of signal from absence of power.}
+A null is only informative if the test could have detected an effect had one been present, so the design
+carries a positive control. The animal-size covariate is put through the identical procedure --- the same
+clustered interval, the same whole-group hold-out --- and the estimation and cross-validation machinery is
+unit-tested to recover planted effects on synthetic data. If the procedure clears the bar for size while
+staying flat for the distances, a flat result is evidence of absence of signal rather than absence of power.
+Chapter~\ref{ch:results} reports whether it does.
 
 \subsection{Design-robustness checks}
-To show the null is not an artefact of a single design choice, we re-run the entire hold-out procedure with one
-component of the pipeline swapped at a time: the visual encoder (DINOv2~$\to$~CLIP), the crop (mask-cropped
+To test whether the outcome depends on any single design choice, we re-run the entire hold-out procedure with
+one component of the pipeline swapped at a time: the visual encoder (DINOv2~$\to$~CLIP), the crop (mask-cropped
 animal~$\to$~a whole-frame bounding box that keeps the background), the prompt (species-specific~$\to$~a
 generic ``animal''), and the visual-distance functional itself (nearest-prototype cosine~$\to$~a distributional
 Fr\'echet/MMD distance between the target and reference embedding sets, after AutoEval~\cite{autoeval}). Each
@@ -406,12 +407,12 @@ per-video sequence, and leave-species-out is the only valid grouping. The associ
 non-degenerate here, so both components are tested. Masks stream from the RWTH server and TAO frames from the
 Hugging Face mirror by HTTP range, so only the annotated frames of the capped animal videos are fetched.
 
-\paragraph{Interpreting the replication.} BURST is held to the exact same out-of-sample bar as
-SA-FARI, with the animal-size confound as the positive control --- it validates out-of-sample on SA-FARI, so a
-test that stays flat for the distances there is genuinely finding no signal; where it too fails to fire (as on
-BURST) the design is simply too small to certify power, marking the result as
-consistency rather than confirmation. We report convergence, not independent proof: BURST is
-better powered by cell count than the SA-FARI location split but still cannot exclude a small before-running distance effect (Section~\ref{sec:burst}).
+\paragraph{Interpreting the replication.} BURST is held to the exact same out-of-sample bar as SA-FARI, and
+carries the same animal-size positive control. That control fixes how the replication may be read. Where it
+clears the bar, a test that stays flat for the distances is genuinely finding no signal. Where the control
+itself fails to fire, the design is too small to certify power, and any flat result counts as consistency
+rather than confirmation. Either way the replication can show convergence, not independent proof, since a
+dataset of this size cannot exclude a small before-running distance effect (Section~\ref{sec:burst}).
 
 \subsection{The controlled model swap}
 \label{sec:meth-swap}
