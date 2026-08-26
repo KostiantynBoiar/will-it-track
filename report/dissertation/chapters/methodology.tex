@@ -48,13 +48,13 @@ variants are used throughout, SA-FARI being mask-annotated, and neither metric i
 \texttt{VEval} evaluator is run as supplied and its output read.
 
 The two are not symmetric, and the asymmetry matters. Association is conditional on detection, since an
-identity can only be assessed for an animal that was found in the first place. One consequence is honest to
-flag at the outset: where a clip holds a single animal there is only one identity to keep, so \texttt{pAssA} is
-then largely determined by \texttt{pDetA}. Of the $346$ positive cells in the primary data, $268$ ($77\%$) hold
-at most one annotated animal per video; across all of them the two scores correlate at $0.97$ and are exactly
-equal in $73\%$. Association is therefore a far weaker target than detection here, and is reported as such
-rather than as an independently powered test (Chapter~\ref{ch:discussion}); the external replication of
-Section~\ref{sec:meth-replication} was chosen partly because it does not have this problem.
+identity can only be assessed for an animal that was found in the first place. A second consequence is worth
+flagging at the outset. Where a clip holds a single animal there is only one identity to keep, so
+\texttt{pAssA} is then largely determined by \texttt{pDetA} and carries little variance of its own. How often
+that happens is a property of the data rather than of the design, and Chapter~\ref{ch:discussion} reports it;
+where it dominates, association is reported as the weak target it is rather than as an independently powered
+test. The external replication of Section~\ref{sec:meth-replication} was chosen partly because it does not have
+this problem.
 
 \subsection{Definition of success and the decision rule}
 \label{sec:meth-success}
@@ -323,9 +323,9 @@ $\log(n_\text{frames})$ covariate, so that ``rare'' is never mistaken for ``far'
 with $y\in[0,1]$ the cell's score and $x$ the standardised design.
 Detection and association
 are analysed apart because their decomposition is the intellectual core of the project --- with the
-qualification, established in Section~\ref{sec:meth-targets}, that association is a near-degenerate target on
-this data and is reported as such rather than as an independently powered test
-(Chapter~\ref{ch:discussion}).
+qualification set out in Section~\ref{sec:meth-targets}, that association may carry little variance
+independent of detection, in which case it is reported as the weaker target rather than as an independently
+powered test (Chapter~\ref{ch:discussion}).
 
 \subsection{Honest, group-aware inference}
 \label{sec:meth-inference}
@@ -349,8 +349,9 @@ reaches significance, we refit with the animal-size covariate to test whether th
 rather than novelty.
 
 \subsection{The intrinsic-difficulty pivot and the nested decomposition}
-Because the sole apparent effect proved to be a size confound, we ask a complementary question: is transfer
-governed by the intrinsic difficulty of the target imagery rather than its novelty? We promote
+The novelty distances are not the only label-free properties available. A complementary question, taken up
+after the novelty tests were complete, is whether transfer is governed by the intrinsic difficulty of the
+target imagery rather than by its novelty. We promote
 the label-free scene properties already measured for the environment axis --- the low-light fraction, the
 clutter score, and the night/IR flag --- from nuisance covariates to predictors of interest, and test them
 against the same out-of-sample bar. To separate a genuine difficulty effect from the

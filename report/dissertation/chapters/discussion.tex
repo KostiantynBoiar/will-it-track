@@ -11,9 +11,10 @@ support: transfer is \emph{not} distance-driven, and the only label-free propert
 is object size --- the very quantity introduced as a nuisance control.
 
 The detection--association decomposition, the intellectual core of the design, has a second, quieter finding:
-association is a near-degenerate target on this data. Because most cells contain a single object,
-\texttt{pAssA} tracks \texttt{pDetA} almost exactly, leaving little identity-specific variance for any feature
-to predict. The decomposition is therefore a detection story; we report the association null with
+association is a near-degenerate target on this data. Of the $346$ positive cells, $268$ ($77\%$) hold at most
+one annotated animal per video, so there is only one identity to keep. Across all positive cells
+\texttt{pAssA} correlates with \texttt{pDetA} at $0.97$ and is exactly equal to it in $73\%$, leaving little
+identity-specific variance for any feature to predict. The decomposition is therefore a detection story; we report the association null with
 those divergence figures as its explanation rather than as a separate failed search.
 
 \subsection{Novelty at the extremes versus graded prediction}
