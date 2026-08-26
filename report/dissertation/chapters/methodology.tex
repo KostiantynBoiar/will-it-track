@@ -1,10 +1,16 @@
 \chapter{Data and Methodology}
 \label{ch:methodology}
 
+This chapter sets out how the question posed in Chapter~\ref{ch:introduction} was turned into something a
+dataset can answer. It begins with the research design, the terms that design depends on, and the rule by
+which a predictor counts as validated. It then describes the data and the two splits, how the tracker's
+performance is measured, and how the label-free features are computed against a frozen reference. The
+remaining sections cover the statistical model and the tests applied to it, the replication on a second
+dataset and a second tracker, and the constraints that make the work reproducible.
+
 \section{Research design and evaluation criteria}
 \label{sec:meth-design}
-This chapter sets out how the question posed in Chapter~\ref{ch:introduction} was turned into something a
-dataset can answer. It is a predictive-modelling study. On one side is a set of predictors $X$: four distances,
+This is a predictive-modelling study. On one side is a set of predictors $X$: four distances,
 each measuring how far a target species or place sits from a frozen reference, none of them requiring the
 tracker to be run or the target to be labelled. On the other is a target $Y$: the tracker's per-cell detection
 and association scores. The question is whether $X$ predicts $Y$, and which parts of it do the work, asked
