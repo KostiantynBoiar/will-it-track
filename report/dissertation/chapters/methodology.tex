@@ -230,17 +230,33 @@ order $3$. A species sharing no level at all would score $7$. The exclusion $s'\
 rule, which keeps the measure non-trivial for species present on both sides of a split. Species whose taxonomy
 is incomplete are left undefined rather than imputed.
 \subsection{Visual distance}
-Each species is fingerprinted by a prototype --- the re-normalised mean DINOv2~\cite{dinov2} embedding
-of its ground-truth-mask-cropped animals --- and the visual distance is the cosine gap from a probe
-species' prototype to that of the nearest other reference species (leave-species-out on Split~A),
-with a CLIP~\cite{clip} encoder as a robustness check. Using the dataset's ground-truth masks means this
-feature needs no SAM\,3 (Figure~\ref{fig:features}b).
+This distance measures how different one species looks from another.
+
+Each animal is cropped to its ground-truth mask, with the background zeroed, and embedded with
+DINOv2~\cite{dinov2}. A species is then summarised by a single prototype: the mean of its embeddings,
+renormalised to unit length. The distance from an embedding $v$ to the nearest prototype other than its own is
+one minus the largest cosine similarity,
+\begin{equation}
+  p_j=\frac{\bar v_j}{\lVert \bar v_j\rVert_2},
+  \qquad
+  d_{\mathrm{vis}}(v)=1-\max_{j\neq e}\, v^{\!\top}p_j ,
+  \label{eq:protodist}
+\end{equation}
+where $e$ indexes the query's own species. That exclusion is the leave-species-out rule again. A
+CLIP~\cite{clip} encoder replaces DINOv2 as a robustness check. Because the masks come from the annotations,
+this feature never runs SAM\,3 (Figure~\ref{fig:features}b).
 \subsection{Environment distance}
-The environment distance is the embedding distance between the animal-masked-out background scene and the
-nearest reference location (Figure~\ref{fig:features}c). Three interpretable scene covariates are taken from
-the same frames. A day/night--infrared (IR) flag and a low-light fraction both come from per-channel colour
-statistics. A clutter score is given by the variance of a Laplacian over the masked background, which measures
-local edge and texture density rather than colour.
+This distance measures how different one scene looks from another.
+
+The animal is erased from the frame, its pixels replaced by the mean colour of what remains, and the result is
+embedded exactly as above (Figure~\ref{fig:features}c). Here prototypes are formed per location rather than per
+species, and $d_{\mathrm{env}}$ is Equation~\ref{eq:protodist} applied to the nearest other location.
+
+Three interpretable covariates come from the same frames. Infrared footage is greyscale, so a pixel's spread
+across colour channels, $\max_c f_c-\min_c f_c$, collapses towards zero; a frame counts as achromatic when that
+spread averages below $12$. The low-light fraction is the share of a location's frames that are achromatic, and
+the night/IR flag is that fraction exceeding one half. Clutter is the mean variance of a Laplacian over the
+greyscale background, which measures local edge and texture density rather than colour.
 
 \begin{figure}[htbp]
 \centering
@@ -261,27 +277,39 @@ fingerprints. None of these features runs SAM\,3.}
 \end{figure}
 
 \subsection{Temporal gap}
-The temporal gap is the smallest absolute difference in years between a cell's capture year, taken from the
-per-video creation-datetime metadata, and the nearest reference year. A usable timestamp is present for only $32$ of $1447$ cells ($2.2\%$), and every one
-of those $32$ has a gap of exactly $0$ --- zero variance --- so the temporal axis is reported as untested rather
-than as a tested null.
+This distance measures how far apart in time two recordings were made.
+
+For a cell recorded in year $y$, it is the smallest absolute difference to any reference year in $\mathcal{Y}$,
+that is $d_{\mathrm{temp}}=\min_{r\in\mathcal{Y}}|y-r|$. Years come from the per-video creation-datetime
+metadata.
+
+This axis turns out not to be testable here. A usable timestamp is present for only $32$ of the $1{,}447$ cells
+($2.2\%$), and all $32$ have a gap of exactly zero. With no variance to exploit, the temporal axis is reported
+as untested rather than as a tested null.
 \subsection{Animal size (confound control)}
-Animal size is the mean $\log$ ground-truth mask area per species. Larger animals are easier to segment, so
-this covariate is what separates genuine visual novelty from mere conspicuousness; its role in exposing the one
-apparent effect as an artefact is Section~\ref{sec:meth-model}.
+This covariate measures how large the animal appears in frame.
+
+It is the log mean ground-truth mask area of a species,
+$\mathrm{log\_area}(s)=\ln\!\big(1+\overline{\mathrm{area}(s)}\big)$, averaged over sampled masklets. Larger
+animals are easier to segment. Size is therefore what separates genuine visual novelty from mere
+conspicuousness, which makes it a nuisance covariate rather than a hypothesis variable. Its role in exposing
+the one apparent effect as an artefact is Section~\ref{sec:meth-model}.
 \subsection{SAM\,3 familiarity proxy}
 \label{sec:meth-familiarity}
+This feature measures how familiar a species looks to SAM\,3 itself.
+
 Every distance above is measured against the SA-FARI reference rather than against what SAM\,3 actually saw
-(Section~\ref{sec:meth-measure}). The familiarity proxy hedges this by reading familiarity from the model
-itself: how separable each species is in SAM\,3's own vision-encoder feature space. The same mask-cropped animals used for the visual distance are pushed through
-SAM\,3's image encoder, mean-pooling the patch-token features to a $1024$-d vector, and each species is scored
-three ways --- silhouette (own-cluster compactness vs the nearest other species), nearest-prototype
-(the visual distance recomputed with SAM\,3's encoder rather than DINOv2), and Mahalanobis typicality
-against the reference feature Gaussian. Like the other distances it is before-running (an image
-property, not a function of SAM\,3's tracking output, so it is non-circular) and label-free. Each metric
-is validated at the exact leave-species-out bar (Bonferroni over the three), size-controlled, and put in a
-head-to-head against the DINOv2 visual distance: the decisive question is whether it adds any out-of-sample gain
-over the visual distance $+$ size (Section~\ref{sec:familiarity}).
+(Section~\ref{sec:meth-measure}). The proxy hedges that gap by reading familiarity from the model. The same
+mask-cropped animals used for the visual distance are pushed through SAM\,3's image encoder, and the
+patch-token features are mean-pooled into a $1024$-dimensional vector. Each species is then scored three ways:
+by silhouette, comparing own-cluster compactness against the nearest other species; by nearest prototype, which
+is Equation~\ref{eq:protodist} recomputed with SAM\,3's encoder in place of DINOv2; and by Mahalanobis
+typicality against the reference feature Gaussian.
+
+The proxy stays before-running and label-free. It is a property of the images, not a function of SAM\,3's
+tracking output, so it is not circular. Each of the three metrics is validated at the same leave-species-out
+bar, Bonferroni-corrected across them, and size-controlled. The decisive question is whether any of them adds
+out-of-sample gain over the visual distance and size together (Section~\ref{sec:familiarity}).
 
 \section{Statistical modelling and hypothesis testing}
 \label{sec:meth-model}
