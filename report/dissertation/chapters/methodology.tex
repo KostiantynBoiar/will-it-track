@@ -59,10 +59,8 @@ this problem.
 \subsection{Definition of success and the decision rule}
 \label{sec:meth-success}
 The intended deliverable is a validated, out-of-sample predictor of \texttt{pDetA}/\texttt{pAssA} from
-label-free distances, with confidence intervals that respect the group structure. Respecting it is necessary
-because cells are grouped by species and by location, and a distance is constant within such a group, so
-hundreds of cells amount to only tens of independent units. A distance is taken to predict transfer only if it
-clears both bars:
+label-free distances, with confidence intervals that respect the group structure
+(Section~\ref{sec:meth-inference}). A distance is taken to predict transfer only if it clears both bars:
 \begin{enumerate}[label=(\roman*),leftmargin=2.4em]
   \item its coefficient's group-cluster-bootstrap 95\% confidence interval (CI) excludes zero; and
   \item the grouped cross-validated model beats a mean-predictor baseline by a margin that is significant under
@@ -311,7 +309,17 @@ out-of-sample gain over the visual distance and size together (Section~\ref{sec:
 
 \section{Statistical modelling and hypothesis testing}
 \label{sec:meth-model}
+Section~\ref{sec:meth-measure} produced the target $Y$, and Section~\ref{sec:meth-features} the predictors $X$.
+This section relates the two, and puts the decision rule of Section~\ref{sec:meth-success} into practice.
+
+Its order follows that rule. The first subsection fits the model. The second derives the confidence intervals
+that criterion~(i) tests, and the third the out-of-sample comparison that criterion~(ii) tests. The three that
+follow test no hypothesis. They exist so that a wrong conclusion cannot be drawn from whatever the first three
+return: they divide explained variance between predictors that overlap, ask whether a second family of
+label-free properties fares better, and check that the outcome does not hinge on any single design choice.
+
 \subsection{Per-target regression}
+\label{sec:meth-per-target}
 Detection and association are modelled separately, because their decomposition is the intellectual core of the
 project. Section~\ref{sec:meth-targets} gives the qualification. Association may carry little variance
 independent of detection, in which case it is reported as the weaker target rather than as an independently
@@ -328,39 +336,41 @@ where $y$ is the cell's score and $x$ the standardised design. That design carri
 scene covariates, and a $\log(n_\text{frames})$ term. The last of these is what keeps ``rare'' from being
 mistaken for ``far''.
 
-\subsection{Honest, group-aware inference}
+\subsection{Group-aware confidence intervals}
 \label{sec:meth-inference}
-Naive model confidence intervals are invalid here for two reasons: support-weighting by frame count inflates
-the effective sample size, and the distances are constant within a species or a location, so the hundreds of
-cells are really only tens of independent groups (pseudo-replication). We therefore report
-group-cluster-bootstrap intervals --- resampling whole species and whole locations, refitting, and
-taking percentile intervals --- as the honest confidence interval for every coefficient.
+A naive model interval would be far too narrow here, for two reasons. Support-weighting by frame count inflates
+the effective sample size. And a distance is constant within a species or a location, so hundreds of cells
+represent only tens of independent groups, which is pseudo-replication. We therefore resample whole species and
+whole locations, refit on each resample, and take percentile intervals. Every coefficient interval reported in
+this dissertation is that group-cluster-bootstrap interval.
 
 \subsection{Out-of-sample validation and the significance test}
-The fitted models are validated out of sample by holding out whole groups (leave-species-out on
-Split~A, leave-location-out on Split~B) and predicting the held-out group. The out-of-sample gain over a
-mean-predictor baseline is tested with a paired group-bootstrap that resamples whole held-out groups,
-yielding a confidence interval and a one-sided $p$-value on the gain --- the criterion~(ii) of
-Section~\ref{sec:meth-design}.
+\label{sec:meth-cv}
+Validation holds out whole groups: leave-species-out on Split~A, leave-location-out on Split~B. The model is
+fitted without a group, then predicts it. Criterion~(ii) compares the resulting error against the
+mean-predictor baseline, and a paired group-bootstrap resampling whole held-out groups tests that comparison.
+It returns both a confidence interval and a one-sided $p$-value on the gain.
 
 \subsection{Variance attribution and confound control}
-Variance is attributed to each factor by dominance/commonality analysis with a VIF collinearity check --- not
-by four univariate fits --- and raw correlations are reported as a model-free cross-check. Where a distance
-reaches significance, we refit with the animal-size covariate to test whether the effect is a size confound
-rather than novelty.
+\label{sec:meth-variance}
+Four univariate fits would not show how much each factor explains, because the distances overlap one another.
+Variance is therefore attributed by dominance analysis, which divides shared explanatory power between
+correlated predictors, with a VIF check for collinearity. Raw correlations are reported alongside as a
+model-free cross-check. Where a distance does reach significance, the model is refitted with the animal-size
+covariate, to test whether the effect is size rather than novelty.
 
 \subsection{The intrinsic-difficulty pivot and the nested decomposition}
 The novelty distances are not the only label-free properties available. A complementary question, taken up
 after the novelty tests were complete, is whether transfer is governed by the intrinsic difficulty of the
-target imagery rather than by its novelty. We promote
-the label-free scene properties already measured for the environment axis --- the low-light fraction, the
-clutter score, and the night/IR flag --- from nuisance covariates to predictors of interest, and test them
-against the same out-of-sample bar. To separate a genuine difficulty effect from the
-size confound, we fit a nested sequence of models --- support only; size only; difficulty only (no
-size); difficulty plus size --- and compare their out-of-sample gains, so that any apparent difficulty effect
-that is really size is exposed as such (Chapter~\ref{ch:results}, Table~\ref{tab:difficulty}). We also report
-each scene property's cell-level correlation alongside its location-level value, because aggregation
-inflates correlations (the ecological-correlation fallacy).
+target imagery rather than by its novelty. The scene properties already measured for the environment axis ---
+the low-light fraction, the clutter score and the night/IR flag --- are promoted from nuisance covariates to
+predictors of interest, and tested against the same out-of-sample bar.
+
+Difficulty and size are easily confused, so they are separated by a nested sequence of models: support only,
+size only, difficulty without size, and difficulty plus size. Comparing their out-of-sample gains exposes any
+apparent difficulty effect that is really size (Table~\ref{tab:difficulty}). Each scene property's cell-level
+correlation is also reported beside its location-level value, because aggregating inflates correlations. That
+is the ecological-correlation fallacy.
 
 \paragraph{Distinguishing absence of signal from absence of power.}
 A null is only informative if the test could have detected an effect had one been present, so the design
@@ -371,14 +381,14 @@ staying flat for the distances, a flat result is evidence of absence of signal r
 Chapter~\ref{ch:results} reports whether it does.
 
 \subsection{Design-robustness checks}
-To test whether the outcome depends on any single design choice, we re-run the entire hold-out procedure with
-one component of the pipeline swapped at a time: the visual encoder (DINOv2~$\to$~CLIP), the crop (mask-cropped
-animal~$\to$~a whole-frame bounding box that keeps the background), the prompt (species-specific~$\to$~a
-generic ``animal''), and the visual-distance functional itself (nearest-prototype cosine~$\to$~a distributional
-Fr\'echet/MMD distance between the target and reference embedding sets, after AutoEval~\cite{autoeval}). Each
-variant is fitted and validated at the identical whole-group hold-out bar of Section~\ref{sec:meth-design},
-with significance judged after a Bonferroni correction over the variant family; the outcomes are reported in
-Chapter~\ref{ch:results} (Table~\ref{tab:robustness}).
+\label{sec:meth-robustness}
+To test whether the outcome depends on any single design choice, the whole hold-out procedure is re-run with
+one component of the pipeline swapped at a time. The visual encoder changes from DINOv2 to CLIP. The crop
+changes from the mask-cropped animal to a whole-frame box that keeps the background. The prompt changes from
+species-specific to a generic ``animal''. And the visual-distance functional changes from a nearest-prototype
+cosine to a distributional Fr\'echet or MMD distance between the target and reference embedding sets, after
+AutoEval~\cite{autoeval}. Each variant is fitted and validated at the identical whole-group bar, with
+significance judged after a Bonferroni correction over the variant family (Table~\ref{tab:robustness}).
 
 \section{Detection precision: false positives on hard negatives}
 \label{sec:meth-fp}
