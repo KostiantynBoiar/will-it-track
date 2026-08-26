@@ -188,12 +188,9 @@ of Section~\ref{sec:meth-familiarity} is included as a hedge.
 \section{Label-free distance features}
 \label{sec:meth-features}
 The features defined here fall into three groups. Four are distances, one for each axis along which a target
-can be unfamiliar: taxonomic, how far the species sits from the reference on the tree of life; visual, how
-different the animal looks; environment, how different the surrounding scene looks; and temporal, how far apart
-in time the footage was captured. These four are the hypothesis variables, H1 resting on the first two and H2
-on the third. Animal size forms the second group, a nuisance covariate included to separate genuine novelty
-from the fact that visually distinctive species tend to be large. The third is the familiarity proxy, which
-reads familiarity from SAM\,3's own feature space and hedges against its pretraining corpus being unknown.
+can be unfamiliar: taxonomic, visual, environment and temporal. These four are the hypothesis variables, with
+H1 resting on the first two and H2 on the third. The second group holds a single nuisance covariate, animal
+size. The third holds the familiarity proxy.
 
 For each split, the reference (``seen'') species, locations and taxonomy are frozen once, and every distance is
 then computed against that reference alone. This is the leakage firewall: no information about a probe can
@@ -242,9 +239,9 @@ one minus the largest cosine similarity,
   d_{\mathrm{vis}}(v)=1-\max_{j\neq e}\, v^{\!\top}p_j ,
   \label{eq:protodist}
 \end{equation}
-where $e$ indexes the query's own species. That exclusion is the leave-species-out rule again. A
-CLIP~\cite{clip} encoder replaces DINOv2 as a robustness check. Because the masks come from the annotations,
-this feature never runs SAM\,3 (Figure~\ref{fig:features}b).
+where $e$ indexes the query's own species, excluded again under the leave-species-out rule. A
+CLIP~\cite{clip} encoder replaces DINOv2 as a robustness check. The masks come from the annotations
+(Figure~\ref{fig:features}b).
 \subsection{Environment distance}
 This distance measures how different one scene looks from another.
 
@@ -279,21 +276,22 @@ fingerprints. None of these features runs SAM\,3.}
 \subsection{Temporal gap}
 This distance measures how far apart in time two recordings were made.
 
-For a cell recorded in year $y$, it is the smallest absolute difference to any reference year in $\mathcal{Y}$,
-that is $d_{\mathrm{temp}}=\min_{r\in\mathcal{Y}}|y-r|$. Years come from the per-video creation-datetime
-metadata.
+Years come from the per-video creation-datetime metadata. For a cell recorded in year $y$, the gap is the
+smallest absolute difference to any reference year in $\mathcal{Y}$:
+\begin{equation}
+  d_{\mathrm{temp}}=\min_{r\in\mathcal{Y}}\,|y-r| .
+  \label{eq:tempgap}
+\end{equation}
 
-This axis turns out not to be testable here. A usable timestamp is present for only $32$ of the $1{,}447$ cells
-($2.2\%$), and all $32$ have a gap of exactly zero. With no variance to exploit, the temporal axis is reported
-as untested rather than as a tested null.
+The feature depends on timestamps being both present and varied across cells. How far the available metadata
+actually supports it is reported in Chapter~\ref{ch:results}.
 \subsection{Animal size (confound control)}
 This covariate measures how large the animal appears in frame.
 
-It is the log mean ground-truth mask area of a species,
-$\mathrm{log\_area}(s)=\ln\!\big(1+\overline{\mathrm{area}(s)}\big)$, averaged over sampled masklets. Larger
-animals are easier to segment. Size is therefore what separates genuine visual novelty from mere
-conspicuousness, which makes it a nuisance covariate rather than a hypothesis variable. Its role in exposing
-the one apparent effect as an artefact is Section~\ref{sec:meth-model}.
+Let $a$ be a species' mean ground-truth mask area in pixels, averaged over sampled masklets. The covariate is
+$\ln(1+a)$. Larger animals are easier to segment, so this is what separates genuine visual novelty from mere
+conspicuousness. Section~\ref{sec:meth-model} describes how it is used to test whether an apparent novelty
+effect is really a size effect.
 \subsection{SAM\,3 familiarity proxy}
 \label{sec:meth-familiarity}
 This feature measures how familiar a species looks to SAM\,3 itself.
