@@ -170,8 +170,8 @@ The frame-level scores are aggregated two ways, and the two are kept distinct. T
 dataset-level \texttt{VEval} figure, reported only to confirm that we reproduce the published SA-FARI operating
 point of $\approx\!0.65$ mask-\texttt{pHOTA}. The macro score is the support-weighted mean over positive cells,
 and it is the modelling target: the model is fitted cell by cell, so the cell is what must carry a score. Being
-a positives-only per-cell average, the macro mean sits lower, at $\approx\!0.53$. Every measurement number
-quoted in this dissertation is the macro value, and is labelled as such.
+a positives-only per-cell average, the macro mean sits lower, at $\approx\!0.53$. Unless a figure is explicitly
+identified as the micro score, every measurement number quoted in this dissertation is the macro value.
 
 \paragraph{Validity of the frozen protocol.} Because the tracker is frozen throughout
 (Section~\ref{sec:meth-zeroshot}), reusing that single inference pass across both splits is sound rather than a
