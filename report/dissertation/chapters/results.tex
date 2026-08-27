@@ -176,16 +176,28 @@ at $r=+0.31$. This is the confound behind the apparent visual-distance effect.}
 \end{figure}
 
 \section{False positives / hallucination}
-The detection score conditions on the animal being present, so it measures recall, not hallucination. The
-$1486$ hard negatives (queries for absent species) ask the complementary question, and are the
-closest the study comes to a validated before-running signal. SAM\,3 returns a masklet anyway about
-$\mathbf{9.8\%}$ of the time. This hallucination rate does \emph{not} rise with taxonomic novelty
-($r\approx+0.06$, n.s.); it falls with visual distinctiveness ($r\approx-0.33$), and this survives an
-animal-size control (partial $-0.37$) --- a genuine, size-independent, label-free correlate, though its
-direction (``distinctive $=$ safer'') is the \emph{opposite} of ``novelty hurts''. Crucially it is a
-\textbf{correlate, not a predictor}: predicting a held-out species' hallucination rate from visual distance
-beats a mean baseline by only $+0.008$~MAE and \emph{just misses} out-of-sample significance ($p=0.053$;
-Table~\ref{tab:fp}). Even the study's best signal does not clear the bar.
+\label{sec:fp}
+Everything so far has concerned misses: whether the tracker finds the animals that are there. The detection
+score conditions on the animal being present, so it measures recall and says nothing about hallucination. The
+opposite failure --- reporting an animal that is not there --- is measured on the $1486$ hard negatives, the
+queries naming a species absent from the clip. A correct run returns nothing. SAM\,3 returns a masklet anyway
+about $9.8\%$ of the time.
+
+Table~\ref{tab:fp} asks whether that rate is predictable from the same label-free distances. Each row is one
+species-level test, giving the statistic, its $95\%$ confidence interval, and the verdict. The first four rows
+are correlations between a species' hallucination rate and one property. The last row is the out-of-sample
+test, where the statistic is an MAE gain over a mean predictor rather than a correlation.
+
+This is the closest the study comes to a validated before-running signal. Taxonomic novelty does nothing
+($r\approx+0.06$, not significant). Visual distinctiveness does: the more distinctive a species looks, the
+\emph{less} the model hallucinates it ($r\approx-0.33$). That survives an animal-size control, strengthening to
+a partial $-0.37$, and size on its own is not significant. Unlike every earlier effect, this one is not size in
+disguise.
+
+It remains a correlate rather than a predictor. Predicting a held-out species' hallucination rate from visual
+distance beats a mean baseline by only $+0.008$ MAE, and just misses out-of-sample significance at $p=0.053$.
+Even the study's best signal does not clear the bar. Its direction is the opposite of the hypothesis too:
+distinctive means safer, rather than novel meaning worse.
 \IfFileExists{tables/false_positives.tex}{\input{tables/false_positives}}{}
 
 \section{Ablations and robustness}
