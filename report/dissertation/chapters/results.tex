@@ -75,6 +75,7 @@ A natural worry is that the distances are so correlated with one another that a 
 between them. The VIF column rules that out. The variance inflation factor measures how entangled each
 predictor is with the others, and a value near $1$ means essentially independent. Every VIF here is
 $\approx 1$, so the $3\%$ is genuinely all there is, not a masked signal.
+
 \IfFileExists{tables/variance.tex}{\input{tables/variance}}{}
 
 The one distance that looked predictive was visual distance, and it turned out to be animal size in disguise.
@@ -95,6 +96,7 @@ The apparent night/IR effect is inflated by being measured at the wrong level. P
 with detection looks moderate, at $r=-0.377$. That is an averaging artefact. Measured at the level of the
 individual cell, where the model actually operates, it shrinks to $-0.13$, and clutter's is $0.00$. So the
 difficulty idea is \textbf{also null}: the only label-free property that predicts detection is animal size.
+
 \IfFileExists{tables/difficulty.tex}{\input{tables/difficulty}}{}
 
 \section{The headline test: predicting unseen species and locations}
@@ -163,9 +165,6 @@ easier''. Taxonomic novelty, meanwhile, is flat ($r\approx0.00$).
 Figure~\ref{fig:size} shows that underlying relationship directly. Each point is one cell, with animal size on
 the horizontal axis and its detection score on the vertical, and the fitted trend rises at $r=+0.31$. Novelty
 does not predict transfer. Size does, a little.
-\IfFileExists{tables/gate1_measurement_species.tex}{\input{tables/gate1_measurement_species}}{}
-\IfFileExists{tables/coefficients_species.tex}{\input{tables/coefficients_species}}{}
-\IfFileExists{tables/cv_validation_species.tex}{\input{tables/cv_validation_species}}{}
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.52\textwidth]{figures/res_size_confound.pdf}
@@ -174,6 +173,8 @@ detection score against log ground-truth mask area, on the location split ($346$
 at $r=+0.31$. This is the confound behind the apparent visual-distance effect.}
 \label{fig:size}
 \end{figure}
+
+\IfFileExists{tables/coefficients_species.tex}{\input{tables/coefficients_species}}{}
 
 \section{False positives / hallucination}
 \label{sec:fp}
@@ -221,7 +222,6 @@ One row does move. Adding the animal-size covariate more than doubles the fit, f
 lifts the out-of-sample gain to significance on both schemes ($+0.018$ at $p=0.02$, $+0.020$ at $p=0.00$).
 That is the conclusion the variance partition reached from the other direction
 (Table~\ref{tab:variance}): size is the only real correlate.
-\IfFileExists{tables/ablations.tex}{\input{tables/ablations}}{}
 
 \subsection{Design robustness}
 Table~\ref{tab:robustness} keeps the factor set fixed and swaps a single design choice per row. Each entry is
@@ -240,7 +240,6 @@ does not merely fail to beat the mean but falls far below it ($\Delta\mathrm{MAE
 
 Across every variant the label-free distances fail identically. The null is a property of the transfer
 problem, not of one modelling choice.
-\IfFileExists{tables/robustness.tex}{\input{tables/robustness}}{}
 
 \section{SAM\,3 familiarity proxy}
 \label{sec:familiarity}
@@ -276,7 +275,6 @@ Nor is the null a power failure. On these same $346$ cells the animal-size contr
 sensitivity to find it. Reading familiarity from SAM\,3's own representations therefore does not rescue
 before-running prediction. It recovers the same size-entangled visual distinctness that was already null, and
 it closes the ``but you do not know SAM\,3's true training set'' objection to that null.
-\IfFileExists{tables/familiarity.tex}{\input{tables/familiarity}}{}
 
 \section{Independent replication (BURST)}
 \label{sec:burst}
@@ -299,8 +297,6 @@ size control. The lone near-signal, visual distance, is the familiar artefact: i
 is $+0.17$ --- in the \emph{opposite} direction to the novelty hypothesis (more-novel animals detected better),
 and a size confound (partial correlation given $\log$-area $+0.08$, $p=0.35$). Both datasets --- SA-FARI and BURST --- now converge on the same
 before-running distance null.
-\IfFileExists{tables/gate1_measurement_burst.tex}{\input{tables/gate1_measurement_burst}}{}
-\IfFileExists{tables/replication_burst.tex}{\input{tables/replication_burst}}{}
 
 \paragraph{Convergent, but not proof.} At $132$ cells BURST supplies a mask-native regime with a genuinely
 non-degenerate association target, and the distance null holds throughout. It is not, however, positive proof:
@@ -367,7 +363,6 @@ only valid scheme and an apparent two-scheme pass is one partition counted twice
 animal-size confound the driver controls; and the combined model --- what a deployment gate would use ---
 is null in both. Two architecturally distinct trackers thus both (i) genuinely track BURST animals and (ii) show
 the before-running distance null. \textbf{The null is task-general across trackers, not a SAM-3 artefact.}
-\IfFileExists{tables/model_swap_cv.tex}{\input{tables/model_swap_cv}}{}
 
 \paragraph{Convergent, but bounded.} This is a controlled model swap, not an independent
 replication: it reuses BURST's cells, ground truth, distances and GLM, changing only the tracker. Its scope is

@@ -30,6 +30,9 @@
 \usepackage[colorlinks=true,linkcolor=NavyBlue,citecolor=NavyBlue,urlcolor=NavyBlue]{hyperref}
 
 \setlist{nosep,leftmargin=1.4em}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
 \captionsetup{font=small,labelfont=bf}
 
 \begin{document}
@@ -158,8 +161,7 @@ LVIS             & Large Vocabulary Instance Segmentation, the class vocabulary 
 \bibliography{references}
 
 % -------------------------------------------------------------- appendices
-% Hidden for now. Content kept in chapters/appendices.tex; uncomment to restore.
-% \appendix
-% \input{chapters/appendices}
+\appendix
+\input{chapters/appendices}
 
 \end{document}

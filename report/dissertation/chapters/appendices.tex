@@ -186,9 +186,20 @@ $\mathrm{CI}\gets$ percentiles $[2.5,97.5]$; significant $\Leftrightarrow$ CI ex
 \end{algorithm}
 
 
-\endinput
-\chapter{Supplementary results}
+\chapter{Supplementary tables}
 \label{app:supplementary}
+These tables support claims made in Chapter~\ref{ch:results}. Each is referenced from the section that
+discusses it.
+
+\IfFileExists{tables/gate1_measurement_species.tex}{\input{tables/gate1_measurement_species}}{}
+\IfFileExists{tables/gate1_measurement_burst.tex}{\input{tables/gate1_measurement_burst}}{}
+\IfFileExists{tables/cv_validation_species.tex}{\input{tables/cv_validation_species}}{}
+\IfFileExists{tables/ablations.tex}{\input{tables/ablations}}{}
+\IfFileExists{tables/robustness.tex}{\input{tables/robustness}}{}
+\IfFileExists{tables/familiarity.tex}{\input{tables/familiarity}}{}
+\IfFileExists{tables/model_swap_cv.tex}{\input{tables/model_swap_cv}}{}
+\IfFileExists{tables/replication_burst.tex}{\input{tables/replication_burst}}{}
+
 % NOTE: drop extended tables here as they are generated (report.py can emit tagged fragments). The
 % primary tables live in Chapter~\ref{ch:results}: Split~B in Table~\ref{tab:coefficients}, Split~A in
 % Table~\ref{tab:coefficients_species}.
