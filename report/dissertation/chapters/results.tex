@@ -202,24 +202,44 @@ distinctive means safer, rather than novel meaning worse.
 
 \section{Ablations and robustness}
 \label{sec:robustness}
-\paragraph{Factor ablation.} Refitting detection with each distance dropped in turn barely moves the fit or
-the (null) out-of-sample gain (Table~\ref{tab:ablation}): no single distance carries signal. The only design
-that changes anything is adding the animal-size covariate, which alone lifts the out-of-sample gain to
-significance ($\Delta\mathrm{MAE}\approx+0.02$, $p\!\le\!0.02$) --- again consistent with size being the sole
-real correlate. Removing the support covariate does not rescue a distance effect either. The variance
-partition (Table~\ref{tab:variance}) tells the same story from the other direction.
+The null of Section~\ref{sec:headline} rests on one particular model, built from one particular set of design
+choices. This section asks whether either could be responsible for it. The first subsection varies which
+factors enter the model. The second holds the factors fixed and varies how they are computed.
+
+\subsection{Factor ablation}
+Table~\ref{tab:ablation} refits detection with one change to the design per row. The pseudo-$R^2$ column is
+McFadden's, a measure of in-sample fit. The last two columns give the out-of-sample MAE gain over a mean
+baseline under the two hold-out schemes, leave-species-out and leave-location-out, each with its $p$-value.
+
+Dropping any distance in turn barely moves either quantity, so no single distance is carrying signal that the
+others obscure. Dropping temporal gap changes nothing at all, which is expected: it has no variance and the
+model already discards it (Section~\ref{sec:meth-temporal}). Removing the support covariate leaves the model
+slightly worse than the baseline ($-0.002$ and $-0.003$), so the null is not that control suppressing a real
+effect.
+
+One row does move. Adding the animal-size covariate more than doubles the fit, from $0.055$ to $0.119$, and
+lifts the out-of-sample gain to significance on both schemes ($+0.018$ at $p=0.02$, $+0.020$ at $p=0.00$).
+That is the conclusion the variance partition reached from the other direction
+(Table~\ref{tab:variance}): size is the only real correlate.
 \IfFileExists{tables/ablations.tex}{\input{tables/ablations}}{}
 
-\paragraph{Design robustness.} The null is not an artefact of the encoder, the crop, the prompt, or the
-distance functional (Table~\ref{tab:robustness}). Re-running the full leave-species-out and leave-location-out
-procedure with a CLIP rather than DINOv2 encoder, a whole-frame rather than mask-cropped embedding, and a
-distributional Fr\'echet or MMD rather than nearest-prototype distance each leaves the out-of-sample gain
-indistinguishable from the baseline (all $\Delta\mathrm{MAE}\le0.007$, $p\ge0.10$, every 95\% CI spanning
-zero). A generic ``animal'' prompt is included for completeness: prompting non-specifically collapses
-per-species detection to a near-constant, mostly-zero target (mean \texttt{pDetA}$\approx0.14$, $73\%$ of cells
-exactly zero), so the distance model cannot beat --- and, fitting a degenerate target, underperforms ---
-a mean predictor. Across every variant the label-free distances fail identically, confirming the null is a
-property of the transfer problem, not of one modelling choice.
+\subsection{Design robustness}
+Table~\ref{tab:robustness} keeps the factor set fixed and swaps a single design choice per row. Each entry is
+the out-of-sample gain with its confidence interval and $p$-value, under both hold-out schemes, judged after a
+Bonferroni correction over the five variants.
+
+Three swaps test the distances themselves: changing the encoder from DINOv2 to CLIP, taking a whole-frame
+embedding that keeps the background instead of a mask crop, and replacing the nearest-prototype distance with a
+distributional Fr\'echet or MMD distance. All leave the gain indistinguishable from the baseline. Every
+$\Delta\mathrm{MAE}$ is at most $0.007$, every $p$-value at least $0.10$, and every interval spans zero.
+
+The generic ``animal'' prompt is included for completeness, and behaves differently. Prompting
+non-specifically collapses per-species detection to a near-constant, mostly-zero target: mean
+\texttt{pDetA}$\approx0.14$, with $73\%$ of cells exactly zero. Fitting a target that degenerate, the model
+does not merely fail to beat the mean but falls far below it ($\Delta\mathrm{MAE}\approx-0.35$).
+
+Across every variant the label-free distances fail identically. The null is a property of the transfer
+problem, not of one modelling choice.
 \IfFileExists{tables/robustness.tex}{\input{tables/robustness}}{}
 
 \section{SAM\,3 familiarity proxy}
