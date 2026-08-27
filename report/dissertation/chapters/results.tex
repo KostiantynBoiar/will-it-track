@@ -139,17 +139,30 @@ the orange line, so the distances carry no predictive power.}
 
 \section{Species hold-out (H1): novelty and the size confound}
 \label{sec:species-holdout}
-The primary novelty test --- leave-one-species-out over the pooled train+test species (99 species,
-1025 scored cells) --- is in Tables~\ref{tab:gate1_species}--\ref{tab:cv_species}. Out-of-sample
-prediction is not significant on any hold-out (Table~\ref{tab:cv_species}). The only coefficient whose CI
-excludes zero, visual distance (Table~\ref{tab:coefficients_species}), is positive --- meaning
-more-novel species are detected \emph{better}, the reverse of what H1 predicts --- and is a \textbf{confound}:
-visually-distinctive species are larger
-(visual~$\leftrightarrow$~$\log$-area $r=0.22$) and larger animals score higher
-($\log$-area~$\leftrightarrow$~pDetA $r=0.30$, the strongest raw correlate of the score). Adding an animal-size
-covariate shrinks the visual coefficient from $+0.37$ to $+0.22$ (CI now spanning zero) while size itself
-is the significant driver, so ``visual novelty helps'' was really ``bigger animals are easier''. Taxonomic
-novelty is flat ($r\approx0.00$). Novelty does not predict transfer.
+The primary novelty test is a leave-one-species-out analysis over the pooled train and test species: $99$
+species and $1025$ scored cells. Three tables report it, each the Split~A counterpart of one already seen for
+Split~B. Table~\ref{tab:gate1_species} gives the measurement, and confirms the tracker scores in the same range
+on the pooled set as on the test split alone. Table~\ref{tab:coefficients_species} gives the fitted
+coefficients, and Table~\ref{tab:cv_species} the out-of-sample test.
+
+Out-of-sample prediction fails again. Every gain in Table~\ref{tab:cv_species} is zero or negative, so the
+distance model is no better than guessing the mean, and on the species scheme slightly worse.
+
+Table~\ref{tab:coefficients_species} is where this split differs from Split~B, and it repays careful reading.
+One coefficient does have an interval excluding zero: visual distance, at $+0.37$ for detection. Its sign,
+though, is \emph{positive}. Read literally, that says more-novel species are detected better, which is the
+reverse of what H1 predicts.
+
+It is a \textbf{confound} rather than a reversal. Visually distinctive species tend to be larger
+(visual~$\leftrightarrow$~$\log$-area $r=0.22$), and larger animals score higher
+($\log$-area~$\leftrightarrow$~\texttt{pDetA} $r=0.30$, the strongest raw correlate of the score). Adding an
+animal-size covariate shrinks the visual coefficient from $+0.37$ to $+0.22$, and its interval now spans zero,
+while size itself becomes the significant driver. ``Visual novelty helps'' was really ``bigger animals are
+easier''. Taxonomic novelty, meanwhile, is flat ($r\approx0.00$).
+
+Figure~\ref{fig:size} shows that underlying relationship directly. Each point is one cell, with animal size on
+the horizontal axis and its detection score on the vertical, and the fitted trend rises at $r=+0.31$. Novelty
+does not predict transfer. Size does, a little.
 \IfFileExists{tables/gate1_measurement_species.tex}{\input{tables/gate1_measurement_species}}{}
 \IfFileExists{tables/coefficients_species.tex}{\input{tables/coefficients_species}}{}
 \IfFileExists{tables/cv_validation_species.tex}{\input{tables/cv_validation_species}}{}
@@ -157,7 +170,8 @@ novelty is flat ($r\approx0.00$). Novelty does not predict transfer.
 \centering
 \includegraphics[width=0.52\textwidth]{figures/res_size_confound.pdf}
 \caption[The size confound]{The one label-free property that predicts detection: animal size. Per-cell
-\texttt{pDetA} rises with log mask area ($r=+0.31$) --- the confound behind the apparent visual-distance effect.}
+detection score against log ground-truth mask area, on the location split ($346$ cells), with the fitted trend
+at $r=+0.31$. This is the confound behind the apparent visual-distance effect.}
 \label{fig:size}
 \end{figure}
 
