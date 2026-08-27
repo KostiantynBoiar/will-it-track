@@ -1,173 +1,164 @@
 \chapter{Discussion}
 \label{ch:discussion}
 
-\section{Interpretation}
-Neither hypothesis is supported. H1 (detection falls with species novelty) and H2 (association falls with
-environment difficulty) both fail the pre-registered bar: no label-free distance beats a mean predictor out of
-sample, and the one coefficient that reached significance --- visual distance, running in the opposite
-direction to the hypothesis (more-novel species detected better, not worse) --- is an animal-size artefact. The follow-up intrinsic-difficulty pivot fares no better: low-light, clutter and night/IR
-predict detection only by proxying animal size, which alone carries the out-of-sample gain. So H0 is what the data
-support: transfer is \emph{not} distance-driven, and the only label-free property that predicts detection
-is object size --- the very quantity introduced as a nuisance control.
+Chapter~\ref{ch:results} reported what the measurements show. This chapter asks what they mean. It sets out the
+interpretation the evidence supports, answers the objection that novelty must surely matter, reconciles the
+null with a literature of positive results, draws out what follows for practice, and states the bounds within
+which the claim holds.
 
-The detection--association decomposition, the intellectual core of the design, has a second, quieter finding:
-association is a near-degenerate target on this data. Of the $346$ positive cells, $268$ ($77\%$) hold at most
-one annotated animal per video, so there is only one identity to keep. Across all positive cells
+\section{What the result means}
+\label{sec:disc-meaning}
+Neither hypothesis survives. H1 and H2 both fail the bar set in advance in Section~\ref{sec:meth-success}, on
+both hold-out schemes and for both targets (Section~\ref{sec:headline}). H0 is what the data support: transfer
+is not distance-driven.
+
+How they fail matters as much as that they fail. The one coefficient that reached significance ran in the
+wrong direction, and dissolved under a size control. The follow-up difficulty pivot behaved the same way, its
+apparent effect routing entirely through animal size. So the only label-free property that predicts detection
+is the very quantity the analysis introduced as a nuisance to control for.
+
+The detection--association decomposition, the intellectual core of the design, produced a second and quieter
+finding. Association is a near-degenerate target on this data. Of the $346$ positive cells, $268$ ($77\%$) hold
+at most one annotated animal per video, so there is only one identity to keep. Across all positive cells
 \texttt{pAssA} correlates with \texttt{pDetA} at $0.97$ and is exactly equal to it in $73\%$, leaving little
-identity-specific variance for any feature to predict. The decomposition is therefore a detection story; we report the association null with
-those divergence figures as its explanation rather than as a separate failed search.
+identity-specific variance for any feature to predict. The decomposition is therefore a detection story, and
+the association null is reported with those divergence figures as its explanation rather than as a separate
+failed search.
 
 \subsection{Novelty at the extremes versus graded prediction}
 \label{sec:disc-coarse}
-A natural objection is that novelty surely matters --- a familiar species is detected better than a
-totally alien one, so how can a novelty distance be null? Both statements are true and do not conflict, because
-they concern different resolutions of the same axis. The coarse claim --- that the extreme tails differ,
-alien-versus-familiar --- is real and never in dispute; the null we report is the far stronger graded
-claim H1 actually tests: that a continuous distance predicts where on the \texttt{pDetA} scale an unseen
-species lands, out of sample, beyond the size confound, well enough to serve as a deployment gate. These come
-apart because the informative variance in \texttt{pDetA} lives in the middle of the range, not at the poles: the
-easy extremes (common large animals near $1$, hopeless cases near $0$) are already predicted by the mean, so a
-coarse ``alien-versus-familiar'' signal adds nothing exactly where prediction has value. A genuine extreme-tail
-effect can therefore coexist with a null graded predictor without contradiction --- and it is the graded,
-held-out, size-controlled predictor, not the truism, that a practitioner would need and that this work shows
-does not exist. (The model swap sharpens this: the challengers' own detect-or-fail behaviour on exotic species
-is itself a coarse novelty effect, yet it is that model's novelty, measured against the wrong reference,
-and it too fails to yield a graded predictor --- so it re-derives the hypothesis, not its confirmation.)
+A natural objection is that novelty surely matters. A familiar species is detected better than a totally alien
+one, so how can a novelty distance be null?
 
-\section{Relation to prior label-free evaluation}
+Both statements are true, because they concern different resolutions of the same axis. The coarse claim, that
+the extreme tails differ, is real and never in dispute. The null reported here is the far stronger graded claim
+that H1 actually tests: that a continuous distance predicts where on the detection scale an unseen species
+lands, out of sample, beyond the size confound, and well enough to gate a deployment.
+
+The two come apart because the informative variance lives in the middle of the range rather than at the poles.
+The easy extremes are already predicted by the mean, with common large animals near $1$ and hopeless cases near
+$0$. A coarse alien-versus-familiar signal therefore adds nothing exactly where prediction would have value. A
+genuine extreme-tail effect can coexist with a null graded predictor without contradiction, and it is the
+graded, held-out, size-controlled predictor that a practitioner would need.
+
+\section{Why the null does not contradict prior positives}
 \label{sec:disc-related}
-The null sits against a literature of positive results, and two axes separate every one of those results
-from ours --- which is why the disagreement is only apparent. The first axis is the signal. Accuracy-
-and Agreement-on-the-Line~\cite{aotl,agl}, ATC~\cite{atc} and AutoEval~\cite{autoeval} all read the model's
-own behaviour on the target --- its confidence, its agreement across a model pair, or (for AutoEval) a
-feature-distribution distance computed after passing the target images through the network. Those are
-\emph{after-running} estimators. We instead forecast from external, label-free distances known
-\emph{before} a single frame is processed --- the strictly harder, and for a practitioner deciding whether to
-spend compute, the more useful regime. The second axis is the output. Every predecessor targets a
-scalar classifier accuracy~\cite{aotl,agl,atc,autoeval} or the quality of a static
-detector/segmenter~\cite{pcr,rca}; none concerns identity maintained over time, and none is decomposed. Ours is
-the first study to ask the question of a promptable video tracker, split into detection
-(\texttt{pDetA}) and association (\texttt{pAssA}). AutoEval~\cite{autoeval} is the closest methodological
-cousin --- it, too, regresses a performance score on a distributional feature distance --- and the strength of
-its positive sharpens the contrast: it reports a near-perfect rank correlation (Spearman $\rho\approx-0.91$)
-between a Fr\'echet distribution-shift distance and classifier accuracy. That distance, though, is computed
-from the model's own penultimate features \emph{after} the target images are passed through the network, and
-predicts a scalar classifier accuracy. We test AutoEval's exact functional in our own regime --- the Fr\'echet
-and MMD distributional distances on cached DINOv2 embeddings, computed \emph{before} running SAM\,3
-(\S\ref{sec:robustness}, Table~\ref{tab:robustness}) --- and it stays null ($\Delta\mathrm{MAE}\le0.007$,
-$p\ge0.10$, every confidence interval spanning zero), so the failure is not an artefact of a lazy
-nearest-prototype distance: even the strongest AutoEval-style distance carries no before-running transfer
-signal. The contrast is not merely one of magnitude but of sign: our nearest analogue, the visual
-distance, correlates with detection in the \emph{opposite} (wrong) direction and dissolves under an
-animal-size control. Our result therefore does not contradict AutoEval's positive; it extends the recipe to a
-regime --- distance measured before running, target a decomposed video tracker --- where the shortcut stops
-working, and reports that it does. A final bridge makes the boundary concrete:
-Accuracy-on-the-Line~\cite{aotl} was validated on iWildCam, the same camera-trap shift this dissertation cites
-via WILDS and Terra Incognita~\cite{wilds,terra} --- so the exact wildlife shift where a classifier's OOD
-accuracy \emph{is} predictable label-free is where our before-running distances are \emph{not}, across both the
-classifier-to-tracker and after-running-to-before-running boundaries.
+The result sits against two literatures of positive findings: one that predicts model performance without
+labels, and one that shows backgrounds drive camera-trap failure. Neither is contradicted here, and it is worth
+saying precisely why.
 
-\section{Reconciling the environment null with the background-bias literature}
-\label{sec:disc-background}
-Our environment axis inherits its motivation and its foreground/background separation from a literature that
-finds backgrounds emphatically \emph{do} matter~\cite{terra,xiao,elephant,panaf}, so the null it returns
-deserves an explicit reconciliation rather than a bare report. The apparent tension dissolves on two
-distinctions. The first is \textbf{causal reliance versus predictive distance}. \citet{xiao}, \citet{elephant}
-and PanAf-FGBG~\cite{panaf} all intervene on the background --- swap it, transplant the object, or
-subtract the paired background-only clip's features --- and watch performance move; PanAf, most sharply, shows
-a chimpanzee-behaviour classifier that scores from the background \emph{alone} almost as well as from the
-foreground on unseen locations, and recovers several points of the location drop by subtracting the
-background. That is a statement about how a model uses context. Ours is the strictly weaker,
-correlational question of whether a scalar scene distance-from-reference forecasts an untouched
-model's per-cell score --- and a model can lean causally on context while its score stays unpredictable from a
-one-number distance. Our null therefore does not deny their causal findings; it locates a regime where the
-label-free-distance shortcut, not the context reliance, fails.
+\subsection{Label-free performance estimation}
+Two axes separate this study from every positive result in Section~\ref{sec:bg-predictable}.
 
-The second distinction is \textbf{why the promptable regime should be the one where it fails}, and here the
-same literature supplies the mechanism. \citet{xiao}, \citet{elephant} and PanAf all study models that must
-infer the category --- a classifier with no foreground cue, or a detector reading co-occurrence --- for
-which a spuriously correlated background is a usable shortcut. SAM\,3 is told what to find: the prompt
-\texttt{"impala"} supplies the foreground identity, removing the incentive to ride the scene, exactly the
-direction \citet{xiao}'s own finding predicts (better, less-shortcut-prone models close the background gap).
-PanAf's target compounds this --- fine-grained behaviour is intrinsically background-correlated (a chimp
-nests in trees, drinks at water), whereas ours is finding and following the named animal itself, where
-naming it short-circuits the context dependence. The result is thus an extension, not a refutation: the
-very backgrounds that causally drive a camera-trap classifier's location drop do not, once surgically isolated
-from the animal and used as a before-running distance, forecast a promptable tracker's transfer --- and because
-we isolate the scene from the animal explicitly (a step none of the label-free-prediction methods take), this
-is a cleaner statement than ``background is diagnostic'', not a weaker one. The claim is bounded accordingly: it
-concerns background distance as a predictor of detection transfer for a promptable tracker
-(the secondary location split, replicated null on BURST, with a near-degenerate association target), not a
-blanket ``background is irrelevant'', which would wrongly contradict \cite{terra,xiao,panaf}.
+The first is the signal. Those estimators all read the model's own behaviour on the target, after running it.
+This work forecasts from external distances known before a single frame is processed. That is the strictly
+harder regime, and for a practitioner deciding whether to spend compute, the more useful one.
 
-\section{Why label-free distances do not yield a deployment estimator}
-The field problem that motivated this work --- telling a practitioner, before spending compute, whether SAM\,3
-is trustworthy for a new (species, place) --- is not solved by label-free distances. That is a negative but
-useful answer: the intuition that ``far-from-training implies unreliable'' does not hold for a promptable video
-tracker, so a deployment gate cannot be built from taxonomic, visual, environmental or temporal distance to a
-reference set alone. The one predictive label-free signal, animal size, is too coarse and too obvious to serve
-as such a gate. What the negative result does establish is a rigorous baseline: any future before-running
-estimator must clear the same whole-group hold-out bar that these well-motivated distances failed.
+The second is the output. Every predecessor targets a scalar classifier accuracy, or the quality of a static
+detector or segmenter. None concerns identity maintained over time, and none decomposes its estimate. This is
+the first study to put the question to a promptable video tracker, split into detection and association.
 
-One \emph{after-running} signal does clear that bar, and we state it plainly rather than leave it implicit. If a
+AutoEval~\cite{autoeval} is the closest methodological cousin, and the strength of its positive sharpens the
+contrast. It reports a near-perfect rank correlation between a Fr\'echet distribution-shift distance and
+classifier accuracy. That distance, though, is computed from the model's own features after the target images
+have passed through the network. We tested AutoEval's exact functional in our own regime --- Fr\'echet and MMD
+distances on cached DINOv2 embeddings, computed before running SAM\,3 --- and it stayed null
+(Section~\ref{sec:robustness}). The failure is therefore not an artefact of a lazy nearest-prototype
+distance. Our nearest analogue does worse still, running in the opposite direction before dissolving under a
+size control.
+
+One bridge makes the boundary concrete. Accuracy-on-the-Line~\cite{aotl} was validated on iWildCam, the same
+camera-trap shift this dissertation cites through WILDS and Terra Incognita~\cite{wilds,terra}. The exact
+wildlife shift where a classifier's out-of-distribution accuracy is predictable label-free is where our
+before-running distances are not.
+
+\subsection{Background bias}
+The environment axis inherits its foreground/background separation from a literature that finds backgrounds
+emphatically do matter (Section~\ref{sec:bg-cameratrap}), so its null needs reconciling.
+
+Two distinctions dissolve the tension. The first is causal reliance versus predictive distance.
+\citet{xiao}, \citet{elephant} and PanAf-FGBG~\cite{panaf} all intervene on the background and watch
+performance move. That is a statement about how a model uses context. Ours is the strictly weaker, correlational question of whether a
+scalar scene distance forecasts an untouched model's per-cell score. A model can lean causally on context while
+its score stays unpredictable from a one-number distance. The null does not deny their causal findings. It
+locates a regime where the distance shortcut fails.
+
+The second distinction is why the promptable regime should be that regime, and the same literature supplies the
+mechanism. Those models must infer the category, and a spuriously correlated background is a usable shortcut
+for doing so. SAM\,3 is told what to find. The prompt \texttt{"impala"} supplies the foreground identity and
+removes the incentive to ride the scene --- exactly the direction \citet{xiao}'s own finding predicts, since
+better and less shortcut-prone models close the background gap. PanAf's target compounds the difference, since
+fine-grained behaviour is intrinsically background-correlated whereas finding and following a named animal is
+not.
+
+The result is therefore an extension rather than a refutation. The backgrounds that causally drive a
+camera-trap classifier's location drop do not, once isolated from the animal and used as a before-running
+distance, forecast a promptable tracker's transfer. Because we isolate scene from animal explicitly, a step
+none of the label-free-prediction methods take, this is a cleaner statement than ``background is diagnostic''
+rather than a weaker one. The claim is bounded accordingly: it concerns background distance as a predictor of
+detection transfer for a promptable tracker, not a blanket claim that background is irrelevant.
+
+\section{What this means in practice}
+\label{sec:disc-practice}
+The field problem that motivated this work --- telling a practitioner, before spending compute, whether a
+promptable tracker is trustworthy for a new species and place --- is not solved by label-free distances. That
+is a negative answer, but a useful one. The intuition that far-from-training implies unreliable does not hold
+here, so a deployment gate cannot be built from taxonomic, visual, environmental or temporal distance to a
+reference set. The one predictive label-free signal, animal size, is too coarse and too obvious to serve as
+one. What the negative result does establish is a baseline: any future before-running estimator must clear the
+same whole-group hold-out bar that these well-motivated distances failed.
+
+One after-running signal does clear that bar, and it is stated plainly here rather than left implicit. If a
 practitioner is willing to run the tracker first, an ATC-style estimator~\cite{atc} --- reading SAM\,3's own
-detection confidence on the target and thresholding it --- predicts \texttt{pDetA} out of sample on both
-cross-validation schemes, where every label-free distance failed. We deliberately keep this outside the
-contribution for three reasons: it is \emph{after-running}, a strictly weaker operating point than the
-before-running question we set out to answer; it is confirmatory of an established label-free-accuracy family
-rather than novel; and it is mechanistically close to circular, since its feature and its target are both
-functions of SAM\,3's own output (a cell with no confident masklet trivially has zero detection accuracy). It
-is a real, validated estimator for the after-running, before-labelling operating point --- but not the
-before-running predictor this dissertation asks for, and not part of the null it reports.
+detection confidence on the target and thresholding it --- predicts detection out of sample on both
+cross-validation schemes, where every label-free distance failed. It is deliberately kept outside the
+contribution, for three reasons. It is after-running, a weaker operating point than the before-running question
+this work set out to answer. It is confirmatory of an established family rather than novel. And it is
+mechanistically close to circular, since feature and target are both functions of SAM\,3's own output: a cell
+with no confident masklet trivially has zero detection accuracy. It is a real, validated estimator for the
+after-running, before-labelling operating point --- but not the before-running predictor this dissertation asks
+for, and not part of the null it reports.
 
 \section{Limitations and threats to validity}
 \label{sec:limitations}
-Several limitations bound the claim. First, distances are measured against the SA-FARI train split, \emph{not}
-SAM\,3's true pretraining corpus (Meta's SA-Co), which is undisclosed; the null is scoped to
-distance-from-SA-FARI. We test one hedge against this --- the familiarity proxy (\S\ref{sec:familiarity}),
-which reads separability directly from SAM\,3's own features --- and it too is null, recovering the same
-size-entangled visual signal, so even model-internal familiarity does not lift the null; a coverage-anchored
-proxy for the actual corpus nonetheless remains untested. Second, the analysis is a single dataset and a single
-frozen backbone,
-and --- since one inference pass is reused across both splits --- the species and location experiments are two
-overlays on the \emph{same} scored cells, not independent replications; they give near-orthogonal but not
-statistically independent evidence. We take two steps against this. Against the dataset threat we
-re-run the whole pipeline on an independent dataset: on the larger, mask-native BURST (\S\ref{sec:burst}, $132$
-cells / $41$ species) the distance null holds again, giving a second convergent null (not positive
-proof --- BURST detects only a large between-species predictor and remains underpowered for a small
-species-constant distance effect --- so we report convergence, not independent confirmation of any positive).
-We also ran a third dataset, MammAlps, in an earlier pass; it is directionally consistent with the null but we
-do not count it here, because at roughly $20$ cells over $5$ species it is too small to certify a null and its
-per-clip annotations are not reproducible from the public release. We report it as excluded rather than
-silently drop it.
-Against the model threat --- the ``single frozen backbone'' --- we run the controlled model swap
-(\S\ref{sec:model_swap}): two architecturally distinct open-vocabulary trackers, GLEE and Florence-2\,+\,SAM\,2,
-both track BURST's animals non-degenerately ($\text{pDetA}\,0.34$ and $0.39$) yet the combined distance model is
-null for each (CIs span zero, neither clears the Bonferroni bar), so the null is task-general rather than a SAM\,3
-artefact --- a convergent, confound-free cross-model replication (again not an independently-powered
-certification: two models on one fair dataset). That swap could not run on SA-FARI itself, and for good reason:
-SA-FARI is SAM\,3's own co-released benchmark, and its camera-trap domain collapses the challengers' confidence
-calibration even where they localise well, so BURST is the fair-swap ceiling. Third, the effective sample is
-tens of
-independent
-species/locations, not hundreds of cells --- which is why
-inference is group-clustered throughout, and why aggregate correlations (e.g. the location-level night/IR
-effect) are reported alongside their much weaker cell-level values to avoid the ecological-correlation fallacy.
-Representational probing is only partly opened here: the familiarity proxy (\S\ref{sec:familiarity}) probes
-whether SAM\,3's features separate the species --- they do, but that separability merely re-encodes the
-visual distance and does not predict transfer --- while a fuller probe of what those representations encode
-remains open.
 
-Finally, on the scorer itself: all scores come from the unmodified official SA-FARI evaluator, which
-wraps the standard HOTA/TETA tracking metrics rather than any SAM-3-specific logic. Its one SAM-3-calibrated
-knob is a fixed $0.5$ confidence gate; we verified it is not load-bearing for the cross-model comparison, since
-the challengers' near-zero SA-FARI scores survive both a box-based metric and a threshold-free
-average-precision metric with no gate at all (\S\ref{sec:model_swap}). The measurement is therefore
-model-fair, and the challenger failures on SA-FARI are genuine detection failures, not scoring artefacts.
+\paragraph{The reference is not the pretraining corpus.} Distances are measured against the SA-FARI train
+split, not against SAM\,3's true pretraining data, which is undisclosed. The null is scoped accordingly. One
+hedge was tested: the familiarity proxy reads separability directly from SAM\,3's own features
+(Section~\ref{sec:familiarity}), and it too is null, recovering the same size-entangled visual signal. Even
+model-internal familiarity does not lift the result. A coverage-anchored proxy for the actual corpus remains
+untested.
+
+\paragraph{One dataset and one backbone.} A single inference pass is reused across both splits, so the species
+and location experiments are two overlays on the same scored cells rather than independent replications. Two
+steps were taken against this. Against the dataset threat, the whole pipeline was re-run on an independent
+dataset, where the null holds again (Section~\ref{sec:burst}) --- a second convergent null rather than positive
+proof, since that dataset remains underpowered for a small species-constant effect. Against the model threat,
+the controlled swap put two architecturally distinct trackers through the same procedure with the same result
+(Section~\ref{sec:model_swap}).
+
+A third dataset, MammAlps~\cite{mammalps}, was run in an earlier pass. It is directionally consistent with the null but is not
+counted here: at roughly $20$ cells over $5$ species it is too small to certify one, and its per-clip
+annotations are not reproducible from the public release. It is reported as excluded rather than silently
+dropped.
+
+\paragraph{The effective sample is groups, not cells.} Tens of independent species and locations, not hundreds
+of cells. That is why inference is group-clustered throughout, and why aggregate correlations are reported
+alongside their much weaker cell-level values, to avoid the ecological-correlation fallacy.
+
+\paragraph{Representational probing is only partly opened.} The familiarity proxy tests whether SAM\,3's
+features separate the species. They do, but that separability merely re-encodes the visual distance and does
+not predict transfer. A fuller probe of what those representations encode remains open.
+
+\paragraph{The scorer.} All scores come from the unmodified official evaluator, which wraps the standard
+HOTA-family metrics rather than any SAM-3-specific logic. Its one SAM-3-calibrated knob is a fixed $0.5$
+confidence gate, and Section~\ref{sec:model_swap} establishes that this gate is not load-bearing for the
+cross-model comparison. The measurement is therefore model-fair.
 
 \section{Ethical considerations}
-The data are anonymised camera-trap footage released under a non-commercial licence; location identifiers are
-already anonymised in SA-FARI. The negative result carries a responsible-deployment message: because label-free
-distance does \emph{not} reliably flag when SAM\,3 will fail, conservation teams should not treat
-low-distance-from-training as a safety guarantee, and reliability should be checked with labelled spot-audits
-rather than assumed.
+\label{sec:disc-ethics}
+The data are anonymised camera-trap footage released under a non-commercial licence, and location identifiers
+are already anonymised in SA-FARI. The negative result carries a responsible-deployment message. Because
+label-free distance does not reliably flag when a promptable tracker will fail, conservation teams should not
+treat low distance from training data as a safety guarantee. Reliability should be checked with labelled
+spot-audits rather than assumed.
