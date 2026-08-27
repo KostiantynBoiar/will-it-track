@@ -66,6 +66,7 @@ species novelty properly is what the constructed species hold-out exists for.
 \IfFileExists{tables/coefficients.tex}{\input{tables/coefficients}}{}
 
 \section{How much the distances explain, and the difficulty pivot}
+\label{sec:variance-difficulty}
 The first question is how much of the variation in detection the four distances account for. The answer is
 almost none. A dominance analysis puts the four together at only $\approx 3\%$ of the variation, and no single
 distance stands out (Table~\ref{tab:variance}). The method is LMG/Shapley, which splits shared explanatory
@@ -276,51 +277,60 @@ sensitivity to find it. Reading familiarity from SAM\,3's own representations th
 before-running prediction. It recovers the same size-entangled visual distinctness that was already null, and
 it closes the ``but you do not know SAM\,3's true training set'' objection to that null.
 
-\section{Independent replication (BURST)}
+\section{Independent replication on a second dataset}
 \label{sec:burst}
-Every result so far reuses one frozen inference pass on one dataset, so the species and location experiments
-are near-orthogonal overlays rather than statistically independent replications. To test the null on genuinely
-independent data we re-ran the whole pipeline on BURST~\cite{burst}. Its animal subset --- the animal
-LVIS classes of the validation split, streamed mask-native and prompted by class name --- yields $132$ video\,$\times$\,class
-cells across $41$ species, in a distinct
-regime (internet/driving/movie video, not camera traps). Zero-shot SAM\,3 is again non-degenerate
-(pHOTA\,$0.635$, Table~\ref{tab:gate1_burst}), and here the association target is genuine
-($\mathrm{corr}(\texttt{pDetA},\texttt{pAssA})=0.76$; of the $71$ multi-object cells, none has \texttt{pAssA}
-exactly equal to \texttt{pDetA}), so both components are testable.
+Both SA-FARI experiments overlay different splits on one frozen inference pass, so they are near-orthogonal
+rather than independent (Section~\ref{sec:meth-replication}). BURST~\cite{burst} supplies the independent test:
+$132$ cells across $41$ species, mask-native, in a quite different regime of internet, driving and film video
+rather than camera traps.
 
-\paragraph{A second convergent null.} Under leakage-free leave-species-out cross-validation the before-running
-distances again fail to predict detection transfer: the combined distance model improves out-of-sample MAE by
-only $+0.002$ ($p=0.374$), with visual ($+0.003$, $p=0.257$), taxonomic (full-taxonomy subset $-0.006$,
-$p=0.952$) and environment ($-0.001$, $p=0.747$) all individually null, and the association specs null likewise
-(Table~\ref{tab:replication_burst}). The result is robust to dropping the $19$ single-cell species and to a
-size control. The lone near-signal, visual distance, is the familiar artefact: its correlation with detection
-is $+0.17$ --- in the \emph{opposite} direction to the novelty hypothesis (more-novel animals detected better),
-and a size confound (partial correlation given $\log$-area $+0.08$, $p=0.35$). Both datasets --- SA-FARI and BURST --- now converge on the same
-before-running distance null.
+Two preconditions hold there. Zero-shot SAM\,3 is non-degenerate, at pHOTA $0.635$
+(Table~\ref{tab:gate1_burst}), so there is real variance to model. And the association target is genuine rather
+than near-degenerate as it is on SA-FARI: \texttt{pDetA} and \texttt{pAssA} correlate at $0.76$, and of the
+$71$ multi-object cells not one has them exactly equal. Both components are therefore testable.
 
-\paragraph{Convergent, but not proof.} At $132$ cells BURST supplies a mask-native regime with a genuinely
-non-degenerate association target, and the distance null holds throughout. It is not, however, positive proof:
-no before-running quantity --- not even the animal-size control that validates on SA-FARI --- reaches
-significance here, so we cannot independently certify that this test could have caught a small species-level
-effect. The lone near-signal, visual distance, is again the wrong-direction size confound (its correlation with
-detection is $+0.37$ between species, the opposite sign to novelty). We therefore read BURST as a second
-convergent null --- no moderate-or-large before-running distance signal, in an independent mask-native regime
-with a non-degenerate association target --- rather than positive proof, and note that a small species-constant
-effect cannot be excluded.
+Table~\ref{tab:replication_burst} reports the outcome under leave-species-out cross-validation. Each row is one
+predictor, with its out-of-sample MAE gain, confidence interval and $p$-value. The last row is the animal-size
+control rather than a distance.
+
+The distances fail again. Combined, they improve out-of-sample error by only $+0.002$ ($p=0.374$), and
+individually visual ($+0.003$), taxonomic ($-0.006$) and environment ($-0.001$) are all null. So are the
+association specifications. The result survives dropping the $19$ single-cell species, and survives a size
+control.
+
+The one near-signal is the familiar artefact. Visual distance correlates with detection at $+0.17$ per cell,
+and at $+0.37$ between species --- the same aggregation inflation seen for night/IR in
+Section~\ref{sec:variance-difficulty}. Both are \emph{positive}, meaning more-novel animals are detected
+better, which is the opposite of the novelty hypothesis. And the correlation dissolves under a size control
+(partial $+0.08$, $p=0.35$).
+
+This is a second convergent null rather than positive proof. No before-running quantity reaches significance
+here, not even the animal-size control that does validate on SA-FARI. Without a control that fires, the test
+cannot certify that it would have caught a small species-level effect. What BURST establishes is that no
+moderate-or-large before-running distance signal exists in an independent mask-native regime with a genuine
+association target. A small species-constant effect cannot be excluded.
 
 \section{Cross-dataset synthesis}
 \label{sec:cross_dataset}
-Table~\ref{tab:cross_dataset} collects every feature tested, its numerical out-of-sample result, and the
-dataset it was measured on. The pattern is consistent across both: no before-running label-free distance
---- taxonomic, visual, or environment, alone or combined --- predicts detection or association transfer out of
-sample; every gain over a mean predictor is within bootstrap noise of zero. The only near-signal, visual
-distance, appears in the \emph{opposite} direction to the novelty hypothesis (more-novel animals detected
-better, not worse) and dissolves under an animal-size control wherever it is examined. The only before-running
-quantity that ever reaches significance is the animal-size confound itself --- and only modestly, on the large
-SA-FARI sample --- which doubles as the positive control that keeps the null honest: the same test that stays
-flat for the distances does pick up size out-of-sample. The contribution is this robust, twice-replicated
-null, with its bounds stated: consistent across a camera-trap and an internet-video dataset, and powered enough on
-SA-FARI to exclude a moderate effect, but not a small one.
+Table~\ref{tab:cross_dataset} collects every feature tested, its result on each dataset, and the verdict. The
+two dataset columns are not in the same metric, and each header says which it is. BURST entries are
+out-of-sample $\Delta$MAE with a $p$-value. SA-FARI entries are standardised GLM coefficients with confidence
+intervals, except the two rows marked $\dagger$, which are $\Delta$MAE like BURST. A feature predicts transfer
+only if it is positive \emph{and} significant.
+
+The pattern is consistent. No before-running label-free distance, alone or combined, predicts detection or
+association transfer out of sample on either dataset, and every gain over a mean predictor sits within
+bootstrap noise of zero.
+
+The only near-signal is visual distance, and it points the wrong way: more-novel animals are detected better,
+not worse. It dissolves under an animal-size control wherever it is examined.
+
+One row does clear the bar, and it is the confound rather than a hypothesis variable. Animal size validates out
+of sample on SA-FARI, modestly. That row doubles as the positive control: the same test that stays flat for
+every distance does detect size, so the null is an absence of signal rather than an absence of power.
+
+The contribution is that null, with its bounds stated. It is consistent across a camera-trap dataset and an
+internet-video one, and powered on SA-FARI to exclude a moderate effect, though not a small one.
 \IfFileExists{tables/cross_dataset_comparison.tex}{\input{tables/cross_dataset_comparison}}{}
 
 \section{Cross-model replication: the model swap}
