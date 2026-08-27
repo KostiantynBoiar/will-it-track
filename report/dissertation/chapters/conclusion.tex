@@ -7,18 +7,10 @@ answers, sets out what the field gains from that answer, and identifies what the
 
 \section{Summary of findings}
 \label{sec:concl-summary}
-Camera traps and laboratory rigs now record wildlife video far faster than anyone can annotate it, and that
-annotation step is what limits how much ecology and behavioural science actually gets done. Promptable
-trackers offer a way past it. Name an animal in ordinary words, and the model finds and follows every one that
-appears, without ever having been trained on that species. The difficulty is that the ability is uneven, and
-uneven in ways nobody can currently anticipate. A team pointing such a model at a new species in a new place
-has no principled basis for deciding whether to trust what comes back, which leaves two unattractive options:
-trust it blindly, or fall back on the manual annotation the model was meant to replace.
-
-This dissertation asked whether that judgement can be made in advance. Can a promptable tracker's zero-shot
-accuracy on an unseen species and place be predicted before the model is run, from properties that require no
-labelling of the target? It asked the question separately for the two halves of the task --- finding the
-animal, and following it --- because the two can fail for different reasons.
+A practitioner opening a new camera-trap site cannot currently tell whether a promptable tracker will work on
+the animals living there. This dissertation asked whether that judgement can be made in advance, from
+properties measurable without running the model or labelling its output, and asked it separately for finding
+the animal and for following it.
 
 The answer is no, and it survives every criterion applied to it. No distance's coefficient interval excludes
 zero. None beats a mean predictor out of sample, on either a species or a location hold-out. Together the four
