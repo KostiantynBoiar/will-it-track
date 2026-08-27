@@ -333,51 +333,50 @@ The contribution is that null, with its bounds stated. It is consistent across a
 internet-video one, and powered on SA-FARI to exclude a moderate effect, though not a small one.
 \IfFileExists{tables/cross_dataset_comparison.tex}{\input{tables/cross_dataset_comparison}}{}
 
-\section{Cross-model replication: the model swap}
+\section{Cross-model replication}
 \label{sec:model_swap}
-The two datasets above both vary the data while holding the tracker fixed at SAM\,3, so they leave one
-threat open: the null might be a quirk of SAM\,3 rather than a property of the prediction problem. A
-controlled model swap closes it --- hold the cells, the ground truth, the four distances and the GLM
-fixed, and change only the tracker. If the before-running distances fail to predict a different
-tracker's transfer too, the null is task-general. We swap in two open-vocabulary, text-promptable trackers of
-deliberately different architecture: GLEE~\cite{glee}, a single unified detect--segment--track model,
-and Florence-2~\cite{florence2}\,+\,SAM\,2~\cite{sam2}, a two-stage pipeline in which a caption-style
-generator emits boxes (with no confidence score) and SAM\,2 turns them into tracked masks.
+Both datasets above vary the data while holding the tracker fixed, which leaves one threat open: the null could
+be a quirk of SAM\,3 rather than a property of the prediction problem. The controlled swap of
+Section~\ref{sec:meth-swap} closes it by changing only the tracker, using two challengers of deliberately
+different architecture, GLEE and Florence-2 paired with SAM\,2.
 
-\paragraph{SA-FARI cannot host the swap --- and it is not the scorer.} On SA-FARI both challengers score
-$\text{pDetA}\approx 0$ and cannot be modelled at all. This is not a rigged evaluator: the zeros survive
-box-HOTA (scoring the box models on boxes, GLEE $0.033$) and a threshold-free average-precision metric with no
-confidence gate at all (GLEE $0.000$, Florence-2 $0.017$--$0.022$); Florence-2, which emits no score, is
-unaffected by the gate and still scores $\sim\!0$. The cause is a double confound. SA-FARI is SAM\,3's
-own co-released benchmark, and its exotic, nocturnal species are out-of-distribution for internet-trained
-challengers --- and the domain, not merely the species, is what breaks them: run GLEE on SA-FARI's
-everyday species (jaguar, cow, fox) and it localises them well (oracle IoU up to $0.90$) yet its
-confidence still collapses below any usable operating point on the dark, cluttered camera-trap footage. SA-FARI
-therefore cannot yield a fair, non-degenerate challenger score.
+\paragraph{Why the swap runs on BURST.} On SA-FARI both challengers score $\text{pDetA}\approx 0$, leaving no
+variance for a regression to explain. That is a genuine detection failure rather than an artefact of the
+evaluator. The zeros survive box-HOTA, which scores the box models on boxes (GLEE $0.033$), and they survive a
+threshold-free average-precision metric with no confidence gate at all (GLEE $0.000$, Florence-2
+$0.017$--$0.022$). Florence-2 emits no confidence score in the first place, so no gate can be blamed, and it
+still scores near zero.
 
-\paragraph{BURST hosts a fair swap, and both challengers work.} BURST is neither SAM\,3's benchmark nor
-camera-trap footage, and SAM\,3 scores higher on it ($\text{pDetA}\,0.607$) than on its own SA-FARI
-($0.537$) --- so there is no home-turf inflation, and the arena is fair. There, both challengers genuinely track:
-GLEE reaches $\text{pDetA}\,0.340$ (median $0.31$, spread $0$--$0.98$, $67/132$ cells $>0.3$) and
-Florence-2\,+\,SAM\,2 reaches $0.394$ (median $0.33$, $72/132$ cells $>0.3$), both non-degenerate with the real
-spread the regression needs (Table~\ref{tab:model_swap}).
+The cause is the domain rather than the species. Run GLEE on SA-FARI's everyday animals --- jaguar, cow, fox
+--- and it localises them well, at oracle IoU up to $0.90$. Its confidence still collapses below any usable
+operating point on the dark, cluttered camera-trap footage. SA-FARI is also SAM\,3's own co-released benchmark.
+Neither condition holds on BURST, where SAM\,3 in fact scores higher ($\text{pDetA}\,0.607$) than on SA-FARI
+($0.537$), so there is no home-turf advantage to correct for.
+
+\paragraph{Both challengers track.} Table~\ref{tab:model_swap} gives each tracker's mean detection score over
+BURST's $132$ cells. GLEE reaches $0.340$ and Florence-2\,+\,SAM\,2 reaches $0.394$, against SAM\,3's $0.607$.
+Both sit well clear of zero, and more importantly both show real per-cell spread: medians of $0.31$ and $0.33$,
+with $67$ and $72$ of the $132$ cells above $0.3$. That is the variance the measurement gate requires.
 \IfFileExists{tables/model_swap.tex}{\input{tables/model_swap}}{}
 
-\paragraph{The null replicates across models.} Under the same leakage-free leave-species-out cross-validation,
-size-controlled, the combined four-distance model fails to predict either challenger's detection transfer:
-$+0.011$ ($95\%$ CI $[-0.004,+0.027]$, $p=0.088$) for GLEE and $+0.034$ ($[-0.001,+0.068]$, $p=0.030$) for
-Florence-2 --- both confidence intervals spanning zero, neither clearing the Bonferroni bar
-($\alpha=0.0125$). As on SA-FARI, a few individual distances flicker (for Florence-2, environment $p=0.006$ and
-temporal $p=0.015$), but the discounts are identical: BURST has no locations, so ``leave-species-out'' is the
-only valid scheme and an apparent two-scheme pass is one partition counted twice; the flickers route through the
-animal-size confound the driver controls; and the combined model --- what a deployment gate would use ---
-is null in both. Two architecturally distinct trackers thus both (i) genuinely track BURST animals and (ii) show
-the before-running distance null. \textbf{The null is task-general across trackers, not a SAM-3 artefact.}
+\paragraph{The null replicates.} Table~\ref{tab:model_swap_cv} applies the same leave-species-out,
+size-controlled procedure to each challenger. The combined four-distance model predicts neither: $+0.011$ for
+GLEE ($95\%$ CI $[-0.004,+0.027]$, $p=0.088$) and $+0.034$ for Florence-2 ($[-0.001,+0.068]$, $p=0.030$). Both
+intervals span zero, and neither clears the Bonferroni bar of $\alpha=0.0125$.
 
-\paragraph{Convergent, but bounded.} This is a controlled model swap, not an independent
-replication: it reuses BURST's cells, ground truth, distances and GLM, changing only the tracker. Its scope is
-two models on one fair dataset ($n=132$, underpowered for a small species-level effect, exactly as the SAM\,3
-BURST run), and Florence-2's combined interval sits closer to zero-exclusion than GLEE's --- so we read it as a
-convergent, confound-free cross-model replication that removes the ``single frozen backbone'' threat, not
-as an independently-powered certification. Combined with the two datasets, the null now holds across both axes
-that could have confounded it --- the dataset and the model.
+Individual distances flicker, as they did on SA-FARI --- environment reaches $p=0.006$ for Florence-2 --- but
+the same discounts apply. BURST has no locations, so leave-species-out is the only valid partition, and an
+apparent pass on two schemes is one partition counted twice. The flickers route through the animal-size
+confound that the driver controls for. And the combined model, which is what a deployment gate would actually
+use, is null for both.
+
+Two architecturally distinct trackers therefore both track BURST's animals and both show the before-running
+distance null. \textbf{The null is task-general across trackers, not a SAM-3 artefact.}
+
+\paragraph{Convergent, but bounded.} This is a controlled swap rather than an independent replication: it
+reuses BURST's cells, ground truth, distances and GLM, changing only the tracker. Its scope is two models on
+one dataset of $132$ cells, underpowered for a small species-level effect exactly as the SAM\,3 run there was,
+and Florence-2's interval sits closer to excluding zero than GLEE's. We therefore read it as a convergent,
+confound-free cross-model replication that removes the single-backbone threat, not as an independently powered
+certification. Combined with the two datasets, the null now holds across both axes that could have confounded
+it: the dataset and the model.
