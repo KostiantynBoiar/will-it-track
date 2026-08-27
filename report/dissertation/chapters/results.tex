@@ -66,29 +66,35 @@ species novelty properly is what the constructed species hold-out exists for.
 \IfFileExists{tables/coefficients.tex}{\input{tables/coefficients}}{}
 
 \section{How much the distances explain, and the difficulty pivot}
-We first ask how much of the variation in detection the four distances account for. A dominance
-analysis (the LMG/Shapley method, which fairly splits shared explanatory power between correlated
-predictors rather than double-counting it) shows they account for almost nothing: together the four explain
-only $\approx 3\%$ of the variation in detection, and no single distance stands out (Table~\ref{tab:variance}).
-A natural worry is that the distances might be so correlated with one another that a real effect is hidden by
-them cancelling out; the VIF column rules this out (VIF, the variance inflation factor, measures how entangled
-each predictor is with the others --- a value near $1$ means ``essentially independent''). Every VIF is
+The first question is how much of the variation in detection the four distances account for. The answer is
+almost none. A dominance analysis puts the four together at only $\approx 3\%$ of the variation, and no single
+distance stands out (Table~\ref{tab:variance}). The method is LMG/Shapley, which splits shared explanatory
+power fairly between correlated predictors rather than double-counting it.
+
+A natural worry is that the distances are so correlated with one another that a real effect cancels out
+between them. The VIF column rules that out. The variance inflation factor measures how entangled each
+predictor is with the others, and a value near $1$ means essentially independent. Every VIF here is
 $\approx 1$, so the $3\%$ is genuinely all there is, not a masked signal.
 \IfFileExists{tables/variance.tex}{\input{tables/variance}}{}
-The one distance that looked predictive (visual distance) turned out to be explained by animal size ---
-visually distinctive species tend to be larger, and larger animals are easier to detect, so ``novelty'' was
-really ``size'' in disguise (a confound). This prompts a different question: rather than how
-novel the animal is, does how hard the scene is predict detection? We therefore test three
-label-free scene properties --- low light, visual clutter, and a night/infrared flag, each measured directly
-from the frames with no SAM\,3 run and no target label --- against the same bar (Table~\ref{tab:difficulty}).
-Bundled together with animal size, these difficulty signals appear to work (they beat the baseline by
-$\approx+0.017$ on both hold-outs). But when we separate the contributions, the entire gain comes from size:
-size \emph{on its own} carries it, while low light \emph{on its own} does not beat the baseline and adds almost
-nothing once size is accounted for. The apparent night/IR effect is also inflated by looking at it the wrong
-way: measured per location the correlation with detection looks moderate ($r=-0.377$), but that is an
-averaging artefact --- measured at the level of the individual cell, where the model actually operates, it
-shrinks to $-0.13$, and clutter's is $0.00$. So the difficulty idea is \textbf{also null}: the only label-free
-property that predicts detection is animal size.
+
+The one distance that looked predictive was visual distance, and it turned out to be animal size in disguise.
+Visually distinctive species tend to be larger, and larger animals are easier to detect. What looked like
+novelty was a confound.
+
+That prompts a different question. Rather than how novel the animal is, does how hard the scene is predict
+detection? Three label-free scene properties are tested against the same bar: low light, visual clutter, and a
+night/infrared flag (Table~\ref{tab:difficulty}). Each is measured directly from the frames, with no SAM\,3
+run and no target label.
+
+Bundled together with animal size, these difficulty signals appear to work, beating the baseline by
+$\approx+0.017$ on both hold-outs. Separating the contributions shows that the entire gain comes from size.
+Size \emph{on its own} carries it. Low light \emph{on its own} does not beat the baseline, and adds almost
+nothing once size is accounted for.
+
+The apparent night/IR effect is inflated by being measured at the wrong level. Per location, its correlation
+with detection looks moderate, at $r=-0.377$. That is an averaging artefact. Measured at the level of the
+individual cell, where the model actually operates, it shrinks to $-0.13$, and clutter's is $0.00$. So the
+difficulty idea is \textbf{also null}: the only label-free property that predicts detection is animal size.
 \IfFileExists{tables/difficulty.tex}{\input{tables/difficulty}}{}
 
 \section{The headline test: predicting unseen species and locations}
