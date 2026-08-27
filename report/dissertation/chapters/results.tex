@@ -99,26 +99,41 @@ difficulty idea is \textbf{also null}: the only label-free property that predict
 
 \section{The headline test: predicting unseen species and locations}
 \label{sec:headline}
-This is the decisive test. We train the model on some species and locations, then ask it to predict detection
-for held-out ones it never saw, and compare its error to the simplest possible guess --- always
-predicting the average score (Table~\ref{tab:cv}). The result is a \textbf{null}: on both hold-out schemes
-(hold out whole species; hold out whole locations) and for both targets, the distance model does no better than
-that trivial average. The improvement in error over the baseline ($\Delta\mathrm{MAE}$, the drop in mean
-absolute error) is within noise of zero in every case, and none is statistically significant: the predictions
-collapse onto the mean rather than tracking the truth (Figure~\ref{fig:predvsactual}).
+This is the decisive test. The model is fitted on some species and locations, then asked to predict detection
+for held-out ones it never saw. Its error is compared against the simplest possible guess: always predicting
+the average score.
 
-The null holds up because the test demonstrably works. Run unchanged on the same cases, it \emph{does} recover a
-real effect: animal size beats the baseline out of sample at the identical bar, significant on both schemes
-($\Delta\mathrm{MAE}=+0.015$ leave-species-out, $+0.017$ leave-location-out; Table~\ref{tab:difficulty}). A test that fires for size while staying flat for the
-distances tells us the distances genuinely carry \emph{no} predictive signal --- the flat result is an absence
-of signal, and the size result is what confirms it.
+Table~\ref{tab:cv} reports that comparison. Each row is one combination of hold-out scheme and target, so the
+four rows cover leave-species-out and leave-location-out for both detection and association, all within the
+same $346$ positive cells. The MAE column is the model's mean absolute error, and Baseline is the mean
+predictor's. $\Delta$ is the gain of one over the other, so a positive value means the model beats guessing the
+mean. The interval comes from the paired group-bootstrap, and the $p$-value is one-sided
+(Section~\ref{sec:meth-cv}).
+
+The result is a \textbf{null}. Every gain falls between $+0.004$ and $+0.007$, every interval spans zero, and
+no $p$-value drops below $0.13$. On both hold-out schemes, and for both targets, the distance model does no
+better than the trivial average.
+
+Figure~\ref{fig:predvsactual} shows what that looks like. Each point is one held-out cell, with its true
+detection score on the horizontal axis and the model's out-of-sample prediction on the vertical. A model that
+predicted well would place its points along the dashed diagonal. A model that ignored its inputs and returned
+the average every time would place them along the horizontal line. The points follow the horizontal line:
+whatever the truth, the prediction barely moves.
+
+The null holds up because the test demonstrably works. Run unchanged on the same cells, it \emph{does} recover
+a real effect. Animal size beats the baseline out of sample at the identical bar, significantly so on both
+schemes ($\Delta\mathrm{MAE}=+0.015$ leave-species-out, $+0.017$ leave-location-out;
+Table~\ref{tab:difficulty}). A test that fires for size while staying flat for the distances tells us the
+distances genuinely carry \emph{no} predictive signal. The flat result is an absence of signal, and the size
+result is what confirms it.
 \IfFileExists{tables/cv_validation.tex}{\input{tables/cv_validation}}{}
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.52\textwidth]{figures/res_pred_vs_actual.pdf}
-\caption[Out-of-sample predicted vs actual]{Out-of-sample detection predictions vs the truth, held-out species
-and locations. They collapse onto the mean baseline (orange) instead of the diagonal (dashed) --- the distances
-carry no predictive power.}
+\caption[Out-of-sample predicted vs actual]{Out-of-sample detection predictions against the truth, for held-out
+species (navy) and held-out locations (green); each point is one cell. Perfect prediction would lie on the
+dashed diagonal, and predicting the mean regardless of input lies on the orange horizontal. The points follow
+the orange line, so the distances carry no predictive power.}
 \label{fig:predvsactual}
 \end{figure}
 
