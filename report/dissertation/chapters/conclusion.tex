@@ -2,34 +2,61 @@
 \label{ch:conclusion}
 
 \section{Summary of findings}
-We asked whether a promptable tracker's zero-shot accuracy on an unseen (species, place) --- studied
-primarily on SAM\,3 --- can be
-predicted, before running the model and without scoring its output, from four label-free distances --- separately
-for detection and association. Under a deliberately powerful out-of-sample test the answer is no: no distance
-beats a mean-predictor baseline on either a species or a location hold-out, the one apparent effect is an
-animal-size confound, and a follow-up intrinsic-difficulty pivot collapses to the same size effect. Only object
-size predicts detection, modestly, and it is the nuisance the analysis controls for. Association carries almost
-no signal distinct from detection. The null is robust to the two ways it might have been an artefact: it holds
-across two datasets (SA-FARI and BURST), and, in a controlled model swap on BURST, across two
-architecturally distinct promptable trackers, so it reflects the prediction problem rather than any one dataset
-or model. The result is a rigorous, decomposed, and now cross-model null.
+\label{sec:concl-summary}
+Camera traps and laboratory rigs now record wildlife video far faster than anyone can annotate it, and that
+annotation step is what limits how much ecology and behavioural science actually gets done. Promptable
+trackers offer a way past it. Name an animal in ordinary words, and the model finds and follows every one that
+appears, without ever having been trained on that species. The difficulty is that the ability is uneven, and
+uneven in ways nobody can currently anticipate. A team pointing such a model at a new species in a new place
+has no principled basis for deciding whether to trust what comes back, which leaves two unattractive options:
+trust it blindly, or fall back on the manual annotation the model was meant to replace.
+
+This dissertation asked whether that judgement can be made in advance. Can a promptable tracker's zero-shot
+accuracy on an unseen species and place be predicted before the model is run, from properties that require no
+labelling of the target? It asked the question separately for the two halves of the task --- finding the
+animal, and following it --- because the two can fail for different reasons.
+
+The answer is no, and it survives every criterion applied to it. No distance's coefficient interval excludes
+zero. None beats a mean predictor out of sample, on either a species or a location hold-out. Together the four
+explain about $3\%$ of the variation in detection. The null holds when the encoder, the crop, the prompt and
+the distance functional are each swapped in turn. It holds for a second family of label-free properties,
+intrinsic scene difficulty, whose apparent effect collapses into animal size. It holds when familiarity is
+read from the tracker's own feature space instead of from an external reference. It holds on a second,
+independent dataset, and on two architecturally distinct trackers substituted for SAM\,3. And it is not a
+failure of power: the same procedure detects animal size out of sample wherever size is present.
+
+Only that one property predicts detection, and only modestly --- the nuisance the analysis introduced in order
+to control for it. Association carries almost no variance distinct from detection on this data, so the
+decomposition that motivated the design turned out to be a detection story. What remains is a rigorous,
+decomposed, cross-dataset and cross-model null.
 
 \section{Contributions}
+\label{sec:concl-contributions}
 To our knowledge this is the first study to test, out of sample, whether a promptable video tracker's
-zero-shot transfer is predictable from label-free, before-running signals, and the first to decompose that
-question into detection and association. Its contribution is the honest negative answer and its explanation:
-transfer is not distance-driven; the apparent signals reduce to an animal-size confound; the test is shown to
-detect that one real signal when present, so the null reflects an absence of signal, not of power; and the null
-generalises --- across two datasets and, via the controlled model swap, across two other trackers --- so it is
-task-general rather than specific to SAM\,3.
+zero-shot transfer is predictable from label-free signals known before the model is run, and the first to
+decompose that question into detection and association.
+
+What the field gains is threefold. The formulation and the protocol are reusable: any future before-running
+estimator can be held to the same whole-group hold-out bar that these well-motivated distances failed, which
+is what makes a negative answer useful rather than merely discouraging. The explanation is specific rather
+than vague: the apparent signals reduce to an animal-size confound, so any future study measuring visual
+novelty across species must control for apparent size or it will rediscover the same artefact. And the caution
+is practical: proximity to familiar training data is not a safety guarantee, so reliability has to be checked
+rather than assumed.
 
 \section{Future work}
-Three directions remain open. First, a fuller representational probe. The familiarity proxy already tests
-whether SAM\,3's own features separate the species and finds they do, but only by re-encoding the visual
-distance (Section~\ref{sec:familiarity}); what those features actually encode --- whether taxonomy is
-represented structurally, and a coverage-anchored proxy for the true, undisclosed pretraining corpus --- is left
-untested. Second, broadening the model swap: more trackers, and ideally a larger fair, mask-native dataset
-than BURST that is not any tracker's home turf --- SA-FARI's larger cell count could not be reused, because its
-camera-trap domain collapses internet-trained challengers' calibration even where they localise well, making it
-the fair-swap ceiling here. Third, targets with richer association structure (crowded, multi-object scenes) where
-the detection--association decomposition would have more to distinguish.
+\label{sec:concl-future}
+Three directions remain open.
+
+The first is a fuller representational probe. The familiarity proxy tests only whether SAM\,3's features
+separate the species, and finds that they do by re-encoding the visual distance
+(Section~\ref{sec:familiarity}). What those features actually encode --- whether taxonomy is represented
+structurally --- is untested, as is a proxy anchored on the coverage of the true, undisclosed pretraining
+corpus.
+
+The second is a broader model swap: more trackers, and ideally a larger fair dataset that is no tracker's home
+turf. SA-FARI's larger cell count could not be reused here, for the reason given in
+Section~\ref{sec:model_swap}.
+
+The third is targets with richer association structure. In crowded, multi-object footage the
+detection--association decomposition would have considerably more to distinguish than it did here.

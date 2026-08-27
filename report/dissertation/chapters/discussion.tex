@@ -55,8 +55,8 @@ This work forecasts from external distances known before a single frame is proce
 harder regime, and for a practitioner deciding whether to spend compute, the more useful one.
 
 The second is the output. Every predecessor targets a scalar classifier accuracy, or the quality of a static
-detector or segmenter. None concerns identity maintained over time, and none decomposes its estimate. This is
-the first study to put the question to a promptable video tracker, split into detection and association.
+detector or segmenter. None concerns identity maintained over time, and none decomposes its estimate. That is
+the gap identified in Section~\ref{sec:bg-gap}.
 
 AutoEval~\cite{autoeval} is the closest methodological cousin, and the strength of its positive sharpens the
 contrast. It reports a near-perfect rank correlation between a Fr\'echet distribution-shift distance and
@@ -105,8 +105,7 @@ promptable tracker is trustworthy for a new species and place --- is not solved 
 is a negative answer, but a useful one. The intuition that far-from-training implies unreliable does not hold
 here, so a deployment gate cannot be built from taxonomic, visual, environmental or temporal distance to a
 reference set. The one predictive label-free signal, animal size, is too coarse and too obvious to serve as
-one. What the negative result does establish is a baseline: any future before-running estimator must clear the
-same whole-group hold-out bar that these well-motivated distances failed.
+one.
 
 One after-running signal does clear that bar, and it is stated plainly here rather than left implicit. If a
 practitioner is willing to run the tracker first, an ATC-style estimator~\cite{atc} --- reading SAM\,3's own
@@ -146,9 +145,9 @@ dropped.
 of cells. That is why inference is group-clustered throughout, and why aggregate correlations are reported
 alongside their much weaker cell-level values, to avoid the ecological-correlation fallacy.
 
-\paragraph{Representational probing is only partly opened.} The familiarity proxy tests whether SAM\,3's
-features separate the species. They do, but that separability merely re-encodes the visual distance and does
-not predict transfer. A fuller probe of what those representations encode remains open.
+\paragraph{Representational probing is only partly opened.} The familiarity proxy establishes that SAM\,3's
+features separate the species, but not what those features encode. Section~\ref{sec:concl-future} takes this
+up.
 
 \paragraph{The scorer.} All scores come from the unmodified official evaluator, which wraps the standard
 HOTA-family metrics rather than any SAM-3-specific logic. Its one SAM-3-calibrated knob is a fixed $0.5$
