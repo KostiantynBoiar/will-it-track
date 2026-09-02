@@ -1,25 +1,18 @@
 % =====================================================================
-%  MSc dissertation — Predicting the Zero-Shot Transfer of a Promptable
-%  Video Tracker, from label-free distances (primary case: SAM 3 on SA-FARI).
-%  Build:  report/build.sh report/dissertation   (Tectonic + biber + gs)
+%  COMPARISON ARTIFACT — full adoption of the official SoCS template
+%  (mproj.cls + times, per the shipped sample). Same chapter content as
+%  dissertation.tex, which remains the canonical document.
+%  Build: report/build.sh report/dissertation  (builds both mains)
 % =====================================================================
-\documentclass[11pt,a4paper]{report}
+\documentclass{mproj}
 
-\usepackage[a4paper,margin=2.5cm]{geometry}
-\usepackage{iftex}
-\ifPDFTeX
-  \usepackage[T1]{fontenc}
-  \usepackage[utf8]{inputenc}
-  \IfFileExists{lmodern.sty}{\usepackage{lmodern}\usepackage{microtype}}{}
-\else
-  \usepackage{fontspec}
-  \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
-\fi
-\usepackage{amsmath,amssymb}
 \usepackage{graphicx}
+\usepackage[T1]{fontenc} % force NFSS/T1 so the PSNFSS Times below applies under XeTeX too
+\usepackage{times}   % the shipped template sample loads times over the class's newcent
+\usepackage{amsmath,amssymb}
 \usepackage{booktabs}
-\usepackage{array}   % >{\raggedright\arraybackslash}p{} column modifiers
-\usepackage[section]{placeins} % keep each table/float inside the section that references it
+\usepackage{array}
+\usepackage[section]{placeins}
 \usepackage{enumitem}
 \usepackage{caption}
 \usepackage[dvipsnames]{xcolor}
@@ -29,71 +22,31 @@
 \usepackage[colorlinks=true,linkcolor=NavyBlue,citecolor=NavyBlue,urlcolor=NavyBlue]{hyperref}
 
 \setlist{nosep,leftmargin=1.4em}
-\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
-\setlength{\intextsep}{8pt plus 2pt minus 2pt}
-\setlength{\floatsep}{8pt plus 2pt minus 2pt}
-% on float pages, pin floats to the top and cap the inter-float gap (default is 1fil/2fil/1fil,
-% which opens huge gaps between two floats sharing a page)
+\captionsetup{font=small,labelfont=bf}
+
+% Float spacing. By default a float page distributes its slack as 1fil above, 2fil between
+% floats and 1fil below, which opens huge gaps between a figure and a table sharing a page;
+% pin floats to the top, cap the inter-float gap, and let the bottom absorb the remainder.
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+\setlength{\floatsep}{10pt plus 2pt minus 2pt}
 \makeatletter
 \setlength{\@fptop}{0pt}
-\setlength{\@fpsep}{8pt plus 1fil}
+\setlength{\@fpsep}{10pt plus 1fil}
 \setlength{\@fpbot}{0pt plus 1fil}
 \makeatother
-\captionsetup{font=small,labelfont=bf}
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.75}
 
 \begin{document}
 
-% ------------------------------------------------- title page (template layout)
-\begin{titlepage}
-\ \vskip2em
-\noindent\includegraphics[trim=0.7cm 0.7cm 0.7cm 0.7cm]{images/CompSci_colour}
-\centering
-\Large
-\vskip 6em
-{\bfseries\Huge Predicting the Zero-Shot Transfer of a\\[6pt]
-Promptable Video Tracker\par}
-\vskip 2em
-{\huge Kostiantyn Boiar\par}
-{\normalsize Student ID: \texttt{2917685}\par}
-\vskip 2em
-School of Computing Science\\
-Sir Alwyn Williams Building\\
-University of Glasgow\\
-G12 8QQ
-\vskip 2em
-A dissertation presented in part fulfilment of the requirements of the Degree of
-Master of Science at The University of Glasgow
-\vskip 2em
-\today
-\vfill
-\end{titlepage}
+\title{Predicting the Zero-Shot Transfer of a Promptable Video Tracker}
+\author{Kostiantyn Boiar\\ \normalsize Student ID: \texttt{2917685}}
+\date{\today}
+\maketitle
 
-\pagenumbering{roman}
-
-% ------------------------------------ consent (official template wording) + declaration
-\chapter*{Education Use Consent}
-I hereby give my permission for this project to be shown to other
-University of Glasgow students and to be distributed in an electronic
-format.  \textbf{Please note that you are under no obligation to sign
-this declaration, but doing so would help future students.}
-
-\begin{tabular}{@{}llll}
-      &                     &            &                     \\
-      &                     &            &                     \\
-Name: & \rule{4.0cm}{0.5mm} & Signature: & \rule{4.5cm}{0.5mm} \\
-      &                     &            &                     \\
-      &                     &            &                     \\
-\end{tabular}
-\vspace{1.5cm}
-
-\noindent\textbf{Declaration of Originality.}\\
-I declare that this dissertation is my own work, except where explicitly stated and referenced, and
-that it has not been submitted for any other degree at the University of Glasgow or any other
-institution.
-
-% -------------------------------------------------------------- abstract
-\chapter*{Abstract}
-\addcontentsline{toc}{chapter}{Abstract}
+\begin{abstract}
 Conservation teams increasingly monitor wildlife with camera traps, which record far more footage than
 anyone can watch. Locating each animal in a video and following it from frame to frame is the bottleneck,
 and a new generation of promptable trackers promises to remove it: name an animal in ordinary words and the
@@ -120,21 +73,27 @@ since the same test reliably detects the size effect whenever it is present.
 The contribution is therefore a carefully bounded negative result, the first for this class of model, and
 with it a practical caution: resemblance to familiar training data is no guarantee that such a tracker will
 work, and reliability has to be checked rather than assumed.
+\end{abstract}
 
-% -------------------------------------------------------------- acknowledgements
-\chapter*{Acknowledgements}
-\addcontentsline{toc}{chapter}{Acknowledgements}
+\educationalconsent
+
+\vspace{1.5cm}
+\noindent\textbf{Declaration of Originality.}\\
+I declare that this dissertation is my own work, except where explicitly stated and referenced, and
+that it has not been submitted for any other degree at the University of Glasgow or any other
+institution.
+
+\newpage
+\section*{Acknowledgements}
 I thank my supervisor, Dr Marwa Mahmoud, for guidance throughout this project.
 
-% -------------------------------------------------------------- contents
 \tableofcontents
 \listoffigures
 \listoftables
 
-% -------------------------------------------------------------- abbreviations
 \chapter*{List of Abbreviations}
 \addcontentsline{toc}{chapter}{List of Abbreviations}
-\begin{tabular}{@{}p{2.7cm}p{12.2cm}@{}}
+\begin{tabular}{@{}p{2.7cm}p{11.2cm}@{}}
 \texttt{pHOTA}   & Promptable Higher Order Tracking Accuracy --- the benchmark's tracking score \\
 \texttt{pDetA}   & Its \emph{detection} half: were the right animals found? (our primary target) \\
 \texttt{pAssA}   & Its \emph{association} half: was each identity kept over time? \\
@@ -158,10 +117,6 @@ RLE              & Run-Length Encoding, the COCO mask format \\
 LVIS             & Large Vocabulary Instance Segmentation, the class vocabulary BURST uses \\
 \end{tabular}
 
-% -------------------------------------------------------------- body
-\clearpage
-\pagenumbering{arabic}
-
 \input{chapters/introduction}
 \input{chapters/background}
 \input{chapters/methodology}
@@ -169,13 +124,11 @@ LVIS             & Large Vocabulary Instance Segmentation, the class vocabulary 
 \input{chapters/discussion}
 \input{chapters/conclusion}
 
-% -------------------------------------------------------------- references
 \clearpage
 \addcontentsline{toc}{chapter}{Bibliography}
 \bibliographystyle{plainnat}
 \bibliography{references}
 
-% -------------------------------------------------------------- appendices
 \appendix
 \input{chapters/appendices}
 
