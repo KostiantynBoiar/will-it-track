@@ -8,7 +8,11 @@
 
 \usepackage{graphicx}
 \usepackage[T1]{fontenc} % force NFSS/T1 so the PSNFSS Times below applies under XeTeX too
-\usepackage{times}   % the shipped template sample loads times over the class's newcent
+% The template sample loads `times`, which leaves mathematics in Computer Modern — visibly
+% mismatched wherever math meets Times text. mathptmx is the same Times family with matching
+% math; courier supplies the typewriter face `times` would have set.
+\usepackage{mathptmx}
+\usepackage{courier}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{array}
