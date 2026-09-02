@@ -26,6 +26,8 @@
 \usepackage[nottoc]{tocbibind} % as in the template sample: puts the bibliography in the ToC
 \usepackage[hidelinks]{hyperref} % template renders plain black text; links stay clickable
 
+% \stubfix{n}: absorb a chapter-final overflow of n lines (no-op in the dense build)
+\newcommand{\stubfix}[1]{\enlargethispage{#1\baselineskip}}
 \setlist{nosep,leftmargin=1.4em}
 \captionsetup{font=small,labelfont=bf}
 

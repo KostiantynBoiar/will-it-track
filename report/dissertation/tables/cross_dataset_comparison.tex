@@ -2,13 +2,9 @@
 % per-dataset tables/docs and the BURST replication analysis. See docs/{label_free_prediction_null,
 % burst_replication}.md.
 \begin{table}[htbp]\centering
-  \caption{Cross-dataset synthesis: every feature tested, its value on each dataset, and the verdict. Each
-  column is reported in one metric, stated in its header: on \textbf{BURST} every entry is the out-of-sample
-  $\Delta$MAE\,($p$) over a mean predictor; on \textbf{SA-FARI} the individual distances are the standardised
-  GLM coefficient with its 95\% CI, while the two rows marked $\dagger$ (combined distances, animal size) are
-  $\Delta$MAE\,($p$) like BURST. A feature ``predicts transfer'' only if it is positive \emph{and} significant.
-  Only the animal-size confound clears the bar, and only on SA-FARI (the positive control); every label-free
-  distance is null on both datasets.}
+  \caption{Cross-dataset synthesis: every feature tested, per dataset. BURST entries are out-of-sample
+  $\Delta$MAE\,($p$); SA-FARI entries are GLM coefficients [95\% CI], except the $\dagger$ rows, which are
+  $\Delta$MAE\,($p$). Only animal size clears the bar, and only on SA-FARI.}
   \label{tab:cross_dataset}
   \footnotesize
   \setlength{\tabcolsep}{5pt}

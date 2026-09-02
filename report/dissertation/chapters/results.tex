@@ -77,7 +77,6 @@ between them. The VIF column rules that out. The variance inflation factor measu
 predictor is with the others, and a value near $1$ means essentially independent. Every VIF here is
 $\approx 1$, so the $3\%$ is genuinely all there is, not a masked signal.
 
-\IfFileExists{tables/variance.tex}{\input{tables/variance}}{}
 
 The one distance that looked predictive was visual distance, and it turned out to be animal size in disguise.
 Visually distinctive species tend to be larger, and larger animals are easier to detect. What looked like
@@ -98,7 +97,6 @@ with detection looks moderate, at $r=-0.377$. That is an averaging artefact. Mea
 individual cell, where the model actually operates, it shrinks to $-0.13$, and clutter's is $0.00$. So the
 difficulty idea is \textbf{also null}: the only label-free property that predicts detection is animal size.
 
-\IfFileExists{tables/difficulty.tex}{\input{tables/difficulty}}{}
 
 \section{The headline test: predicting unseen species and locations}
 \label{sec:headline}
@@ -132,7 +130,7 @@ result is what confirms it.
 \IfFileExists{tables/cv_validation.tex}{\input{tables/cv_validation}}{}
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.52\textwidth]{figures/res_pred_vs_actual.pdf}
+\includegraphics[width=0.44\textwidth]{figures/res_pred_vs_actual.pdf}
 \caption[Out-of-sample predicted vs actual]{Out-of-sample detection predictions against the truth, for held-out
 species (navy) and held-out locations (green); each point is one cell. Perfect prediction would lie on the
 dashed diagonal, and predicting the mean regardless of input lies on the orange horizontal. The points follow
@@ -168,12 +166,13 @@ the horizontal axis and its detection score on the vertical, and the fitted tren
 does not predict transfer. Size does, a little.
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.52\textwidth]{figures/res_size_confound.pdf}
+\includegraphics[width=0.44\textwidth]{figures/res_size_confound.pdf}
 \caption[The size confound]{The one label-free property that predicts detection: animal size. Per-cell
 detection score against log ground-truth mask area, on the location split ($346$ cells), with the fitted trend
 at $r=+0.31$. This is the confound behind the apparent visual-distance effect.}
 \label{fig:size}
 \end{figure}
+
 
 \IfFileExists{tables/coefficients_species.tex}{\input{tables/coefficients_species}}{}
 
@@ -200,6 +199,7 @@ It remains a correlate rather than a predictor. Predicting a held-out species' h
 distance beats a mean baseline by only $+0.008$ MAE, and just misses out-of-sample significance at $p=0.053$.
 Even the study's best signal does not clear the bar. Its direction is the opposite of the hypothesis too:
 distinctive means safer, rather than novel meaning worse.
+
 \IfFileExists{tables/false_positives.tex}{\input{tables/false_positives}}{}
 
 \section{Ablations and robustness}

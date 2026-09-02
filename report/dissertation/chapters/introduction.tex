@@ -2,10 +2,10 @@
 \label{ch:introduction}
 
 Wildlife video is recorded far faster than anyone can annotate it, and a new class of promptable tracker
-promises to close that gap by finding and following animals it was never trained on. Whether such a model can
-be trusted on a particular animal in a particular place is not something anyone can currently say in advance.
-This chapter sets out that problem, turns it into a research question and a set of testable hypotheses, states
-what the work contributes, and maps the rest of the dissertation.
+promises to close that gap by finding and following animals it was never trained on --- but whether such a
+model can be trusted on a particular animal in a particular place is not something anyone can currently say in
+advance. This chapter sets out that problem, turns it into a research question and testable hypotheses, states
+the contributions, and maps the dissertation.
 
 \section{Motivation}
 \label{sec:motivation}
@@ -67,36 +67,32 @@ some property of the target, cheap to measure, that says whether the model will 
 
 There is an obvious candidate, and practitioners already reason with it informally --- distance from the
 familiar. A model ought to do worse on things unlike what it has seen. If that intuition held quantitatively,
-it would be genuinely useful. You could measure how far a new species or place sits from the model's
-reference. That number would then act as a deployment gate, applied before spending compute and before
-annotating anything.
+one could measure how far a new species or place sits from the model's reference and use that number as a
+deployment gate, applied before spending compute and before annotating anything.
 
 This dissertation asks whether that rule exists. Precisely: can a promptable tracker's zero-shot accuracy on
 an unseen (species, place) be predicted in advance, from properties measurable without running the model or
 scoring its output? And which factors, if any, govern that transfer?
 
-We ask it separately for the two halves of the task, because tracking is built on detection. The model must
-first find the animal, then hold onto its identity from frame to frame. The two can fail for different
-reasons. Finding is about whether the animal is recognisable at all; following is about whether the scene lets
-an identity survive. A single accuracy number would average them together and hide the answer, so we keep them
-apart throughout.
+We ask it separately for the two halves of the task, because the two can fail for different reasons: finding
+is about whether the animal is recognisable at all, following about whether the scene lets an identity
+survive. A single accuracy number would average them together and hide the answer, so we keep them apart
+throughout.
 
 Asking the question at all requires a demanding dataset. It needs species labels structured enough to say how
 far apart two species are, plus location metadata, timestamps, and dense per-frame tracking annotation --- all
 in one corpus. SA-FARI~\cite{safari} carries all four, which is why we use it;
 Section~\ref{sec:bg-safari} sets out its contents.
 
-We study SAM\,3 on SA-FARI as the primary case. We then ask whether the answer is specific to it. The analysis
+We study SAM\,3 on SA-FARI as the primary case, then ask whether the answer is specific to it: the analysis
 is repeated on a second, independent dataset, and two other promptable trackers are swapped in on the same
 data (Section~\ref{sec:model_swap}).
 
 \section{Hypotheses}
 \label{sec:hypotheses}
 The research question asks two things at once: \emph{whether} transfer can be predicted, and \emph{what
-governs} it. The hypotheses below turn that into something a dataset can answer. Each names a factor, commits
-to a direction, and can be rejected by the evidence.
-
-Two terms are needed first, because the rest of the dissertation rests on them.
+governs} it. The hypotheses below turn that into something a dataset can answer; each names a factor, commits
+to a direction, and can be rejected by the evidence. Two terms are needed first.
 
 The tracker is scored with a standard tracking metric that splits cleanly into two halves
 (Section~\ref{sec:bg-hota}). \textbf{\texttt{pDetA}}, detection accuracy, scores the finding half: were the
@@ -110,7 +106,7 @@ is run, which is exactly what a deployment gate would require. The four tested h
 \emph{distances}: how far a target species or place sits from a fixed reference set, measured by taxonomy, by
 appearance, by the surrounding scene, and by time.
 
-\begin{description}[leftmargin=2.6em,style=nextline]
+\begin{description}[leftmargin=1.6em]
   \item[H0 (null)] The label-free distances carry no predictive information about \texttt{pDetA} or
     \texttt{pAssA}. Transfer is not distance-driven.
   \item[H1 (detection)] \texttt{pDetA} falls as the species becomes more novel --- further from the reference
@@ -126,9 +122,9 @@ intuition. Holding an identity across frames should depend on the scene rather t
 so, the difficulties catalogued in Section~\ref{sec:bg-challenges} --- darkness, clutter, an unfamiliar
 background --- ought to bite here rather than on detection.
 
-H0 is what remains if both fail. It is not an absence of an answer but a substantive one. It would mean the
-distance intuition, however reasonable it sounds, does not survive contact with the data --- and that a
-deployment gate cannot be built this way.
+H0 is what remains if both fail --- a substantive answer, not an absence of one: the distance intuition,
+however reasonable it sounds, does not survive contact with the data, and a deployment gate cannot be built
+this way.
 
 \section{Contributions}
 To our knowledge this is the first study to ask whether a promptable video tracker's zero-shot transfer can be
@@ -147,11 +143,12 @@ literature. The work contributes four things, taken up again in Section~\ref{sec
     animal appears in frame --- and the caution for practice that follows.
 \end{enumerate}
 
+\stubfix{3}% final-polish: absorb the outline's overflow lines
 \section{Dissertation outline}
-Chapter~\ref{ch:background} reviews the related work and states precisely the gap this dissertation fills.
-Chapter~\ref{ch:methodology} describes the data and the two splits, how transfer is measured, the four
-label-free distances, and the statistical procedure used to test them. Chapter~\ref{ch:results} reports the
-results, including the out-of-sample validation, the robustness checks, and the replications on a further
-dataset and two further trackers. Chapter~\ref{ch:discussion} interprets those results, reconciles them with
-the prior literature, and sets out the limitations and threats to validity together with the ethical
-considerations. Chapter~\ref{ch:conclusion} concludes and identifies what is left open for future work.
+\stubfix{3}%
+Chapter~\ref{ch:background} reviews the related work and states the gap. Chapter~\ref{ch:methodology}
+describes the data, the measurement, the four distances, and the statistical procedure.
+Chapter~\ref{ch:results} reports the results, with the robustness checks and the cross-dataset and
+cross-model replications. Chapter~\ref{ch:discussion} interprets them, reconciles them with the prior
+literature, and sets out the limitations, ethics, and threats to validity. Chapter~\ref{ch:conclusion}
+concludes and identifies future work.

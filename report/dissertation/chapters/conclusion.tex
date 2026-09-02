@@ -1,58 +1,49 @@
 \chapter{Conclusion}
 \label{ch:conclusion}
 
-Chapter~\ref{ch:discussion} interpreted the results and set the bounds within which they hold. This chapter
-closes the dissertation. It returns to the problem the work set out to solve and states what the evidence
-answers, sets out what the field gains from that answer, and identifies what the result leaves open.
+Chapter~\ref{ch:discussion} interpreted the results and set their bounds. This chapter returns to the
+problem, states what the evidence answers, what the field gains from that answer, and what remains open.
 
 \section{Summary of findings}
 \label{sec:concl-summary}
-A practitioner opening a new camera-trap site cannot currently tell whether a promptable tracker will work on
-the animals living there. This dissertation asked whether that judgement can be made in advance, from
-properties measurable without running the model or labelling its output, and asked it separately for finding
-the animal and for following it.
+A practitioner opening a new camera-trap site cannot currently tell whether a promptable tracker will work
+on the animals living there. This dissertation asked whether that judgement can be made in advance, from
+properties measurable without running the model or labelling its output --- separately for finding the animal
+and for following it.
 
 The answer is no, and it survives every criterion applied to it. No distance's coefficient interval excludes
-zero. None beats a mean predictor out of sample, on either a species or a location hold-out. Together the four
-explain about $3\%$ of the variation in detection. The null holds when the encoder, the crop, the prompt and
-the distance functional are each swapped in turn. It holds for a second family of label-free properties,
-intrinsic scene difficulty, whose apparent effect collapses into animal size. It holds when familiarity is
-read from the tracker's own feature space instead of from an external reference. It holds on a second,
-independent dataset, and on two architecturally distinct trackers substituted for SAM\,3. And it is not a
-failure of power: the same procedure detects animal size out of sample wherever size is present.
+zero; none beats a mean predictor out of sample, on either a species or a location hold-out; together the
+four explain about $3\%$ of the variation in detection. The null holds when the encoder, the crop, the prompt
+and the distance functional are each swapped in turn; for a second family of label-free properties, intrinsic
+scene difficulty, whose apparent effect collapses into animal size; when familiarity is read from the
+tracker's own feature space instead of an external reference; on a second, independent dataset; and on two
+architecturally distinct trackers substituted for SAM\,3. And it is not a failure of power: the same
+procedure detects animal size out of sample wherever size is present.
 
-Only that one property predicts detection, and only modestly --- the nuisance the analysis introduced in order
-to control for it. Association carries almost no variance distinct from detection on this data, so the
-decomposition that motivated the design turned out to be a detection story. What remains is a rigorous,
-decomposed, cross-dataset and cross-model null.
+Only that one property predicts detection, and only modestly --- the nuisance the analysis introduced in
+order to control for it. Association carries almost no variance distinct from detection here, so the
+decomposition turned out to be a detection story. What remains is a rigorous, decomposed, cross-dataset and
+cross-model null.
 
 \section{Contributions}
 \label{sec:concl-contributions}
 To our knowledge this is the first study to test, out of sample, whether a promptable video tracker's
 zero-shot transfer is predictable from label-free signals known before the model is run, and the first to
-decompose that question into detection and association.
+decompose that question into detection and association. What the field gains is threefold. The formulation and protocol are reusable: any future before-running
+estimator can be held to the same whole-group hold-out bar these well-motivated distances failed. The
+explanation is specific: the apparent signals reduce to an animal-size confound, so any future study measuring
+visual novelty across species must control for apparent size or it will rediscover the same artefact. And the
+caution is practical: proximity to familiar training data is not a safety guarantee, so reliability has to be
+checked rather than assumed.
 
-What the field gains is threefold. The formulation and the protocol are reusable: any future before-running
-estimator can be held to the same whole-group hold-out bar that these well-motivated distances failed, which
-is what makes a negative answer useful rather than merely discouraging. The explanation is specific rather
-than vague: the apparent signals reduce to an animal-size confound, so any future study measuring visual
-novelty across species must control for apparent size or it will rediscover the same artefact. And the caution
-is practical: proximity to familiar training data is not a safety guarantee, so reliability has to be checked
-rather than assumed.
-
+\stubfix{2}% final-polish: absorb the future-work overflow
 \section{Future work}
 \label{sec:concl-future}
-Three directions remain open.
-
-The first is a fuller representational probe. The familiarity proxy tests only whether SAM\,3's features
-separate the species, and finds that they do by re-encoding the visual distance
-(Section~\ref{sec:familiarity}). What those features actually encode --- whether taxonomy is represented
+Three directions remain open. The first is a fuller representational probe: the familiarity proxy shows that
+SAM\,3's features separate the species only by re-encoding the visual distance
+(Section~\ref{sec:familiarity}), and what they actually encode --- whether taxonomy is represented
 structurally --- is untested, as is a proxy anchored on the coverage of the true, undisclosed pretraining
-corpus.
-
-The second is a broader model swap: more trackers, and ideally a larger fair dataset that is no tracker's home
-turf. SA-FARI's larger cell count could not be reused here, for the reason given in
-Section~\ref{sec:model_swap}.
-
-The third is targets with richer association structure. In crowded, multi-object footage the
-detection--association decomposition would have considerably more to distinguish than it did here.
+corpus. The second is a broader model swap: more trackers, and a larger fair dataset that is no tracker's home
+turf (Section~\ref{sec:model_swap} gives the reason SA-FARI could not serve). The third is targets with richer
+association structure: in crowded, multi-object footage the detection--association decomposition would have
+considerably more to distinguish than it did here.
