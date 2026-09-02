@@ -28,6 +28,7 @@
 
 % \stubfix{n}: absorb a chapter-final overflow of n lines (no-op in the dense build)
 \newcommand{\stubfix}[1]{\enlargethispage{#1\baselineskip}}
+\emergencystretch=1em % narrow Times column: prefer looser lines over overfull boxes
 \setlist{nosep,leftmargin=1.4em}
 \captionsetup{font=small,labelfont=bf}
 

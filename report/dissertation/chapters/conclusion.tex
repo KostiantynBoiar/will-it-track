@@ -27,16 +27,16 @@ cross-model null.
 
 \section{Contributions}
 \label{sec:concl-contributions}
-To our knowledge this is the first study to test, out of sample, whether a promptable video tracker's
-zero-shot transfer is predictable from label-free signals known before the model is run, and the first to
-decompose that question into detection and association. What the field gains is threefold. The formulation and protocol are reusable: any future before-running
+To our knowledge this is the first out-of-sample test of whether a promptable video tracker's zero-shot
+transfer is predictable from label-free, before-running signals, and the first to decompose that question
+into detection and association. What the field gains is threefold. The formulation and protocol are reusable: any future before-running
 estimator can be held to the same whole-group hold-out bar these well-motivated distances failed. The
 explanation is specific: the apparent signals reduce to an animal-size confound, so any future study measuring
 visual novelty across species must control for apparent size or it will rediscover the same artefact. And the
 caution is practical: proximity to familiar training data is not a safety guarantee, so reliability has to be
 checked rather than assumed.
 
-\stubfix{2}% final-polish: absorb the future-work overflow
+\stubfix{1}% final-polish: absorb the future-work overflow
 \section{Future work}
 \label{sec:concl-future}
 Three directions remain open. The first is a fuller representational probe: the familiarity proxy shows that
@@ -44,6 +44,6 @@ SAM\,3's features separate the species only by re-encoding the visual distance
 (Section~\ref{sec:familiarity}), and what they actually encode --- whether taxonomy is represented
 structurally --- is untested, as is a proxy anchored on the coverage of the true, undisclosed pretraining
 corpus. The second is a broader model swap: more trackers, and a larger fair dataset that is no tracker's home
-turf (Section~\ref{sec:model_swap} gives the reason SA-FARI could not serve). The third is targets with richer
+turf (Section~\ref{sec:model_swap}). The third is targets with richer
 association structure: in crowded, multi-object footage the detection--association decomposition would have
 considerably more to distinguish than it did here.

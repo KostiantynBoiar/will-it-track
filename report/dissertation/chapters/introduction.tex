@@ -19,23 +19,22 @@ record and expensive to annotate.
 This dissertation works on the wild side of that divide, where the problem is hardest. Camera traps have
 become a standard tool in wildlife monitoring, and a single survey leaves a team with far more footage than
 anyone can watch. Somebody still has to work out which animal is in each clip, how many there are, and what
-they do. Done by hand this is slow and expensive, and it is the step that limits how much ecology gets done at
-all.
+they do; done by hand, that is the step that limits how much ecology gets done at all.
 
-Automating it means solving two problems, not one. The first is \emph{finding} the animal in a frame. The
-second is \emph{following} it from frame to frame, so the same individual keeps the same identity for as long
-as it is visible. Only the second yields the counts and behavioural sequences both communities want: in a
-study of social behaviour, losing an identity means losing the very animal whose behaviour was being measured.
-It is also the harder of the two.
+Automating it means solving two problems, not one. The first is \emph{finding} the animal in a frame; the
+second is \emph{following} it, so the same individual keeps the same identity for as long as it is
+visible. Only the second yields the counts and behavioural sequences both communities want: in a
+study of social behaviour, losing an identity means losing the very animal whose behaviour was being
+measured; it is also the harder of the two.
 
 Neither is easy on real footage. Animals are camouflaged against the background they live in, appear at any
-distance and viewpoint, and are cut in half by vegetation. Much of the footage is recorded at night in
-infrared. And because a camera trap is fixed, the same scene repeats in every clip from that site, which gives
-a model an easy shortcut: learn the background rather than the animal~\cite{panaf,xiao}.
+distance and viewpoint, are cut in half by vegetation, and much of the footage is recorded at night in
+infrared. And because a camera trap is fixed, the same scene repeats in every clip from a site, which gives a
+model an easy shortcut: learn the background rather than the animal~\cite{panaf,xiao}.
 Section~\ref{sec:bg-challenges} sets these difficulties out in full.
 
-For years the standard answer was to train a detector on a fixed list of species and deploy it. It works where
-it was trained. It degrades sharply at camera sites and regions it has not seen~\cite{terra,wilds}. And adding
+For years the standard answer was to train a detector on a fixed list of species and deploy it. It works
+where it was trained and degrades sharply at sites and regions it has not seen~\cite{terra,wilds}. And adding
 a species that was not on the list means collecting and labelling more data --- precisely the cost a team
 opening a new site is trying to avoid.
 
@@ -44,21 +43,21 @@ SAM\,3~\cite{sam3} \texttt{"impala"} and it finds, segments and follows every im
 been trained on that species. A team can point a tracker at an animal it has never seen and get an answer
 straight away.
 
-That is the appeal. The liability is that the answer is not equally good everywhere. Zero-shot performance
-varies sharply from one animal to the next, and from one place to the next. No rule tells a practitioner,
+That is the appeal. The liability is that zero-shot performance varies sharply from one animal to the next,
+and from one place to the next. No rule tells a practitioner,
 before running the model, whether its output can be trusted for a given animal in a given place. The choice
 left is an unattractive one: trust the output blindly, or fall back on the manual annotation the model was
 meant to replace.
 
-This dissertation studies that gap. It asks whether such a rule exists --- first for SAM\,3, and then whether
-whatever we find is specific to it.
+This dissertation studies that gap: does such a rule exist --- first for SAM\,3, and then is whatever we
+find specific to it?
 
 \section{Problem statement and research question}
 \label{sec:problem}
 The appeal of a zero-shot model is that it skips the labelling step. That is also what makes it hard to trust.
-The normal way to check whether a model works on your data is to label some of it and measure. But a team that
-could afford to do that would have had less need for a zero-shot model in the first place. So these tools get
-deployed precisely where nobody has checked that they work.
+The normal way to check whether a model works on your data is to label some of it and measure --- but a team
+that could afford that would have less need for a zero-shot model. So these tools get deployed precisely
+where nobody has checked that they work.
 
 The problem is a general one. Any foundation model applied to a case nobody validated sits in the same
 position. The capability is broad, the guarantees are absent, and the user has no principled basis for
@@ -101,12 +100,12 @@ animal keep one consistent identity for as long as it was visible? Both run from
 separately for the reason given in Section~\ref{sec:problem}.
 
 A predictor is \textbf{label-free} if computing it needs no annotation of the target footage and no
-measurement of how the tracker performed on it. Only such a predictor can be evaluated \emph{before} the model
-is run, which is exactly what a deployment gate would require. The four tested here are all
+measurement of how the tracker performed on it; only such a predictor can be evaluated \emph{before} the
+model is run, which is what a deployment gate requires. The four tested here are all
 \emph{distances}: how far a target species or place sits from a fixed reference set, measured by taxonomy, by
 appearance, by the surrounding scene, and by time.
 
-\begin{description}[leftmargin=1.6em]
+\begin{description}[leftmargin=1.6em,style=unboxed,itemsep=2pt]
   \item[H0 (null)] The label-free distances carry no predictive information about \texttt{pDetA} or
     \texttt{pAssA}. Transfer is not distance-driven.
   \item[H1 (detection)] \texttt{pDetA} falls as the species becomes more novel --- further from the reference
@@ -143,12 +142,12 @@ literature. The work contributes four things, taken up again in Section~\ref{sec
     animal appears in frame --- and the caution for practice that follows.
 \end{enumerate}
 
-\stubfix{3}% final-polish: absorb the outline's overflow lines
+\stubfix{1}% final-polish: absorb the outline's overflow lines
 \section{Dissertation outline}
-\stubfix{3}%
-Chapter~\ref{ch:background} reviews the related work and states the gap. Chapter~\ref{ch:methodology}
-describes the data, the measurement, the four distances, and the statistical procedure.
-Chapter~\ref{ch:results} reports the results, with the robustness checks and the cross-dataset and
-cross-model replications. Chapter~\ref{ch:discussion} interprets them, reconciles them with the prior
-literature, and sets out the limitations, ethics, and threats to validity. Chapter~\ref{ch:conclusion}
-concludes and identifies future work.
+\stubfix{1}%
+\looseness=-1 % allow this paragraph to set one line shorter
+Chapter~\ref{ch:background} reviews the related work and states the gap; Chapter~\ref{ch:methodology}
+describes the data, the measurement, the distances, and the statistics; Chapter~\ref{ch:results} reports the
+results, robustness checks, and the cross-dataset and cross-model replications;
+Chapter~\ref{ch:discussion} interprets them and sets out limitations and ethics; and
+Chapter~\ref{ch:conclusion} concludes with future work.

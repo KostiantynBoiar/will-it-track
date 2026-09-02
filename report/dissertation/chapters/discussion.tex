@@ -14,8 +14,8 @@ wrong direction, and dissolved under a size control. The follow-up difficulty pi
 apparent effect routing entirely through animal size. So the only label-free property that predicts detection
 is the very quantity the analysis introduced as a nuisance to control for.
 
-The detection--association decomposition, the intellectual core of the design, produced a second and quieter
-finding. Association is a near-degenerate target on this data. Of the $346$ positive cells, $268$ ($77\%$) hold
+The detection--association decomposition, the intellectual core of the design, produced a second and
+quieter finding: association is a near-degenerate target on this data. Of the $346$ positive cells, $268$ ($77\%$) hold
 at most one annotated animal per video, so there is only one identity to keep. Across all positive cells
 \texttt{pAssA} correlates with \texttt{pDetA} at $0.97$ and is exactly equal to it in $73\%$, leaving little
 identity-specific variance for any feature to predict. The decomposition is therefore a detection story, and
@@ -60,8 +60,8 @@ embeddings computed before running SAM\,3, and it stayed null (Section~\ref{sec:
 not an artefact of a lazy nearest-prototype distance; our nearest analogue does worse still, running in the
 opposite direction before dissolving under a size control.
 
-One bridge makes the boundary concrete. Accuracy-on-the-Line~\cite{aotl} was validated on iWildCam, the same
-camera-trap shift this dissertation cites through WILDS and Terra Incognita~\cite{wilds,terra}. The exact
+One bridge makes the boundary concrete: Accuracy-on-the-Line~\cite{aotl} was validated on iWildCam, the
+same camera-trap shift this dissertation cites through WILDS and Terra Incognita~\cite{wilds,terra}. The exact
 wildlife shift where a classifier's out-of-distribution accuracy is predictable label-free is where our
 before-running distances are not.
 
@@ -99,9 +99,8 @@ cross-validation schemes, where every label-free distance failed. It is delibera
 contribution, for three reasons: it is after-running, a weaker operating point than the before-running
 question this work set out to answer; it is confirmatory of an established family rather than novel; and it is
 mechanistically close to circular, since feature and target are both functions of SAM\,3's own output --- a
-cell with no confident masklet trivially has zero detection accuracy. It is a real, validated estimator for
-the after-running, before-labelling operating point, but not the before-running predictor this dissertation
-asks for, and not part of the null it reports.
+cell with no confident masklet trivially has zero detection accuracy. It is a real, validated estimator for the after-running, before-labelling operating point --- but not the
+before-running predictor this dissertation asks for, nor part of its null.
 
 \section{Limitations, threats to validity, and ethics}
 \label{sec:limitations}
@@ -109,13 +108,12 @@ asks for, and not part of the null it reports.
 \paragraph{The reference is not the pretraining corpus.} Distances are measured against the SA-FARI train
 split, not against SAM\,3's true pretraining data, which is undisclosed. The null is scoped accordingly. One
 hedge was tested: the familiarity proxy reads separability directly from SAM\,3's own features
-(Section~\ref{sec:familiarity}), and it too is null, recovering the same size-entangled visual signal. Even
-model-internal familiarity does not lift the result. A coverage-anchored proxy for the actual corpus remains
-untested.
+(Section~\ref{sec:familiarity}), and it too is null, recovering the same size-entangled visual signal; a
+coverage-anchored proxy for the actual corpus remains untested.
 
-\paragraph{One dataset and one backbone.} A single inference pass is reused across both splits, so the species
-and location experiments are two overlays on the same scored cells rather than independent replications. Two
-steps were taken against this. Against the dataset threat, the whole pipeline was re-run on an independent
+\paragraph{One dataset and one backbone.} A single inference pass is reused across both splits, so the
+species and location experiments are two overlays on the same scored cells rather than independent
+replications. Against the dataset threat, the whole pipeline was re-run on an independent
 dataset, where the null holds again (Section~\ref{sec:burst}) --- a second convergent null rather than positive
 proof, since that dataset remains underpowered for a small species-constant effect. Against the model threat,
 the controlled swap put two architecturally distinct trackers through the same procedure with the same result
@@ -132,15 +130,14 @@ alongside their much weaker cell-level values, to avoid the ecological-correlati
 features separate the species, but not what those features encode. Section~\ref{sec:concl-future} takes this
 up.
 
-\paragraph{The scorer.} All scores come from the unmodified official evaluator, which wraps the standard
-HOTA-family metrics rather than any SAM-3-specific logic. Its one SAM-3-calibrated knob is a fixed $0.5$
-confidence gate, and Section~\ref{sec:model_swap} establishes that this gate is not load-bearing for the
-cross-model comparison. The measurement is therefore model-fair.
+\paragraph{The scorer.} All scores come from the unmodified official evaluator, which wraps standard
+HOTA-family metrics, not SAM-3-specific logic. Its one SAM-3-calibrated knob is a fixed $0.5$ confidence gate, and Section~\ref{sec:model_swap}
+establishes that this gate is not load-bearing for the cross-model comparison; the measurement is model-fair.
 
-\stubfix{3}% final-polish: absorb the ethics overflow
+\stubfix{1}% final-polish: absorb the ethics overflow
 \paragraph{Ethical considerations.}
-The data are anonymised camera-trap footage released under a non-commercial licence, and location identifiers
-are already anonymised in SA-FARI. The negative result carries a responsible-deployment message. Because
-label-free distance does not reliably flag when a promptable tracker will fail, conservation teams should not
-treat low distance from training data as a safety guarantee. Reliability should be checked with labelled
-spot-audits rather than assumed.
+\looseness=-1 % allow this paragraph to set one line shorter
+The data are anonymised camera-trap footage under a non-commercial licence, with location identifiers
+already anonymised in SA-FARI. The negative result carries a responsible-deployment message: label-free distance does not
+reliably flag when a promptable tracker will fail, so teams should not treat low distance from training data
+as a safety guarantee; reliability should be checked with labelled spot-audits, not assumed.
