@@ -19,7 +19,8 @@
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,calc}
 \usepackage[numbers,sort&compress]{natbib}
-\usepackage[colorlinks=true,linkcolor=NavyBlue,citecolor=NavyBlue,urlcolor=NavyBlue]{hyperref}
+\usepackage[nottoc]{tocbibind} % as in the template sample: puts the bibliography in the ToC
+\usepackage[hidelinks]{hyperref} % template renders plain black text; links stay clickable
 
 \setlist{nosep,leftmargin=1.4em}
 \captionsetup{font=small,labelfont=bf}
@@ -42,7 +43,7 @@
 \begin{document}
 
 \title{Predicting the Zero-Shot Transfer of a Promptable Video Tracker}
-\author{Kostiantyn Boiar\\ \normalsize Student ID: \texttt{2917685}}
+\author{Kostiantyn Boiar}
 \date{\today}
 \maketitle
 
@@ -76,12 +77,6 @@ work, and reliability has to be checked rather than assumed.
 \end{abstract}
 
 \educationalconsent
-
-\vspace{1.5cm}
-\noindent\textbf{Declaration of Originality.}\\
-I declare that this dissertation is my own work, except where explicitly stated and referenced, and
-that it has not been submitted for any other degree at the University of Glasgow or any other
-institution.
 
 \newpage
 \section*{Acknowledgements}
@@ -124,12 +119,10 @@ LVIS             & Large Vocabulary Instance Segmentation, the class vocabulary 
 \input{chapters/discussion}
 \input{chapters/conclusion}
 
-\clearpage
-\addcontentsline{toc}{chapter}{Bibliography}
-\bibliographystyle{plainnat}
-\bibliography{references}
-
 \appendix
 \input{chapters/appendices}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
 
 \end{document}
