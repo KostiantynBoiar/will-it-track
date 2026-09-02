@@ -36,14 +36,11 @@ visual novelty across species must control for apparent size or it will rediscov
 caution is practical: proximity to familiar training data is not a safety guarantee, so reliability has to be
 checked rather than assumed.
 
-\stubfix{1}% final-polish: absorb the future-work overflow
 \section{Future work}
 \label{sec:concl-future}
-Three directions remain open. The first is a fuller representational probe: the familiarity proxy shows that
-SAM\,3's features separate the species only by re-encoding the visual distance
-(Section~\ref{sec:familiarity}), and what they actually encode --- whether taxonomy is represented
-structurally --- is untested, as is a proxy anchored on the coverage of the true, undisclosed pretraining
-corpus. The second is a broader model swap: more trackers, and a larger fair dataset that is no tracker's home
-turf (Section~\ref{sec:model_swap}). The third is targets with richer
-association structure: in crowded, multi-object footage the detection--association decomposition would have
-considerably more to distinguish than it did here.
+Three directions remain open. The first is a fuller representational probe: the familiarity proxy shows
+that SAM\,3's features separate the species only by re-encoding the visual distance
+(Section~\ref{sec:familiarity}); what they encode --- whether taxonomy is represented structurally --- is
+untested, as is a proxy anchored on the true, undisclosed pretraining corpus. The second is a broader swap: more trackers, and a larger fair dataset that is no tracker's home turf
+(Section~\ref{sec:model_swap}). The third is richer association structure: crowded, multi-object footage
+would give the decomposition considerably more to distinguish.

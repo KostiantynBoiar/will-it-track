@@ -124,20 +124,17 @@ dropped.
 
 \paragraph{The effective sample is groups, not cells.} Tens of independent species and locations, not hundreds
 of cells. That is why inference is group-clustered throughout, and why aggregate correlations are reported
-alongside their much weaker cell-level values, to avoid the ecological-correlation fallacy.
-
-\paragraph{Representational probing is only partly opened.} The familiarity proxy establishes that SAM\,3's
-features separate the species, but not what those features encode. Section~\ref{sec:concl-future} takes this
-up.
+alongside their much weaker cell-level values, to avoid the ecological-correlation fallacy. Representational
+probing is likewise only partly opened: the familiarity proxy shows the features separate the species, but
+not what they encode (Section~\ref{sec:concl-future}).
 
 \paragraph{The scorer.} All scores come from the unmodified official evaluator, which wraps standard
-HOTA-family metrics, not SAM-3-specific logic. Its one SAM-3-calibrated knob is a fixed $0.5$ confidence gate, and Section~\ref{sec:model_swap}
-establishes that this gate is not load-bearing for the cross-model comparison; the measurement is model-fair.
+HOTA-family metrics, not SAM-3-specific logic; its one SAM-3-calibrated knob, a fixed $0.5$ confidence gate,
+is not load-bearing for the cross-model comparison (Section~\ref{sec:model_swap}), so the measurement is
+model-fair.
 
-\stubfix{1}% final-polish: absorb the ethics overflow
 \paragraph{Ethical considerations.}
-\looseness=-1 % allow this paragraph to set one line shorter
-The data are anonymised camera-trap footage under a non-commercial licence, with location identifiers
-already anonymised in SA-FARI. The negative result carries a responsible-deployment message: label-free distance does not
-reliably flag when a promptable tracker will fail, so teams should not treat low distance from training data
-as a safety guarantee; reliability should be checked with labelled spot-audits, not assumed.
+The data are anonymised camera-trap footage under a non-commercial licence, location identifiers included.
+The deployment message: label-free distance does not reliably flag when a promptable tracker will fail, so
+low distance from training data is no safety guarantee; reliability should be checked with labelled
+spot-audits, not assumed.
