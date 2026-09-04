@@ -1,14 +1,12 @@
 """Export the pipeline's results into the dissertation.
 
-Reads the generated artifacts under ``outputs/`` (which is git-ignored) and writes committed,
-dissertation-facing files under ``report/dissertation/``:
+Reads the generated artifacts under outputs/ (which is git-ignored) and writes committed,
+dissertation-facing files under report/dissertation/: results_summary.md, a human-readable rollup of
+every headline number (so the results survive even though outputs/*.parquet never enters git), and
+tables/{gate1_measurement,coefficients,cv_validation}.tex, booktabs fragments that chapters/results.tex
+pulls in via \\input straight into the Results chapter.
 
-* ``results_summary.md`` --- a human-readable rollup of every headline number (so the results survive
-  even though ``outputs/*.parquet`` never enters git), and
-* ``tables/{gate1_measurement,coefficients,cv_validation}.tex`` --- ``booktabs`` fragments that
-  ``chapters/results.tex`` ``\\input``s straight into the Results chapter.
-
-Run: ``PYTHONPATH=. python -m src.analysis.report [--config configs/default.yaml]``
+Run: PYTHONPATH=. python -m src.analysis.report [--config configs/default.yaml]
 """
 
 from __future__ import annotations

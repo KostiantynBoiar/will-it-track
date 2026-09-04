@@ -70,7 +70,7 @@ class EnvironmentDistance:
         scene_cache: EmbeddingCache,
         stats_cache: EmbeddingCache,
     ) -> dict[str, dict]:
-        """Per ``location_id``: scene prototype + mean achromatic fraction + mean clutter."""
+        """Per location_id: scene prototype + mean achromatic fraction + mean clutter."""
         feat = self.config.features
         items = []
         stat_items = []  # (key, record, frame_index, anns)
@@ -112,7 +112,7 @@ class EnvironmentDistance:
         return out
 
     def _stats(self, stat_items: list[tuple], stats_cache: EmbeddingCache) -> dict[str, np.ndarray]:
-        """Per-frame ``[achromatic, clutter]`` colour stats, cached (frames already local after embedding)."""
+        """Per-frame [achromatic, clutter] colour stats, cached (frames already local after embedding)."""
         misses = [it for it in stat_items if stats_cache.get(it[0]) is None]
         by_record: dict[str, list[tuple]] = defaultdict(list)
         for item in misses:
@@ -144,7 +144,7 @@ class EnvironmentDistance:
         return {it[0]: s for it in stat_items if (s := stats_cache.get(it[0])) is not None}
 
     def compute(self, partition: Partition) -> pd.DataFrame:
-        """Return per-probe-location ``environment_distance`` + colour covariates (indexed by location)."""
+        """Return per-probe-location environment_distance + colour covariates (indexed by location)."""
         embedder = Embedder(self.encoder, self.config)
         scene_cache = EmbeddingCache(self.config, f"{self.encoder}_bg", mask_crop=False)
         stats_cache = EmbeddingCache(self.config, "colorstats", mask_crop=False)

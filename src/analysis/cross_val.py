@@ -2,10 +2,10 @@
 
 Turns a fitted curve into a predictor: predicts held-out species/places from distance alone
 using leave-one-species-out and leave-one-location-out schemes (whole groups held out). Reports
-out-of-sample error and calibration to ``outputs/validation/cv_results.parquet`` and asserts
+out-of-sample error and calibration to outputs/validation/cv_results.parquet and asserts
 leakage-free grouping.
 
-Run: ``PYTHONPATH=. .venv/bin/python -m src.analysis.cross_val [--config configs/default.yaml]``
+Run: PYTHONPATH=. .venv/bin/python -m src.analysis.cross_val [--config configs/default.yaml]
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ _CELL_KEYS = ["category_id", "species", "location_id", "time"]
 def oos_predictions(
     df: pd.DataFrame, target: str, group_col: str, config: Config
 ) -> pd.DataFrame:
-    """Leave-one-group-out out-of-sample predictions for ``target`` grouped by ``group_col``.
+    """Leave-one-group-out out-of-sample predictions for target grouped by group_col.
 
     Each fold refits the GLM on the training groups (with its own standardisation, so no held-out
     statistic leaks) and predicts the held-out group. Returns one row per predicted cell with the
@@ -69,11 +69,11 @@ def oos_predictions(
 
 
 def _bootstrap_delta(delta: np.ndarray, groups: np.ndarray, n_boot: int, seed: int) -> dict:
-    """Paired group-bootstrap of ``mean(delta)``: resample whole groups -> 95% CI + one-sided ``p``.
+    """Paired group-bootstrap of mean(delta): resample whole groups -> 95% CI + one-sided p.
 
-    ``delta`` is the per-cell ``|error_baseline| - |error_model|`` (positive => the model beats the
-    mean). Cells inside a held-out group are not independent, so resampling *whole groups* (not cells)
-    is what keeps the significance test honest. ``p`` is ``P(mean delta <= 0)`` across resamples.
+    delta is the per-cell |error_baseline| - |error_model| (positive => the model beats the
+    mean). Cells inside a held-out group are not independent, so resampling whole groups (not cells)
+    is what keeps the significance test honest. p is P(mean delta <= 0) across resamples.
     """
     uniq = np.unique(groups)
     if len(uniq) < 2 or n_boot <= 0:
@@ -93,9 +93,9 @@ def _bootstrap_delta(delta: np.ndarray, groups: np.ndarray, n_boot: int, seed: i
 def _summarise(cv: pd.DataFrame, config: Config | None = None) -> pd.DataFrame:
     """Per (scheme, target): OOS MAE vs the mean baseline, with a paired group-bootstrap on the gain.
 
-    ``delta = baseline_mae - mae`` (>0 => the model beats the mean); its 95% CI and one-sided
-    ``p_value`` come from resampling whole held-out groups (a cell-level test would overstate
-    significance because cells within a group share a species/location). ``significant`` is the 5% call.
+    delta = baseline_mae - mae (>0 => the model beats the mean); its 95% CI and one-sided
+    p_value come from resampling whole held-out groups (a cell-level test would overstate
+    significance because cells within a group share a species/location). significant is the 5% call.
     """
     cfg = config or Config()
     done = cv[cv["predicted"].notna()]
@@ -123,12 +123,12 @@ class GroupedCV:
         """Initialize.
 
         Args:
-            config: Project config (``cv.group_schemes``).
+            config: Project config (cv.group_schemes).
         """
         self.config = config or Config()
 
     def run(self, table_path: Path) -> Path:
-        """Run grouped CV and write ``outputs/validation/cv_results.parquet``.
+        """Run grouped CV and write outputs/validation/cv_results.parquet.
 
         Args:
             table_path: Merged scores-x-features parquet.

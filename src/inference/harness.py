@@ -1,11 +1,11 @@
 """Frozen SAM 3 inference harness.
 
 Runs frozen SAM 3 promptable tracking over every probe of a split and writes predicted masklets per
-``(video, prompt)`` to ``outputs/predictions/`` in the evaluator's expected format. Species-specific
-prompts are primary; a generic ``"animal"`` prompt is the robustness condition. Hard negatives are kept
+(video, prompt) to outputs/predictions/ in the evaluator's expected format. Species-specific
+prompts are primary; a generic "animal" prompt is the robustness condition. Hard negatives are kept
 (they should yield no masklet). Per-video JSONs make the run resumable across Colab session timeouts.
 
-Run: ``python -m src.inference.harness --split test [--limit N] [--config configs/default.yaml]``
+Run: python -m src.inference.harness --split test [--limit N] [--config configs/default.yaml]
 """
 
 from __future__ import annotations
@@ -25,12 +25,12 @@ from src.inference.sam3_tracker import Masklet, Tracker
 
 
 def _packed(rle: dict) -> dict:
-    """A pycocotools-ready RLE (``counts`` as bytes) from our JSON-serialisable ``{size, counts}``."""
+    """A pycocotools-ready RLE (counts as bytes) from our JSON-serialisable {size, counts}."""
     return {"size": rle["size"], "counts": rle["counts"].encode("ascii")}
 
 
 def _bbox(rle: dict) -> list[float]:
-    """COCO ``[x, y, w, h]`` bounding box for one RLE mask."""
+    """COCO [x, y, w, h] bounding box for one RLE mask."""
     return [float(v) for v in coco_mask.toBbox(_packed(rle)).tolist()]
 
 
@@ -40,17 +40,17 @@ def _area(rle: dict) -> int:
 
 
 def probe_filename(video_id: str, category_id: str) -> str:
-    """Per-probe prediction filename, keyed by ``(video, species)``.
+    """Per-probe prediction filename, keyed by (video, species).
 
     One video is queried with several species prompts (its own species plus hard-negative species), and
-    each prompt yields a different prediction; keying by ``video_id`` alone would collide, storing only one
+    each prompt yields a different prediction; keying by video_id alone would collide, storing only one
     probe per video (which silently drops every hard negative).
     """
     return f"{video_id}_{category_id}.json"
 
 
 def _cap_per_species(records: list[VideoRecord], cap: int) -> list[VideoRecord]:
-    """Up to ``cap`` present (positive) videos per species — a stratified sample for the H1 fit.
+    """Up to cap present (positive) videos per species — a stratified sample for the H1 fit.
 
     Hard negatives are dropped when sampling: they carry no masklet, so they add no positive cell to the
     novelty fit; the hard-negative false-positive analysis is a separate pass over the full probe set.
@@ -72,8 +72,8 @@ class InferenceHarness:
         """Initialize.
 
         Args:
-            config: Project config (``inference.*``, ``paths.*``).
-            tracker: The tracker to use (defaults to the real :class:`Sam3Tracker`; tests inject a fake).
+            config: Project config (inference.*, paths.*).
+            tracker: The tracker to use (defaults to the real Sam3Tracker; tests inject a fake).
         """
         self.config = config or Config()
         if tracker is None:
@@ -101,7 +101,7 @@ class InferenceHarness:
     def _out_dir(self, split: str) -> Path:
         """Per-(tracker, split, prompt-mode) predictions directory.
 
-        The default ``"sam3"`` tracker keeps the historical ``predictions/{split}/{prompt_mode}/`` path
+        The default "sam3" tracker keeps the historical predictions/{split}/{prompt_mode}/ path
         (so existing artefacts are byte-identical); any other tracker (e.g. GLEE) is namespaced under its
         own subdir so the model-swap run never collides with — or resumes against — SAM 3's files.
         """
@@ -125,10 +125,10 @@ class InferenceHarness:
     def _predict_video(self, record: VideoRecord) -> list[dict]:
         """Track one probe → a flat list of per-masklet entries in the official VEval schema.
 
-        Each entry is one masklet: integer ``video_id`` / ``category_id`` matching the split GT (VEval
-        joins predictions to ground truth on that pair), a single ``score``, and equal-length per-frame
-        ``segmentations`` (RLE), ``bboxes`` (COCO ``[x, y, w, h]``) and ``areas`` — ``None`` / ``0`` on
-        frames where the object is absent. Hard negatives (and unavailable frames) contribute no entries.
+        Each entry is one masklet: integer video_id / category_id matching the split GT (VEval joins
+        predictions to ground truth on that pair), a single score, and equal-length per-frame
+        segmentations (RLE), bboxes (COCO [x, y, w, h]) and areas — None / 0 on frames where the
+        object is absent. Hard negatives (and unavailable frames) contribute no entries.
         """
         frames = self._frames(record)
         if not frames or any(frame is None for frame in frames):
@@ -164,7 +164,7 @@ class InferenceHarness:
         """Predict masklets for every probe and write per-video JSONs; return the predictions dir.
 
         Args:
-            split: ``"train"`` / ``"test"``.
+            split: "train" / "test".
             limit: Optional cap on the number of probes (for a subset smoke test).
 
         Returns:

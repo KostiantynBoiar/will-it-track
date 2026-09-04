@@ -2,20 +2,20 @@
 
 BURST is the better-powered replication (41 animal species, 132 video×class cells, mask-native) that MammAlps
 (20 cells) could not be. This script refits the leakage-free leave-species-out machinery
-(``src.analysis.cross_val.oos_predictions`` + ``_summarise``) on cleanly separated predictor sets — BURST has
-no shared locations, so ``category_id`` (species) is the only valid grouping — and prints the diagnostics that
+(src.analysis.cross_val.oos_predictions + _summarise) on cleanly separated predictor sets — BURST has
+no shared locations, so category_id (species) is the only valid grouping — and prints the diagnostics that
 decide the honest framing:
 
 * The before-running distances (taxonomic/visual/environment) are a NULL; the after-running confidence controls
-  fire. But the firing does NOT prove the test is powered for a *distance*: distances are species-constant, so
-  leave-species-out can only use the BETWEEN-species channel, whereas ``conf_mean_score`` wins mainly through a
-  WITHIN-species channel. Collapsing ``conf_mean_score`` to species means (making it distance-like) kills its
-  out-of-sample win — the key caveat. The confidence controls therefore establish pipeline *liveness* (a real
+  fire. But the firing does NOT prove the test is powered for a distance: distances are species-constant, so
+  leave-species-out can only use the BETWEEN-species channel, whereas conf_mean_score wins mainly through a
+  WITHIN-species channel. Collapsing conf_mean_score to species means (making it distance-like) kills its
+  out-of-sample win — the key caveat. The confidence controls therefore establish pipeline liveness (a real
   contrast with MammAlps, where nothing fired), not power for a small species-level distance effect.
 
-Numbers here were adversarially verified against the raw parquet; see ``docs/burst_replication.md``.
+Numbers here were adversarially verified against the raw parquet; see docs/burst_replication.md.
 
-Run: ``PYTHONPATH=. python scripts/burst_replication_analysis.py --features outputs_burst/features.parquet``
+Run: PYTHONPATH=. python scripts/burst_replication_analysis.py --features outputs_burst/features.parquet
 """
 
 from __future__ import annotations
@@ -61,13 +61,13 @@ def _run(fe: pd.DataFrame, cfg0: Config, keep: tuple[str, ...], control_size: bo
 
 
 def _between_species_corr(fe: pd.DataFrame, col: str) -> float:
-    """Correlation of species-mean ``col`` with species-mean pDetA — the only channel a distance can use."""
+    """Correlation of species-mean col with species-mean pDetA — the only channel a distance can use."""
     g = fe.groupby("species").agg(x=(col, "mean"), y=("pDetA", "mean")).dropna()
     return float(stats.pearsonr(g.x, g.y)[0]) if len(g) > 2 else float("nan")
 
 
 def _within_species_fraction(fe: pd.DataFrame, col: str) -> float:
-    """Fraction of ``col``'s variance that is within-species (0 ⇒ species-constant, like a distance)."""
+    """Fraction of col's variance that is within-species (0 ⇒ species-constant, like a distance)."""
     v = fe[[col, "species"]].dropna()
     if v[col].var() == 0:
         return 0.0

@@ -31,7 +31,7 @@ def safari_by_origin(config: Config) -> dict[str, SAFARI]:
 def record_annotations(
     record: VideoRecord, safari: dict[str, SAFARI], category_id: str | None = None
 ) -> list[dict]:
-    """A record's video annotations, optionally filtered to one ``category_id``."""
+    """A record's video annotations, optionally filtered to one category_id."""
     origin, _, raw_id = record.video_id.partition(":")
     anns = safari[origin].annotations_by_video().get(raw_id, [])
     if category_id is None:
@@ -40,7 +40,7 @@ def record_annotations(
 
 
 def prototype(vectors: list[np.ndarray]) -> np.ndarray | None:
-    """Re-normalised mean of L2-normalised vectors (``None`` if there are none)."""
+    """Re-normalised mean of L2-normalised vectors (None if there are none)."""
     if not vectors:
         return None
     mean = np.mean(vectors, axis=0)
@@ -50,7 +50,7 @@ def prototype(vectors: list[np.ndarray]) -> np.ndarray | None:
 def nearest_distance(
     vector: np.ndarray, references: dict[str, np.ndarray], exclude: str | None = None
 ) -> float:
-    """``1 - max cosine`` to the nearest reference prototype (skipping ``exclude``); ``NaN`` if none."""
+    """1 - max cosine to the nearest reference prototype (skipping exclude); NaN if none."""
     candidates = [proto for key, proto in references.items() if key != exclude]
     if not candidates:
         return float("nan")
@@ -58,7 +58,7 @@ def nearest_distance(
 
 
 def gaussian_stats(vectors: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Mean vector and covariance matrix of a stack of embeddings ``(n, d)`` (cov = ``0`` if ``n < 2``)."""
+    """Mean vector and covariance matrix of a stack of embeddings (n, d) (cov = 0 if n < 2)."""
     x = np.asarray(vectors, dtype=np.float64)
     mu = x.mean(axis=0)
     cov = np.cov(x, rowvar=False) if x.shape[0] > 1 else np.zeros((x.shape[1], x.shape[1]))
@@ -68,11 +68,11 @@ def gaussian_stats(vectors: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 def frechet_distance(
     mu1: np.ndarray, cov1: np.ndarray, mu2: np.ndarray, cov2: np.ndarray, eps: float = 1e-6
 ) -> float:
-    """Fréchet (FID-style) distance between Gaussians ``N(mu1,cov1)`` and ``N(mu2,cov2)``.
+    """Fréchet (FID-style) distance between Gaussians N(mu1,cov1) and N(mu2,cov2).
 
-    ``||mu1-mu2||^2 + Tr(cov1 + cov2 - 2(cov1 cov2)^{1/2})`` via ``scipy.linalg.sqrtm``; a small ``eps*I``
+    ||mu1-mu2||^2 + Tr(cov1 + cov2 - 2(cov1 cov2)^{1/2}) via scipy.linalg.sqrtm; a small eps*I
     is added before the matrix square root for numerical stability (rank-deficient per-species covariances),
-    and any imaginary residue from ``sqrtm`` is dropped. AutoEval's distributional feature distance.
+    and any imaginary residue from sqrtm is dropped. AutoEval's distributional feature distance.
     """
     from scipy.linalg import sqrtm
 
@@ -85,7 +85,7 @@ def frechet_distance(
 
 
 def _sq_dists(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """Pairwise squared Euclidean distances between rows of ``a`` and ``b`` (clamped ``>= 0``)."""
+    """Pairwise squared Euclidean distances between rows of a and b (clamped >= 0)."""
     aa = np.sum(a * a, axis=1)[:, None]
     bb = np.sum(b * b, axis=1)[None, :]
     return np.maximum(aa + bb - 2.0 * a @ b.T, 0.0)
@@ -114,10 +114,10 @@ def mmd_rbf(x: np.ndarray, y: np.ndarray, *, gamma: float | None = None,
 def distributional_distance(
     target: np.ndarray, reference: np.ndarray, variant: str, *, seed: int = 0, ref_cap: int = 4000
 ) -> float:
-    """``frechet``/``mmd`` distance from a target species' embedding set to the pooled reference set.
+    """frechet/mmd distance from a target species' embedding set to the pooled reference set.
 
-    ``NaN`` if either set has fewer than two vectors. The reference pool is deterministically subsampled to
-    ``ref_cap`` to bound the covariance/kernel cost. This is the distributional analogue of the
+    NaN if either set has fewer than two vectors. The reference pool is deterministically subsampled to
+    ref_cap to bound the covariance/kernel cost. This is the distributional analogue of the
     nearest-prototype cosine distance — the whole target distribution against the whole reference.
     """
     target = np.asarray(target, dtype=np.float64)
@@ -137,10 +137,10 @@ def distributional_distance(
 def embed_crops(
     items: list[Item], config: Config, embedder: Embedder, cache: EmbeddingCache
 ) -> dict[str, np.ndarray]:
-    """Embed each item's crop (cache-first), returning ``{cache_key: vector}``.
+    """Embed each item's crop (cache-first), returning {cache_key: vector}.
 
-    Processed in chunks of ``features.embed_crop_chunk``: each chunk fetches its frames, decodes +
-    crops them (in parallel across ``features.embed_load_workers`` threads, since the path is I/O-bound
+    Processed in chunks of features.embed_crop_chunk: each chunk fetches its frames, decodes +
+    crops them (in parallel across features.embed_load_workers threads, since the path is I/O-bound
     on frame reads not the GPU), embeds, caches, then drops the crops before the next chunk. Peak RAM is
     bounded by the chunk size, so full sampling caps do not exhaust memory even though the environment
     "crop" is a whole frame. Behaviour is unchanged — the result is re-read from the cache.

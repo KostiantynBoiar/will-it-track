@@ -1,11 +1,11 @@
 """Score with the OFFICIAL VEval evaluator and aggregate to cells.
 
-Produces the dependent variables — per-cell ``pDetA`` / ``pAssA`` / ``pHOTA``. Runs the vendored VEval
+Produces the dependent variables — per-cell pDetA / pAssA / pHOTA. Runs the vendored VEval
 evaluator (the metric is never re-implemented) over the harness predictions and the split annotations,
-then aggregates to one row per ``(category_id, species, location_id, time)`` cell in
-``outputs/scores.parquet``, carrying support counts and the prompt condition.
+then aggregates to one row per (category_id, species, location_id, time) cell in
+outputs/scores.parquet, carrying support counts and the prompt condition.
 
-Run: ``python -m src.eval.score --split test [--config configs/default.yaml]``
+Run: python -m src.eval.score --split test [--config configs/default.yaml]
 """
 
 from __future__ import annotations
@@ -28,9 +28,9 @@ from src.io import write_parquet
 
 _METRICS = ("pDetA", "pAssA", "pHOTA")
 
-# VEval's per-probe ``video_np_results`` entries report HOTA-family metrics prefixed by annotation type
-# (``mask_*`` / ``bbox_*``), confirmed against the vendored toy output (runbook cell 7). SA-FARI is
-# mask-based, so we take the ``mask_*`` value first and fall back to ``bbox_*`` (then bare spellings).
+# VEval's per-probe video_np_results entries report HOTA-family metrics prefixed by annotation type
+# (mask_* / bbox_*), confirmed against the vendored toy output (runbook cell 7). SA-FARI is
+# mask-based, so we take the mask_* value first and fall back to bbox_* (then bare spellings).
 _METRIC_KEYS = {
     "pDetA": ("mask_DetA", "bbox_DetA", "pDetA", "DetA"),
     "pAssA": ("mask_AssA", "bbox_AssA", "pAssA", "AssA"),
@@ -39,7 +39,7 @@ _METRIC_KEYS = {
 
 
 def _first_present(entry: dict, keys: tuple[str, ...]) -> float | None:
-    """First non-null value among ``keys`` in ``entry`` as a float (``None`` if none present)."""
+    """First non-null value among keys in entry as a float (None if none present)."""
     for key in keys:
         if entry.get(key) is not None:
             return float(entry[key])
@@ -54,7 +54,7 @@ class Scorer:
         self.config = config or Config()
 
     def _support(self, split: str) -> dict[tuple[str, str], tuple[int, int]]:
-        """Per probe ``(video_id, category_id) -> (n_annotated_frames, n_masklets)`` from the GT."""
+        """Per probe (video_id, category_id) -> (n_annotated_frames, n_masklets) from the GT."""
         safari = SAFARI(split, self.config)
         by_video = safari.annotations_by_video()
         support: dict[tuple[str, str], tuple[int, int]] = {}
@@ -77,11 +77,11 @@ class Scorer:
         """Join per-probe VEval metrics + support onto the cell grid → one row per cell.
 
         Args:
-            per_probe: ``{(video_id, category_id): {"pDetA": .., "pAssA": .., "pHOTA": ..}}``.
+            per_probe: {(video_id, category_id): {"pDetA": .., "pAssA": .., "pHOTA": ..}}.
             split: The split whose probes/cells to aggregate.
 
         Returns:
-            A DataFrame with a row per ``(category_id, species, location_id, time)`` cell.
+            A DataFrame with a row per (category_id, species, location_id, time) cell.
         """
         safari = SAFARI(split, self.config)
         support = self._support(split)
@@ -122,11 +122,11 @@ class Scorer:
         """Run the vendored VEval script on (predictions, GT) and return its result JSON.
 
         The scorer is run as a standalone script (not pip-installed), so its own package must be on
-        ``PYTHONPATH`` — we point it at the vendored clone root so ``import sam3`` resolves regardless of
+        PYTHONPATH — we point it at the vendored clone root so import sam3 resolves regardless of
         the caller's environment.
         """
         script = self.config.paths.third_party_root / self.config.eval.veval_script
-        sam3_root = self.config.paths.third_party_root / "sam3"  # clone dir → makes `import sam3` work
+        sam3_root = self.config.paths.third_party_root / "sam3"  # clone dir → makes import sam3 work
         env = {**os.environ}
         env["PYTHONPATH"] = os.pathsep.join(filter(None, [str(sam3_root), env.get("PYTHONPATH", "")]))
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
@@ -149,7 +149,7 @@ class Scorer:
         return json.loads(result_path.read_text())
 
     def _metric_keys(self) -> dict[str, tuple[str, ...]]:
-        """Per-metric lookup order; puts ``bbox_*`` before ``mask_*`` when ``eval.prefer_bbox`` (box GT)."""
+        """Per-metric lookup order; puts bbox_* before mask_* when eval.prefer_bbox (box GT)."""
         if not self.config.eval.prefer_bbox:
             return _METRIC_KEYS
         return {
@@ -159,12 +159,12 @@ class Scorer:
         }
 
     def _parse_veval(self, result: dict) -> dict[tuple[str, str], dict]:
-        """Map the VEval result into ``{(video_id, category_id): {metric: value}}``.
+        """Map the VEval result into {(video_id, category_id): {metric: value}}.
 
-        The evaluator emits ``{"dataset_results": {..aggregate..}, "video_np_results": [{video_id,
-        category_id, **metrics}]}``; we key each per-probe entry by ``(video_id, category_id)`` (as
-        strings, to match the harness records) and resolve each metric via :meth:`_metric_keys` (mask-first,
-        or bbox-first when ``eval.prefer_bbox``). Absent ``video_np_results`` yields an empty map (scores
+        The evaluator emits {"dataset_results": {..aggregate..}, "video_np_results": [{video_id,
+        category_id, **metrics}]}; we key each per-probe entry by (video_id, category_id) (as
+        strings, to match the harness records) and resolve each metric via _metric_keys (mask-first,
+        or bbox-first when eval.prefer_bbox). Absent video_np_results yields an empty map (scores
         become NaN, support is still counted).
         """
         entries = (
@@ -183,14 +183,14 @@ class Scorer:
     def _scored_gt(self, split: str, pred_dir: Path) -> Path:
         """A ground-truth file trimmed to the videos we actually predicted.
 
-        VEval only scores the probes it is given, but it loads the *entire* GT into memory first; the
+        VEval only scores the probes it is given, but it loads the entire GT into memory first; the
         full train GT (all ~31k videos, ~0.9 GB on disk) OOM-kills the evaluator. We only ever predict a
-        capped sample, so we hand VEval a GT restricted to those video ids --- keeping its footprint in the
+        capped sample, so we hand VEval a GT restricted to those video ids — keeping its footprint in the
         same range as the (small) test split. Written next to the outputs; harmless for test (keeps all).
 
-        Per-probe files are named ``{video_id}_{category_id}.json`` (:func:`inference.harness.probe_filename`),
-        so the video id is the stem with the trailing ``_{category_id}`` removed --- ``rsplit`` on the last
-        underscore recovers it (``category_id`` is numeric, and pooled ids like ``train:123`` carry a colon,
+        Per-probe files are named {video_id}_{category_id}.json (inference.harness.probe_filename),
+        so the video id is the stem with the trailing _{category_id} removed — rsplit on the last
+        underscore recovers it (category_id is numeric, and pooled ids like train:123 carry a colon,
         not an underscore).
         """
         pred_ids = {p.stem.rsplit("_", 1)[0] for p in pred_dir.glob("*.json")}
@@ -209,7 +209,7 @@ class Scorer:
         return out
 
     def score(self, split: str = "test") -> Path:
-        """Score the harness predictions and write ``outputs/scores.parquet``; return its path."""
+        """Score the harness predictions and write outputs/scores.parquet; return its path."""
         inf = self.config.inference
         # Mirror the harness's per-tracker namespacing: "sam3" keeps the historical path; any other
         # tracker (e.g. GLEE) is read from its own subdir so trackers' predictions never collide.

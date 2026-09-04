@@ -30,13 +30,13 @@ class TemporalGap:
         self.config = config or Config()
 
     def compute(self, partition: Partition) -> pd.Series:
-        """Return ``temporal_gap`` per probe cell.
+        """Return temporal_gap per probe cell.
 
         Args:
             partition: The active split.
 
         Returns:
-            A Series with a ``(category_id, species, location_id, time)`` MultiIndex; each value is the
+            A Series with a (category_id, species, location_id, time) MultiIndex; each value is the
             smallest year gap from the cell's footage to the nearest reference footage year.
         """
         reference_years = {int(y) for y in partition.reference_years if y.isdigit()}

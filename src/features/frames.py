@@ -1,7 +1,7 @@
 """Frame + crop utilities for the visual/environment features.
 
 Pure PIL/numpy — no torch. Resolves the annotated frames of a masklet, pulls them on demand
-(fetch-or-skip via :class:`~src.acquire.FrameFetcher`, never crashing a feature), and produces the two
+(fetch-or-skip via FrameFetcher, never crashing a feature), and produces the two
 crop kinds: the mask-cropped animal (visual) and the animal-masked-out background (environment). Also
 holds the colour-only heuristics (night/IR, clutter) so their tests need neither frames nor a model.
 """
@@ -18,13 +18,13 @@ from src.config import Config
 
 
 def annotated_frame_indices(annotation: dict) -> list[int]:
-    """Frame indices of a masklet that carry a mask (``segmentations[i] is not None``)."""
+    """Frame indices of a masklet that carry a mask (segmentations[i] is not None)."""
     segs = annotation.get("segmentations") or []
     return [i for i, seg in enumerate(segs) if seg is not None]
 
 
 def sample_evenly(indices: list[int], n: int) -> list[int]:
-    """Up to ``n`` evenly-spaced values from ``indices`` (deterministic, sorted, de-duplicated)."""
+    """Up to n evenly-spaced values from indices (deterministic, sorted, de-duplicated)."""
     if n <= 0 or len(indices) <= n:
         return sorted(indices)
     positions = np.linspace(0, len(indices) - 1, n).round().astype(int)
@@ -32,7 +32,7 @@ def sample_evenly(indices: list[int], n: int) -> list[int]:
 
 
 def sample_frame_indices(annotation: dict, n: int) -> list[int]:
-    """Up to ``n`` evenly-spaced annotated frame indices of a masklet."""
+    """Up to n evenly-spaced annotated frame indices of a masklet."""
     return sample_evenly(annotated_frame_indices(annotation), n)
 
 
@@ -49,7 +49,7 @@ def ensure_frames(file_names: Sequence[str], split: str, config: Config | None =
 
 
 def load_frame(file_name: str, config: Config | None = None) -> Image.Image | None:
-    """Load a local frame as RGB, or ``None`` if it is missing/unreadable (call ``ensure_frames`` first)."""
+    """Load a local frame as RGB, or None if it is missing/unreadable (call ensure_frames first)."""
     cfg = config or Config()
     path = cfg.paths.data_root / cfg.data.frames_subdir / file_name
     if not path.exists():
@@ -61,7 +61,7 @@ def load_frame(file_name: str, config: Config | None = None) -> Image.Image | No
 
 
 def _fit_mask(mask: np.ndarray, shape: tuple[int, int]) -> np.ndarray:
-    """Resize a boolean mask to ``shape`` (H, W) with nearest-neighbour if it does not already match."""
+    """Resize a boolean mask to shape (H, W) with nearest-neighbour if it does not already match."""
     if mask.shape == shape:
         return mask
     resized = Image.fromarray(mask.astype(np.uint8) * 255).resize(
@@ -76,10 +76,10 @@ def animal_crop(
     mask_crop: bool = True,
     min_px: int = 64,
 ) -> Image.Image | None:
-    """Crop the animal to its mask bounding box; ``None`` if the mask is empty/too small.
+    """Crop the animal to its mask bounding box; None if the mask is empty/too small.
 
-    The crop box is derived from ``np.where(mask)`` (not the stored COCO bbox) so it always matches the
-    decoded pixels. When ``mask_crop`` the background is zeroed *before* cropping, so appearance —
+    The crop box is derived from np.where(mask) (not the stored COCO bbox) so it always matches the
+    decoded pixels. When mask_crop the background is zeroed *before* cropping, so appearance —
     not scene — drives the embedding.
     """
     arr = np.asarray(frame.convert("RGB"))
@@ -111,7 +111,7 @@ def masked_background(
 
 
 def frame_achromatic(frame: Image.Image, threshold: float = 12.0) -> bool:
-    """True if the frame is near-grayscale (IR/night): mean per-pixel channel spread below ``threshold``."""
+    """True if the frame is near-grayscale (IR/night): mean per-pixel channel spread below threshold."""
     arr = np.asarray(frame.convert("RGB")).astype(np.int16)
     spread = arr.max(axis=2) - arr.min(axis=2)
     return float(spread.mean()) < threshold

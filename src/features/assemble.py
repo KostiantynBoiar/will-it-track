@@ -1,15 +1,15 @@
 """Assemble the feature table.
 
 Joins the four distances (+ a deferred familiarity-proxy placeholder) onto the per-cell scores into a
-single modelling table written to ``outputs/features.parquet`` — one row per scored cell, keyed by
-``(category_id, species, location_id, time)`` — re-verifying that no test label leaks into any column.
+single modelling table written to outputs/features.parquet — one row per scored cell, keyed by
+(category_id, species, location_id, time) — re-verifying that no test label leaks into any column.
 
 The distances live at different granularities and are broadcast onto the cell grid:
-taxonomic/visual are per ``category_id``; the temporal gap is already per cell; environment (+ its
-night/IR and clutter covariates) is per ``location_id``. The scores' own ``pDetA``/``pAssA``/support
+taxonomic/visual are per category_id; the temporal gap is already per cell; environment (+ its
+night/IR and clutter covariates) is per location_id. The scores' own pDetA/pAssA/support
 columns ride along, so the output is the ready-to-fit table the regression consumes directly.
 
-Run: ``PYTHONPATH=. .venv/bin/python -m src.features.assemble [--config configs/default.yaml]``
+Run: PYTHONPATH=. python -m src.features.assemble [--config configs/default.yaml]
 """
 
 from __future__ import annotations
@@ -46,18 +46,18 @@ def merge_features(
     familiarity: pd.Series | None = None,
     confidence: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
-    """Broadcast the distance objects onto the per-cell ``scores`` grid → the merged modelling table.
+    """Broadcast the distance objects onto the per-cell scores grid → the merged modelling table.
 
     Args:
-        scores: The per-cell scores (``category_id, species, location_id, time`` + ``pDetA``/... ).
-        taxonomic: ``taxonomic_distance`` indexed by ``category_id``.
-        visual: ``visual_distance`` indexed by ``category_id``.
-        temporal: ``temporal_gap`` with a ``(category_id, species, location_id, time)`` MultiIndex.
-        environment: Per-``location_id`` frame (``environment_distance`` + covariates).
-        size: Optional ``log_area`` per ``category_id`` --- the size covariate (``NaN`` column when omitted).
-        familiarity: Optional ``familiarity_proxy`` per ``category_id`` (``NaN`` column when omitted).
-        confidence: Optional per-cell ATC-style confidence block (``(category_id, species, location_id,
-            time)`` MultiIndex, the ``conf_*`` columns) --- ``NaN`` columns when omitted.
+        scores: The per-cell scores (category_id, species, location_id, time + pDetA/... ).
+        taxonomic: taxonomic_distance indexed by category_id.
+        visual: visual_distance indexed by category_id.
+        temporal: temporal_gap with a (category_id, species, location_id, time) MultiIndex.
+        environment: Per-location_id frame (environment_distance + covariates).
+        size: Optional log_area per category_id — the size covariate (NaN column when omitted).
+        familiarity: Optional familiarity_proxy per category_id (NaN column when omitted).
+        confidence: Optional per-cell ATC-style confidence block ((category_id, species, location_id,
+            time) MultiIndex, the conf_* columns) — NaN columns when omitted.
 
     Returns:
         One row per input cell, with the four distance columns + covariates joined on.
@@ -102,7 +102,7 @@ class FeatureAssembler:
         """Initialize.
 
         Args:
-            config: Project config (``paths.outputs_root``, ``features.*``).
+            config: Project config (paths.outputs_root, features.*).
         """
         self.config = config or Config()
 
@@ -121,15 +121,15 @@ class FeatureAssembler:
                 raise ValueError(f"species leakage: {len(overlap)} probe species in the reference")
 
     def assemble(self, partition: Partition | None = None) -> Path:
-        """Build and write ``outputs/features.parquet`` for ``partition`` (location split by default).
+        """Build and write outputs/features.parquet for partition (location split by default).
 
         Args:
             partition: The experiment partition; defaults to the location hold-out (Split B). Pass a
                 species hold-out (Split A) to build the novelty-axis table instead — write it under a
-                distinct ``outputs_root`` to keep both experiments' artefacts side by side.
+                distinct outputs_root to keep both experiments' artefacts side by side.
 
         Returns:
-            Path to the written ``features.parquet``.
+            Path to the written features.parquet.
         """
         scores = read_parquet(self.config.paths.outputs_root / "scores.parquet")
         partition = partition or build_location_partition(self.config)

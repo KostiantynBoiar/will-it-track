@@ -1,11 +1,11 @@
 """Generate the 'distances in action' figure images from a real frame + GT mask (reproducible).
 
-Writes ``feat_overlay/animal/background/original.png`` to ``report/dissertation/figures/`` for
-Figure~\\ref{fig:features}: the frame with its ground-truth mask, the mask-cropped animal (the *visual*
-distance input), and the animal-erased background (the *environment* distance input). Torch/PIL-only, no
+Writes feat_overlay/animal/background/original.png to report/dissertation/figures/ for
+Figure~\\ref{fig:features}: the frame with its ground-truth mask, the mask-cropped animal (the visual
+distance input), and the animal-erased background (the environment distance input). Torch/PIL-only, no
 SAM 3. The subject is a fixed, hand-picked daytime frame (a collared peccary) whose frames are local.
 
-Run: ``PYTHONPATH=. python -m src.analysis.figures_features``
+Run: PYTHONPATH=. python -m src.analysis.figures_features
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ from PIL import Image
 from src.config import Config
 from src.dataset import SAFARI
 
-# Hand-picked subject: a large, daytime (colour) collared peccary whose frame is local.
 _SPLIT, _VIDEO_ID, _CATEGORY_ID, _FRAME_INDEX = "test", "583", "43570", 0
 _FRAME_FILE = "sa_fari_000584/00000.jpg"
 _ORANGE = np.array([214, 104, 26])  # the deck/dissertation accent

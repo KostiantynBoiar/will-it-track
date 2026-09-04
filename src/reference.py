@@ -1,12 +1,12 @@
 """Freeze the reference for a split (the leakage firewall).
 
-For a given :class:`~src.splits.Partition`, freeze the reference species/locations and a probe-cell
+For a given src.splits.Partition, freeze the reference species/locations and a probe-cell
 manifest once, so every distance is later computed against a fixed anchor. Disjointness is asserted on
-the split's *held axis* (location for Split B; leave-one-species-out for Split A) and the other-axis
-overlap is *reported* honestly — the SA-FARI split shares species, so species overlap is expected, not
+the split's held axis (location for Split B; leave-one-species-out for Split A) and the other-axis
+overlap is reported honestly — the SA-FARI split shares species, so species overlap is expected, not
 an error.
 
-Run: ``PYTHONPATH=. .venv/bin/python -m src.reference --freeze`` / ``--check``.
+Run: PYTHONPATH=. python -m src.reference [--check] [--freeze]
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ class ManifestCell(BaseModel):
         species: Canonical species label.
         location_id: Camera/location identifier.
         time: Coarse time bucket (year).
-        taxonomy: Lowercased taxonomy (``{}`` if the category has none).
+        taxonomy: Lowercased taxonomy ({} if the category has none).
         n_videos: Number of probe videos backing this cell.
     """
 
@@ -54,7 +54,7 @@ class Reference:
         """Initialize.
 
         Args:
-            config: Project config (``paths.reference_root``, ``reference.*``).
+            config: Project config (paths.reference_root, reference.*).
             partition: The split whose reference is frozen (required for freeze/load/check).
         """
         self.config = config or Config()
@@ -70,7 +70,7 @@ class Reference:
         """Assert the split's held axis is disjoint; report the other-axis overlap.
 
         Returns:
-            ``{"held_axis", "location_overlap", "species_overlap"}``.
+            {"held_axis", "location_overlap", "species_overlap"}.
 
         Raises:
             AssertionError: If Split B's probe locations intersect the reference, or Split A is not LOSO.
@@ -90,7 +90,7 @@ class Reference:
         }
 
     def freeze(self) -> None:
-        """Write reference species/locations + the probe-cell manifest to ``reference_root/<split>/``."""
+        """Write reference species/locations + the probe-cell manifest to reference_root/<split>/."""
         assert self.partition is not None
         root = self._root
         root.mkdir(parents=True, exist_ok=True)
@@ -141,7 +141,7 @@ class Reference:
 
 
 def main() -> None:
-    """CLI: build both splits, ``--check`` disjointness and/or ``--freeze`` their references."""
+    """CLI: build both splits, --check disjointness and/or --freeze their references."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default=None, help="optional YAML config")
     ap.add_argument(

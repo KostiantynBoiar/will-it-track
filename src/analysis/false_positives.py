@@ -1,16 +1,16 @@
 """False-positive / hallucination analysis on hard negatives.
 
-On a hard negative the queried species is absent, so a *correct* run returns no masklet. Here we ask the
-detection-precision question the pDetA fit cannot --- pDetA conditions on the animal being present, so it
+On a hard negative the queried species is absent, so a correct run returns no masklet. Here we ask the
+detection-precision question the pDetA fit cannot — pDetA conditions on the animal being present, so it
 measures recall-given-present, not hallucination. Does SAM 3 return a masklet anyway, and does that
 false-positive rate rise with the label-free novelty (taxonomic / visual distance) of the queried species?
 
 We read the harness prediction JSONs directly (a non-empty prediction above a score threshold = a
 hallucination), attach each hard-negative species' taxonomic and visual distance, and summarise at the
-*species* level (so the significance test is over species, not pseudo-replicated probes). Writes
-``outputs/false_positives.parquet`` + ``outputs/false_positives_summary.json``.
+species level (so the significance test is over species, not pseudo-replicated probes). Writes
+outputs/false_positives.parquet + outputs/false_positives_summary.json.
 
-Run: ``PYTHONPATH=. python -m src.analysis.false_positives --split test [--threshold 0.5]``
+Run: PYTHONPATH=. python -m src.analysis.false_positives --split test [--threshold 0.5]
 """
 
 from __future__ import annotations
@@ -35,10 +35,10 @@ from src.splits import build_species_partition
 def fp_table(split: str, config: Config, threshold: float) -> pd.DataFrame:
     """Per hard-negative probe: hallucination flag + max score + taxonomic/visual distance.
 
-    A hard negative whose prediction JSON holds a masklet scoring ``>= threshold`` is a false positive.
+    A hard negative whose prediction JSON holds a masklet scoring >= threshold is a false positive.
     Distances are computed on a partition whose probe side is the hard-negative species (reference set
     unchanged), so taxonomic distance resolves for any species with full taxonomy; visual distance is
-    ``NaN`` for species that never appear positively (no crops to embed).
+    NaN for species that never appear positively (no crops to embed).
     """
     records = [r for r in SAFARI(split, config).records() if r.is_hard_negative]
     pred_dir = (
@@ -78,7 +78,7 @@ def fp_table(split: str, config: Config, threshold: float) -> pd.DataFrame:
 
 
 def _weighted_pearson(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> float:
-    """Support-weighted Pearson correlation (``NaN`` if either side is constant)."""
+    """Support-weighted Pearson correlation (NaN if either side is constant)."""
     mx, my = np.average(x, weights=w), np.average(y, weights=w)
     cov = np.average((x - mx) * (y - my), weights=w)
     sx, sy = np.sqrt(np.average((x - mx) ** 2, weights=w)), np.sqrt(np.average((y - my) ** 2, weights=w))
@@ -110,10 +110,10 @@ def _corr_over_species(species: pd.DataFrame, dist_col: str, seed: int, n_boot: 
 def _partial_corr_over_species(
     species: pd.DataFrame, x_col: str, z_col: str, seed: int, n_boot: int
 ) -> dict:
-    """Support-weighted partial correlation of per-species FP rate with ``x_col`` controlling ``z_col``.
+    """Support-weighted partial correlation of per-species FP rate with x_col controlling z_col.
 
     Uses the standard partial-correlation identity on the three weighted pairwise correlations, with a
-    species bootstrap CI. If the visual FP effect is really a size artefact, controlling ``log_area`` here
+    species bootstrap CI. If the visual FP effect is really a size artefact, controlling log_area here
     shrinks it toward zero (mirroring the size-controlled coefficient ablation).
     """
     data = species[["fp_rate", x_col, z_col, "n"]].dropna()
@@ -137,7 +137,7 @@ def _partial_corr_over_species(
 
 
 def _wls_line(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> tuple[float, float]:
-    """Weighted least-squares line ``y ~ x`` -> (slope, intercept)."""
+    """Weighted least-squares line y ~ x -> (slope, intercept)."""
     if w.sum() <= 0:
         return 0.0, float(np.mean(y)) if len(y) else 0.0
     mx, my = np.average(x, weights=w), np.average(y, weights=w)
@@ -147,10 +147,10 @@ def _wls_line(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> tuple[float, float
 
 
 def fp_predictor_cv(species: pd.DataFrame, config: Config, predictor: str = "visual_distance") -> dict:
-    """Leave-one-species-out validation: predict a held-out species' FP rate from ``predictor``.
+    """Leave-one-species-out validation: predict a held-out species' FP rate from predictor.
 
     Each fold fits a support-weighted line on the other species and predicts the held-out one; the gain over
-    a mean-predictor baseline is tested with a species bootstrap. This is what earns the ``predictor'' claim
+    a mean-predictor baseline is tested with a species bootstrap. This is what earns the "predictor" claim
     (per the decision rule) for the hallucination-risk signal, beyond the in-sample correlation.
     """
     data = species[["fp_rate", predictor, "n"]].dropna().reset_index(drop=True)
@@ -195,7 +195,7 @@ def summarise(df: pd.DataFrame, config: Config, threshold: float) -> dict:
     by_tercile = {}
     if len(tercile) >= 3 and tercile["taxonomic_distance"].nunique() >= 2:
         # Auto-label the surviving bins: the taxonomic distance is discrete (integer tree steps), so
-        # qcut with duplicates="drop" may collapse to fewer than three bins -- fixed labels would then
+        # qcut with duplicates="drop" may collapse to fewer than three bins — fixed labels would then
         # mismatch the bin count. Interval labels adapt to however many terciles survive.
         tercile["bin"] = pd.qcut(tercile["taxonomic_distance"], 3, duplicates="drop")
         by_tercile = {
@@ -225,7 +225,7 @@ def summarise(df: pd.DataFrame, config: Config, threshold: float) -> dict:
 
 
 def analyse(split: str = "test", config: Config | None = None, threshold: float = 0.5) -> Path:
-    """Build the FP table + summary; write both under ``outputs/``; return the parquet path."""
+    """Build the FP table + summary; write both under outputs/; return the parquet path."""
     cfg = config or Config()
     df = fp_table(split, cfg, threshold)
     path = write_parquet(df, cfg.paths.outputs_root / "false_positives.parquet")

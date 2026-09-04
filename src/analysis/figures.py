@@ -1,11 +1,11 @@
 """Generate the dissertation's result figures from the committed outputs (reproducible).
 
-Writes PDF/PNG figures to ``report/dissertation/figures/`` — the honest-null visuals: a coefficient
+Writes PDF/PNG figures to report/dissertation/figures/ — the honest-null visuals: a coefficient
 forest plot (every distance's CI crossing zero), the out-of-sample predicted-vs-actual cloud (no
-predictive power), and the size-confound scatter (the one real correlate). The ``features_in_action``
-images are generated separately (they need a real frame + GT mask); see ``figures_features.py``.
+predictive power), and the size-confound scatter (the one real correlate). The features_in_action
+images are generated separately (they need a real frame + GT mask); see figures_features.py.
 
-Run: ``PYTHONPATH=. python -m src.analysis.figures [--config configs/default.yaml]``
+Run: PYTHONPATH=. python -m src.analysis.figures [--config configs/default.yaml]
 """
 
 from __future__ import annotations

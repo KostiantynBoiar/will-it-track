@@ -1,13 +1,13 @@
 """Central configuration.
 
 Single source of truth for every constant (paths, data, reference, inference, eval, features,
-model, cross-validation). Defaults are overridable via a YAML file (``configs/*.yaml``) or
-``SAFARI_*`` environment variables. Every hard constraint is a config toggle here
-(``keep_hard_negatives``, ``mask_crop``, ``support_weight``, ``log_support_covariate``,
-``group_schemes``) so ablations flip config, not code.
+model, cross-validation). Defaults are overridable via a YAML file (configs/*.yaml) or
+SAFARI_* environment variables. Every hard constraint is a config toggle here
+(keep_hard_negatives, mask_crop, support_weight, log_support_covariate,
+group_schemes) so ablations flip config, not code.
 
-Pydantic v2 + pydantic-settings: any field is overridable via a ``SAFARI_*`` env var, nested with
-``__`` (e.g. ``SAFARI_DATA__FPS``, ``SAFARI_PATHS__DATA_ROOT``, ``SAFARI_SEED``). ``Config.load(path)``
+Pydantic v2 + pydantic-settings: any field is overridable via a SAFARI_* env var, nested with
+__ (e.g. SAFARI_DATA__FPS, SAFARI_PATHS__DATA_ROOT, SAFARI_SEED). Config.load(path)
 reads a YAML file over the defaults; env vars fill anything the YAML omits.
 """
 
@@ -46,14 +46,14 @@ class DataConfig(BaseModel):
 
     Attributes:
         fps: Frame rate the annotations align to (6 fps downsampled).
-        annotations_subdir: Subdirectory of ``data_root`` holding the annotation JSONs.
-        frames_subdir: Subdirectory of ``data_root`` holding the 6 fps frames.
-        train_ann: Train-split ``_ext`` annotation JSON (the seen set / reference).
-        test_ann: Test-split ``_ext`` annotation JSON (the transfer probes).
+        annotations_subdir: Subdirectory of data_root holding the annotation JSONs.
+        frames_subdir: Subdirectory of data_root holding the 6 fps frames.
+        train_ann: Train-split _ext annotation JSON (the seen set / reference).
+        test_ann: Test-split _ext annotation JSON (the transfer probes).
         keep_hard_negatives: Keep queries that return 0 (do not filter them).
         hf_repo: Gated Hugging Face dataset id for the annotations.
         gcs_bucket: Public GCS bucket holding the 6 fps frames (anonymous access).
-        frames_gcs_dir: Bucket-relative frame root (``{split}``-templated); ``file_names`` append to it.
+        frames_gcs_dir: Bucket-relative frame root ({split}-templated); file_names append to it.
     """
 
     fps: int = 6
@@ -69,10 +69,10 @@ class DataConfig(BaseModel):
 
 
 class ReferenceConfig(BaseModel):
-    """The frozen reference. Files resolved under ``paths.reference_root/<split-name>/``.
+    """The frozen reference. Files resolved under paths.reference_root/<split-name>/.
 
     Attributes:
-        reference_species_file: Frozen reference species set (``category_id``s) for the split.
+        reference_species_file: Frozen reference species set (category_ids) for the split.
         reference_locations_file: Frozen reference location set for the split.
         manifest_file: Per-probe-cell manifest (category_id + taxonomy + location_id + timestamps).
     """
@@ -98,27 +98,27 @@ class InferenceConfig(BaseModel):
     """Frozen promptable-tracker inference (SAM 3 by default; GLEE for the model-swap).
 
     Attributes:
-        tracker: Which frozen tracker to run — ``"sam3"`` (default) or ``"glee"``. Selects the class the
-            harness constructs; a controlled model-swap that leaves the ``"sam3"`` path byte-identical.
+        tracker: Which frozen tracker to run — "sam3" (default) or "glee". Selects the class the
+            harness constructs; a controlled model-swap that leaves the "sam3" path byte-identical.
         sam3_model: Hugging Face id (or local path) of the frozen SAM 3 checkpoint.
-        prompt_mode: ``"species"`` (primary) or ``"generic"`` ("animal", robustness).
+        prompt_mode: "species" (primary) or "generic" ("animal", robustness).
         device: Torch device for inference.
-        precision: ``"bf16"`` / ``"fp16"`` / ``"fp32"`` (tune to the GPU tier).
+        precision: "bf16" / "fp16" / "fp32" (tune to the GPU tier).
         batch_frames: Frames per inference batch.
-        score_threshold: Minimum confidence to keep a predicted masklet; ``0.0`` writes raw scores so
-            VEval (not the harness) owns the operating point (its own ``prob_thresh`` decides HOTA).
+        score_threshold: Minimum confidence to keep a predicted masklet; 0.0 writes raw scores so
+            VEval (not the harness) owns the operating point (its own prob_thresh decides HOTA).
             Shared by every tracker so the scoring stage stays identical across the swap.
-        predictions_subdir: Where per-video prediction JSONs are written, under ``paths.outputs_root``.
+        predictions_subdir: Where per-video prediction JSONs are written, under paths.outputs_root.
         max_videos_per_species: Cap on present (positive) videos scored per species — a stratified
             sample so the huge train split (~31k probes) yields the species hold-out at feasible cost;
-            ``None`` runs every probe. Hard negatives are skipped when capping (positives-only H1 fit).
-        glee_model: Name/tag of the GLEE checkpoint (default the zero-shot ``GLEE_Lite_scaleup``).
-        glee_repo: Path to the GLEE checkout root (the dir containing ``projects/``); put on ``sys.path``
-            at load so ``projects.GLEE.glee.*`` imports resolve. ``None`` until staged on the GPU box.
-        glee_config: Path to GLEE's model YAML (detectron2/GLEE repo); ``None`` until staged on the GPU box.
-        glee_weights: Path to the GLEE ``.pth`` weights; ``None`` until downloaded on the GPU box.
-        glee_score_threshold: GLEE's own per-query pre-filter (it scores *every* query). Distinct from
-            ``score_threshold`` (which stays ``0.0`` so VEval owns the final operating point); this only
+            None runs every probe. Hard negatives are skipped when capping (positives-only H1 fit).
+        glee_model: Name/tag of the GLEE checkpoint (default the zero-shot GLEE_Lite_scaleup).
+        glee_repo: Path to the GLEE checkout root (the dir containing projects/); put on sys.path
+            at load so projects.GLEE.glee.* imports resolve. None until staged on the GPU box.
+        glee_config: Path to GLEE's model YAML (detectron2/GLEE repo); None until staged on the GPU box.
+        glee_weights: Path to the GLEE .pth weights; None until downloaded on the GPU box.
+        glee_score_threshold: GLEE's own per-query pre-filter (it scores every query). Distinct from
+            score_threshold (which stays 0.0 so VEval owns the final operating point); this only
             decides which candidate detections GLEE emits before VEval. Never tune it to flatter the null.
         glee_topk: Top-k GLEE queries kept per frame before NMS. GLEE emits 100 object queries per frame
             (mostly low-quality duplicates); a small k (like app.py's num_inst) keeps only the confident few.
@@ -158,10 +158,10 @@ class EvalConfig(BaseModel):
 
     Attributes:
         metrics: Reported metrics (computed by the vendored VEval scorer).
-        veval_script: Path to the vendored evaluator, under ``paths.third_party_root``.
-        prefer_bbox: Read VEval's ``bbox_*`` HOTA metrics before ``mask_*``. On for a box-only dataset
+        veval_script: Path to the vendored evaluator, under paths.third_party_root.
+        prefer_bbox: Read VEval's bbox_* HOTA metrics before mask_*. On for a box-only dataset
             whose GT is emitted as filled-rectangle masks: a tight predicted mask vs a rectangle GT would
-            deflate mask-IoU, so box-IoU HOTA (``bbox_*``) is the honest score there.
+            deflate mask-IoU, so box-IoU HOTA (bbox_*) is the honest score there.
     """
 
     metrics: tuple[str, ...] = ("pHOTA", "pDetA", "pAssA")
@@ -173,11 +173,11 @@ class FeaturesConfig(BaseModel):
     """Label-free distance features.
 
     Attributes:
-        visual_encoder: ``"dinov2"`` (primary) or ``"clip"`` (robustness).
+        visual_encoder: "dinov2" (primary) or "clip" (robustness).
         mask_crop: Crop visual embeddings to the animal mask; robustness ablation toggles it off.
         scene_encoder: Encoder for the environment/background embedding.
         taxonomic_levels: 7-level taxonomy (Kingdom -> Species) for LCA tree distance.
-        distance_variant: ``"nearest_prototype"`` (primary), or ``"frechet"`` / ``"mmd"`` (robustness).
+        distance_variant: "nearest_prototype" (primary), or "frechet" / "mmd" (robustness).
         night_ir_from_color: Derive the day/night-IR flag from colour statistics.
         n_frames_per_masklet: Annotated frames sampled per masklet for embedding.
         max_masklets_per_species: Cap on masklets embedded per species (bounds the prototype cost).
@@ -186,22 +186,22 @@ class FeaturesConfig(BaseModel):
         embed_crop_chunk: Crops loaded + embedded per chunk — bounds peak RAM (only this many decoded
             frames are ever alive at once), independent of the sampling caps.
         embed_load_workers: Threads that load + crop frames per chunk in parallel (the embedding path
-            is I/O-bound on frame reads, not the GPU); ``1`` = serial.
-        embed_device: Torch device for embedding (``"mps"``/``"cuda"``/``"cpu"``; falls back to CPU).
+            is I/O-bound on frame reads, not the GPU); 1 = serial.
+        embed_device: Torch device for embedding ("mps"/"cuda"/"cpu"; falls back to CPU).
         min_mask_pixels: Smallest mask (in pixels) that yields a usable animal crop.
-        background_fill: How to neutralise the animal in the scene embedding (``"mean"``/``"zero"``).
+        background_fill: How to neutralise the animal in the scene embedding ("mean"/"zero").
         night_ir_threshold: Mean channel-spread (0-255) below which a frame counts as night/IR.
-        embeddings_subdir: Cache dir for embeddings, under ``paths.outputs_root``.
+        embeddings_subdir: Cache dir for embeddings, under paths.outputs_root.
         compute_familiarity: Compute the SAM 3 familiarity proxy during assembly (T2.5; needs the GPU
             transformers backend). Off by default so the standard assemble stays transformers-free and the
             committed feature tables are byte-identical.
-        familiarity_encoder: Cache name for the SAM 3 crop embeddings (separate ``sam3_crop*.npz`` file).
-        familiarity_metric: How separability is measured in SAM 3's feature space --- ``"silhouette"``
-            (compactness vs nearest-other-species; the genuine separability signal), ``"nearest_prototype"``
+        familiarity_encoder: Cache name for the SAM 3 crop embeddings (separate sam3_crop*.npz file).
+        familiarity_metric: How separability is measured in SAM 3's feature space — "silhouette"
+            (compactness vs nearest-other-species; the genuine separability signal), "nearest_prototype"
             (cosine gap to the nearest reference species, i.e. the visual distance with SAM 3's encoder), or
-            ``"mahalanobis"`` (typicality vs the reference feature Gaussian).
-        familiarity_pooling: Pool SAM 3's vision-encoder output to one vector per crop --- ``"pooler"`` (the
-            neck's pooled output) or ``"patch_mean"`` (mean over patch tokens).
+            "mahalanobis" (typicality vs the reference feature Gaussian).
+        familiarity_pooling: Pool SAM 3's vision-encoder output to one vector per crop — "pooler" (the
+            neck's pooled output) or "patch_mean" (mean over patch tokens).
     """
 
     visual_encoder: str = "dinov2"
@@ -239,17 +239,17 @@ class ModelConfig(BaseModel):
     """Per-target regression on the distances.
 
     Attributes:
-        family: ``"beta"`` / logit-link GLM on bounded scores.
+        family: "beta" / logit-link GLM on bounded scores.
         support_weight: Weight observations by support.
         support_col: Support column used for weighting and the covariate.
-        log_support_covariate: Add ``log(n_frames)`` so "rare" is never mistaken for "far".
+        log_support_covariate: Add log(n_frames) so "rare" is never mistaken for "far".
         cluster_ci: Report group-cluster-bootstrap coefficient CIs (refit per resample) instead of the
-            naive model CIs. The naive CIs are anti-conservative here — ``var_weights`` inflates the
+            naive model CIs. The naive CIs are anti-conservative here — var_weights inflates the
             effective N and the predictors are constant within species/location (pseudo-replication) —
             so the honest interval resamples whole groups. Naive CIs are still written alongside.
         cluster_cols: Grouping columns bootstrapped over; the reported CI is the conservative envelope
             across them (widest), since novelty predictors vary per species and scene ones per location.
-        control_size: Add ``log_area`` (mean GT mask-area per species) as a nuisance covariate. Off by
+        control_size: Add log_area (mean GT mask-area per species) as a nuisance covariate. Off by
             default so committed fits are unchanged; turned on for the confound ablation that tests whether
             the (wrong-signed) visual-distance effect is really an animal-size artefact.
     """
@@ -278,17 +278,17 @@ class CVConfig(BaseModel):
 class BurstConfig(BaseModel):
     """BURST → SA-Co adapter (R7 many-species replication; mask-native LVIS-class tracker).
 
-    BURST ships one ``all_classes.json`` per split: a list of ``sequences``, each carrying a source
-    ``dataset`` + ``seq_name`` (locating the TAO frames), ``annotated_image_paths``, per-frame COCO-RLE
-    ``segmentations`` keyed by track id, and ``track_category_ids`` (track → LVIS category). The adapter
+    BURST ships one all_classes.json per split: a list of sequences, each carrying a source
+    dataset + seq_name (locating the TAO frames), annotated_image_paths, per-frame COCO-RLE
+    segmentations keyed by track id, and track_category_ids (track → LVIS category). The adapter
     keeps only the animal categories (those in the packaged taxonomy CSV — a WordNet-derived whitelist),
-    emits the RLE masks directly (mask-native, so ``eval.prefer_bbox`` stays off), and caps videos per
-    category so SAM 3 inference stays tractable. Location is the per-video ``seq_name`` (no site metadata),
-    time is empty, so only leave-species-out is meaningful (``cv.group_schemes = ("species",)``).
+    emits the RLE masks directly (mask-native, so eval.prefer_bbox stays off), and caps videos per
+    category so SAM 3 inference stays tractable. Location is the per-video seq_name (no site metadata),
+    time is empty, so only leave-species-out is meaningful (cv.group_schemes = ("species",)).
 
     Attributes:
-        ann_file: The extracted BURST annotation JSON (relative to ``annotations_subdir``).
-        taxonomy_csv: Optional override for the packaged ``src/adapters/burst_taxonomy.csv``.
+        ann_file: The extracted BURST annotation JSON (relative to annotations_subdir).
+        taxonomy_csv: Optional override for the packaged src/adapters/burst_taxonomy.csv.
         max_videos_per_category: Cap on sequences per animal category (bounds dog/person dominance).
         max_frames_per_video: Cap on kept annotated frames per sequence.
         min_frames: Skip sequences with fewer than this many annotated frames of the target category.
@@ -304,8 +304,8 @@ class BurstConfig(BaseModel):
 class Config(BaseSettings):
     """Top-level configuration aggregating every section.
 
-    Any field is overridable via a ``SAFARI_*`` env var (nested with ``__``), e.g.
-    ``SAFARI_DATA__FPS=8`` or ``SAFARI_PATHS__DATA_ROOT=/mnt/safari``.
+    Any field is overridable via a SAFARI_* env var (nested with __), e.g.
+    SAFARI_DATA__FPS=8 or SAFARI_PATHS__DATA_ROOT=/mnt/safari.
 
     Attributes:
         paths: Filesystem locations.
@@ -318,9 +318,9 @@ class Config(BaseSettings):
         model: Regression options.
         cv: Cross-validation + bootstrap options.
         seed: Random seed.
-        experiment: Experiment tag for the exporter's output filenames (``"location"`` keeps the
-            unsuffixed names; e.g. ``"species"`` writes ``coefficients_species.tex``), so two experiments'
-            artefacts sit side by side without clobbering. Overridable via ``SAFARI_EXPERIMENT``.
+        experiment: Experiment tag for the exporter's output filenames ("location" keeps the
+            unsuffixed names; e.g. "species" writes coefficients_species.tex), so two experiments'
+            artefacts sit side by side without clobbering. Overridable via SAFARI_EXPERIMENT.
     """
 
     model_config = SettingsConfigDict(
@@ -342,13 +342,13 @@ class Config(BaseSettings):
 
     @classmethod
     def load(cls, path: str | Path | None = None) -> Config:
-        """Build a config from defaults + ``SAFARI_*`` env vars, overlaying a YAML file if given.
+        """Build a config from defaults + SAFARI_* env vars, overlaying a YAML file if given.
 
         Args:
-            path: Optional YAML config path; defaults + env only when ``None``.
+            path: Optional YAML config path; defaults + env only when None.
 
         Returns:
-            The resolved :class:`Config` (YAML sections coerced into the sub-models; extras ignored).
+            The resolved Config (YAML sections coerced into the sub-models; extras ignored).
         """
         if path is None:
             return cls()

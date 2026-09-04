@@ -1,8 +1,8 @@
 """Frozen image encoders (DINOv2 / CLIP) for the visual + environment features.
 
-The only feature module that imports torch. :class:`Embedder` maps PIL images to L2-normalised float32
-vectors; :class:`EmbeddingCache` persists them keyed by ``(encoder, mask_crop)`` so re-runs skip the
-forward pass. DINOv2 is loaded via ``timm`` (weights from the HF cache), CLIP via ``open_clip`` — both
+The only feature module that imports torch. Embedder maps PIL images to L2-normalised float32
+vectors; EmbeddingCache persists them keyed by (encoder, mask_crop) so re-runs skip the
+forward pass. DINOv2 is loaded via timm (weights from the HF cache), CLIP via open_clip — both
 download once on first use.
 """
 
@@ -23,14 +23,14 @@ _CLIP_MODEL = ("ViT-B-32", "openai")
 
 
 class Embedder:
-    """A lazily-loaded, cached frozen encoder: ``embed(images) -> (N, D)`` L2-normalised float32."""
+    """A lazily-loaded, cached frozen encoder: embed(images) -> (N, D) L2-normalised float32."""
 
     def __init__(self, encoder: str | None = None, config: Config | None = None) -> None:
-        """Initialize (the model is loaded on first ``embed``).
+        """Initialize (the model is loaded on first embed).
 
         Args:
-            encoder: ``"dinov2"`` or ``"clip"`` (defaults to ``features.visual_encoder``).
-            config: Project config (``features.embed_device`` / ``embed_batch``).
+            encoder: "dinov2" or "clip" (defaults to features.visual_encoder).
+            config: Project config (features.embed_device / embed_batch).
         """
         self.config = config or Config()
         self.encoder = encoder or self.config.features.visual_encoder
@@ -79,7 +79,7 @@ class Embedder:
         return feats.float().cpu().numpy()
 
     def embed(self, images: list[Image.Image]) -> np.ndarray:
-        """Embed images to L2-normalised float32 vectors, shape ``(len(images), D)``."""
+        """Embed images to L2-normalised float32 vectors, shape (len(images), D)."""
         if not images:
             return np.zeros((0, 0), dtype="float32")
         self._load()
@@ -95,7 +95,7 @@ class Embedder:
 
 
 class EmbeddingCache:
-    """A disk-backed ``key -> vector`` cache, one file per ``(encoder, mask_crop)``."""
+    """A disk-backed key -> vector cache, one file per (encoder, mask_crop)."""
 
     def __init__(self, config: Config, encoder: str, mask_crop: bool) -> None:
         """Load any existing cache for this encoder/crop setting into memory."""
@@ -110,11 +110,11 @@ class EmbeddingCache:
                 self._vectors = dict(zip(data["keys"].tolist(), data["vecs"], strict=False))
 
     def get(self, key: str) -> np.ndarray | None:
-        """Return the cached vector for ``key`` (or ``None``)."""
+        """Return the cached vector for key (or None)."""
         return self._vectors.get(key)
 
     def put(self, key: str, vector: np.ndarray) -> None:
-        """Store a vector under ``key``."""
+        """Store a vector under key."""
         self._vectors[key] = vector.astype("float32")
 
     def save(self) -> Path:

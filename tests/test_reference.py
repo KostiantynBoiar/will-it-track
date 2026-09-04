@@ -1,6 +1,6 @@
 """Reference tests — location-disjoint Split B, honest species-overlap report, and manifest.
 
-Skips until the annotations are fetched (`python -m src.acquire --annotations`).
+Skips until the annotations are fetched (python -m src.acquire --annotations).
 """
 
 from __future__ import annotations

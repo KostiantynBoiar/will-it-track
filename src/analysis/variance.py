@@ -32,7 +32,7 @@ def _standardised_factors(df: pd.DataFrame, target: str) -> tuple[pd.DataFrame, 
 
 
 def _ols_r2(y: pd.Series, x: pd.DataFrame) -> float:
-    """OLS R^2 of ``y`` on ``x`` (0 for the empty predictor set)."""
+    """OLS R^2 of y on x (0 for the empty predictor set)."""
     if x.shape[1] == 0:
         return 0.0
     return float(sm.OLS(y.to_numpy(), sm.add_constant(x.to_numpy(), has_constant="add")).fit().rsquared)
@@ -73,11 +73,11 @@ class VariancePartition:
         """Return the unique + shared R^2 per factor for one target.
 
         Args:
-            target: ``"pDetA"`` or ``"pAssA"``.
+            target: "pDetA" or "pAssA".
 
         Returns:
-            One row per factor: ``lmg_r2`` (Shapley share of R^2), ``share`` (fraction of the model
-            R^2), and ``vif`` (collinearity). Sorted by ``lmg_r2`` descending.
+            One row per factor: lmg_r2 (Shapley share of R^2), share (fraction of the model
+            R^2), and vif (collinearity). Sorted by lmg_r2 descending.
         """
         df = read_parquet(self._table_path)
         x, y, cols = _standardised_factors(df, target)

@@ -1,16 +1,16 @@
 """Extract the annotated frames for the BURST probe videos — streamed from the HF TAO-Amodal frame zips.
 
-Reads the converted probe JSON (``data.test_ann``) and, for each video's ``source_dataset`` + ``source_seq``,
-pulls just that video's annotated frames from ``frames/<split>/<source>.zip`` on the gated HF dataset
-``chengyenhsieh/TAO-Amodal`` (HTTP range via ``remotezip`` + a bearer token) and writes them to
-``data_root/frames/<video_name>/<frame>``, aligned to the video's ``file_names``. Only the capped
+Reads the converted probe JSON (data.test_ann) and, for each video's source_dataset + source_seq,
+pulls just that video's annotated frames from frames/<split>/<source>.zip on the gated HF dataset
+chengyenhsieh/TAO-Amodal (HTTP range via remotezip + a bearer token) and writes them to
+data_root/frames/<video_name>/<frame>, aligned to the video's file_names. Only the capped
 animal-subset frames are touched (a few thousand JPEGs), never the whole multi-GB archive. Idempotent: a video
 whose frames already exist is skipped.
 
-Frame paths inside each source zip are ``<seq_name>/<frame>.jpg``; the probe's ``video_name`` is
-``<source>__<seq_name>`` so the two never collide across sources.
+Frame paths inside each source zip are <seq_name>/<frame>.jpg; the probe's video_name is
+<source>__<seq_name> so the two never collide across sources.
 
-Run: ``PYTHONPATH=. python scripts/extract_burst_frames.py --config configs/burst.yaml --split val``
+Run: PYTHONPATH=. python scripts/extract_burst_frames.py --config configs/burst.yaml --split val
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ def _token() -> str:
 
 
 def extract(config: Config, split: str) -> None:
-    """Extract every probe video's annotated frames from the per-source HF zips into ``frames/``."""
+    """Extract every probe video's annotated frames from the per-source HF zips into frames/."""
     from remotezip import RemoteZip
 
     ann = config.paths.data_root / config.data.annotations_subdir / config.data.test_ann

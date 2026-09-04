@@ -4,8 +4,8 @@ DINOv2 fingerprints of mask-cropped animals are averaged into a per-species prot
 the cosine gap to the nearest *other* species' prototype (leave-one-species-out on the species split).
 NaN where a species yields no usable crops. Uses ground-truth masks — no SAM 3.
 
-``features.distance_variant`` selects how the gap is measured: ``nearest_prototype`` (default, above) or a
-distributional ``frechet``/``mmd`` distance between the target species' whole embedding set and the pooled
+features.distance_variant selects how the gap is measured: nearest_prototype (default, above) or a
+distributional frechet/mmd distance between the target species' whole embedding set and the pooled
 reference set (the AutoEval recipe; a robustness variant that never collapses the species to one prototype).
 """
 
@@ -55,7 +55,7 @@ class VisualDistance:
     def _vectors_by_species(
         self, records: list[VideoRecord], embedder: Embedder, cache: EmbeddingCache
     ) -> dict[str, list[np.ndarray]]:
-        """Per-species (``category_id``) list of mask-cropped animal embeddings."""
+        """Per-species (category_id) list of mask-cropped animal embeddings."""
         feat = self.config.features
         items = []
         keys_by_species: dict[str, list[str]] = defaultdict(list)
@@ -91,7 +91,7 @@ class VisualDistance:
     def _prototypes(
         self, records: list[VideoRecord], embedder: Embedder, cache: EmbeddingCache
     ) -> dict[str, np.ndarray]:
-        """One prototype per species (``category_id``) from its mask-cropped animal embeddings."""
+        """One prototype per species (category_id) from its mask-cropped animal embeddings."""
         return {
             cid: proto
             for cid, vecs in self._vectors_by_species(records, embedder, cache).items()
@@ -99,7 +99,7 @@ class VisualDistance:
         }
 
     def compute(self, partition: Partition) -> pd.Series:
-        """Return ``visual_distance`` per probe species (``category_id``); ``NaN`` where no crops exist."""
+        """Return visual_distance per probe species (category_id); NaN where no crops exist."""
         embedder = Embedder(self.encoder, self.config)
         cache = EmbeddingCache(self.config, self.encoder, self.config.features.mask_crop)
         variant = self.config.features.distance_variant

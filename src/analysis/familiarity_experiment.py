@@ -1,19 +1,19 @@
 """Familiarity-proxy experiment (T2.5) — does SAM 3's own feature-space separability predict pDetA OOS?
 
-The four before-running *novelty distances* were H0, and the one that neared significance (``visual_distance``)
+The four before-running novelty distances were H0, and the one that neared significance (visual_distance)
 was a wrong-direction size confound. This experiment adds one more before-running, label-free, non-circular
-axis: **familiarity read from SAM 3's own vision-encoder embeddings** (T2.5), hedging the undisclosed-pretraining
-problem. It measures separability three ways (``silhouette`` / ``nearest_prototype`` / ``mahalanobis``; see
-:mod:`src.features.familiarity`) and validates each at the *exact* leave-species-out bar the distances faced,
-then runs the honest head-to-head: **does familiarity add out-of-sample gain over ``visual_distance`` + size?**
+axis: familiarity read from SAM 3's own vision-encoder embeddings (T2.5), hedging the undisclosed-pretraining
+problem. It measures separability three ways (silhouette / nearest_prototype / mahalanobis; see
+src.features.familiarity) and validates each at the exact leave-species-out bar the distances faced,
+then runs the honest head-to-head: does familiarity add out-of-sample gain over visual_distance + size?
 
-Two stages: ``extract`` (GPU — embeds crops with SAM 3, computes the three metric columns into
-``features_fam.parquet``; reuses the cached embeddings across metrics) and ``run`` (CPU — the CV, Bonferroni
-over the three metrics, the size decomposition, and the correlations; writes ``familiarity_experiment_summary
-.json``). Expected outcome, pre-registered: most likely **hardens H0** — separability confounds with the size
-effect that already dissolved the visual signal.
+Two stages: extract (GPU — embeds crops with SAM 3, computes the three metric columns into
+features_fam.parquet; reuses the cached embeddings across metrics) and run (CPU — the CV, Bonferroni over
+the three metrics, the size decomposition, and the correlations; writes
+familiarity_experiment_summary.json). Expected outcome, pre-registered: most likely hardens H0 —
+separability confounds with the size effect that already dissolved the visual signal.
 
-Run: ``PYTHONPATH=. python -m src.analysis.familiarity_experiment --stage all [--origins test] [--config ...]``
+Run: PYTHONPATH=. python -m src.analysis.familiarity_experiment --stage all [--origins test] [--config ...]
 """
 
 from __future__ import annotations
@@ -41,11 +41,11 @@ _BONFERRONI_M = 3  # the three metric variants
 
 
 def extract(config: Config, origins: tuple[str, ...] = ("train", "test")) -> pd.DataFrame:
-    """GPU: embed crops with SAM 3, compute the three familiarity metrics → ``features_fam.parquet``.
+    """GPU: embed crops with SAM 3, compute the three familiarity metrics → features_fam.parquet.
 
     Builds the species hold-out (Split A) partition, computes each metric (the SAM 3 embeddings are cached, so
-    the second and third metrics are free), maps the per-species series onto the base ``features.parquet``, and
-    adds the torch-free ``log_area`` covariate.
+    the second and third metrics are free), maps the per-species series onto the base features.parquet, and
+    adds the torch-free log_area covariate.
     """
     from src.features.familiarity import FamiliarityProxy
 
@@ -75,7 +75,7 @@ def extract(config: Config, origins: tuple[str, ...] = ("train", "test")) -> pd.
 
 
 def _schemes(summary: pd.DataFrame, target: str = "pDetA") -> dict:
-    """Per-scheme ``delta/CI/p/mae`` dict for one CV summary (species + location)."""
+    """Per-scheme delta/CI/p/mae dict for one CV summary (species + location)."""
     det = summary[summary["target"] == target] if not summary.empty else summary
     return {
         r.group_scheme: {
@@ -96,7 +96,7 @@ def _corr(df: pd.DataFrame, a: str, b: str) -> float | None:
 
 
 def run(config: Config | None = None) -> Path:
-    """CPU: read ``features_fam.parquet``, validate each metric + head-to-head vs visual; write the summary."""
+    """CPU: read features_fam.parquet, validate each metric + head-to-head vs visual; write the summary."""
     cfg = config or Config()
     outputs = cfg.paths.outputs_root
     fam_path = outputs / "features_fam.parquet"

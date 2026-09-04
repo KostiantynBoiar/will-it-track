@@ -30,7 +30,7 @@ def test_animal_crop_box_from_mask() -> None:
 
 
 def test_animal_crop_zeros_background() -> None:
-    """With ``mask_crop`` the non-mask pixels inside the box are zeroed."""
+    """With mask_crop the non-mask pixels inside the box are zeroed."""
     mask = np.zeros((20, 20), dtype=bool)
     mask[5:10, 6:12] = True
     mask[5, 6] = False  # a hole at the box's top-left corner
@@ -68,7 +68,7 @@ def test_frame_achromatic() -> None:
 
 
 def test_sample_frame_indices() -> None:
-    """Only non-None segmentation frames are sampled; at most ``n`` of them."""
+    """Only non-None segmentation frames are sampled; at most n of them."""
     ann = {"segmentations": [None, {}, {}, None, {}, {}]}
     assert annotated_frame_indices(ann) == [1, 2, 4, 5]
     sampled = sample_frame_indices(ann, 2)

@@ -1,16 +1,16 @@
 """Per-target regression.
 
-Models ``pDetA`` and ``pAssA`` separately on the four distances using a support-weighted
+Models pDetA and pAssA separately on the four distances using a support-weighted
 logit-link GLM on bounded scores (the "beta / logit-link GLM, weighted by support" of CLAUDE.md:
-a fractional-logit ``Binomial`` GLM whose endog is a proportion in ``[0, 1]`` and whose
-``var_weights`` are the per-cell support). A ``log(n_frames)`` covariate is added so rare is not
-mistaken for far. Writes the fitted model + a standardised coefficient table to ``outputs/models/``.
+a fractional-logit Binomial GLM whose endog is a proportion in [0, 1] and whose
+var_weights are the per-cell support). A log(n_frames) covariate is added so rare is not
+mistaken for far. Writes the fitted model + a standardised coefficient table to outputs/models/.
 
-The :class:`DesignBuilder` (fit-on-train, transform-any) and :func:`fit_glm` here are the shared
-estimation core reused by :mod:`src.analysis.cross_val`, :mod:`src.analysis.variance`, and
-:mod:`src.analysis.uncertainty` so every stage standardises features identically and leakage-free.
+The DesignBuilder (fit-on-train, transform-any) and fit_glm here are the shared
+estimation core reused by src.analysis.cross_val, src.analysis.variance, and
+src.analysis.uncertainty so every stage standardises features identically and leakage-free.
 
-Run: ``PYTHONPATH=. .venv/bin/python -m src.analysis.regression [--config configs/default.yaml]``
+Run: PYTHONPATH=. .venv/bin/python -m src.analysis.regression [--config configs/default.yaml]
 """
 
 from __future__ import annotations
@@ -42,11 +42,11 @@ def _num(series: pd.Series) -> pd.Series:
 
 
 class DesignBuilder:
-    """Standardising design-matrix builder: ``fit`` on a training frame, ``transform`` any frame.
+    """Standardising design-matrix builder: fit on a training frame, transform any frame.
 
-    Continuous predictors (distances, clutter, ``log(support)``) are z-scored using means/SDs learned
-    at ``fit`` time only — so a cross-validation fold never sees held-out statistics. Missing values are
-    mean-imputed (to the training mean). Binary covariates pass through as ``0/1``. An intercept is added.
+    Continuous predictors (distances, clutter, log(support)) are z-scored using means/SDs learned
+    at fit time only — so a cross-validation fold never sees held-out statistics. Missing values are
+    mean-imputed (to the training mean). Binary covariates pass through as 0/1. An intercept is added.
     """
 
     def __init__(self, config: Config | None = None) -> None:
@@ -58,10 +58,10 @@ class DesignBuilder:
         self.support_col_: str | None = None
 
     def fit(self, df: pd.DataFrame) -> DesignBuilder:
-        """Learn standardisation statistics from ``df`` (a training frame).
+        """Learn standardisation statistics from df (a training frame).
 
         Zero-variance predictors are dropped, not kept as an all-zero column: a constant regressor
-        carries no information and only makes the design rank-deficient (e.g. ``temporal_gap`` on the
+        carries no information and only makes the design rank-deficient (e.g. temporal_gap on the
         location split, which is present for a handful of cells and identical among them).
         """
         candidates = (*DISTANCE_COLS, *CONFIDENCE_COLS, *_CONT_COVARIATES)
@@ -91,7 +91,7 @@ class DesignBuilder:
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Build the (standardised, intercepted) design matrix for ``df``."""
+        """Build the (standardised, intercepted) design matrix for df."""
         design = pd.DataFrame(index=df.index)
         for col in self.cont_:
             mean, sd = self.stats_[col]
@@ -111,17 +111,17 @@ class DesignBuilder:
 
 
 def _weights(df: pd.DataFrame, config: Config) -> np.ndarray | None:
-    """Per-cell support weights (``var_weights``), or ``None`` when weighting is off."""
+    """Per-cell support weights (var_weights), or None when weighting is off."""
     if not config.model.support_weight or config.model.support_col not in df.columns:
         return None
     return _num(df[config.model.support_col]).fillna(0.0).clip(lower=0.0).to_numpy(dtype=float)
 
 
 def fit_glm(df: pd.DataFrame, target: str, builder: DesignBuilder, config: Config):  # noqa: ANN201
-    """Fit the support-weighted fractional-logit GLM for ``target`` on ``builder``'s design.
+    """Fit the support-weighted fractional-logit GLM for target on builder's design.
 
-    ``builder`` must already be ``fit`` (on the training rows). Rows with a missing target are dropped.
-    Returns the fitted statsmodels ``GLMResults``.
+    builder must already be fit (on the training rows). Rows with a missing target are dropped.
+    Returns the fitted statsmodels GLMResults.
     """
     rows = df[_num(df[target]).notna()]
     design = builder.transform(rows)
@@ -131,7 +131,7 @@ def fit_glm(df: pd.DataFrame, target: str, builder: DesignBuilder, config: Confi
 
 
 def _pseudo_r2(result) -> float:  # noqa: ANN001
-    """McFadden-style pseudo-R^2 (``1 - deviance/null_deviance``); ``0`` if the null is degenerate."""
+    """McFadden-style pseudo-R^2 (1 - deviance/null_deviance); 0 if the null is degenerate."""
     null = float(result.null_deviance)
     return 1.0 - float(result.deviance) / null if null > 0 else 0.0
 
@@ -147,13 +147,13 @@ def group_bootstrap_cis(
 ) -> pd.DataFrame:
     """Group-cluster-bootstrap CIs for the standardised coefficients (the honest interval).
 
-    Resamples whole groups with replacement from each ``model.cluster_cols`` column, refits the GLM per
+    Resamples whole groups with replacement from each model.cluster_cols column, refits the GLM per
     resample, and takes percentile intervals; the reported interval per coefficient is the conservative
-    envelope (widest ``ci_lo``/``ci_hi``) across the grouping columns. This supersedes the naive model
-    CIs, which are anti-conservative here because ``var_weights`` inflates the effective sample size and
-    the predictors are constant within species / location (pseudo-replication) --- so ``conf_int`` treats
+    envelope (widest ci_lo/ci_hi) across the grouping columns. This supersedes the naive model
+    CIs, which are anti-conservative here because var_weights inflates the effective sample size and
+    the predictors are constant within species / location (pseudo-replication) — so conf_int treats
     ~60-90 independent clusters as hundreds of independent cells. Returns a frame indexed by parameter
-    with ``ci_lo``/``ci_hi`` (``NaN`` for a parameter that never appears across resamples).
+    with ci_lo/ci_hi (NaN for a parameter that never appears across resamples).
     """
     rows = df[_num(df[target]).notna()].copy().reset_index(drop=True)
     n_boot = config.cv.n_bootstrap if n_boot is None else n_boot
@@ -194,14 +194,14 @@ class TargetRegression:
         """Initialize.
 
         Args:
-            target: ``"pDetA"`` or ``"pAssA"``.
-            config: Project config (``model.*``).
+            target: "pDetA" or "pAssA".
+            config: Project config (model.*).
         """
         self.target = target
         self.config = config or Config()
 
     def fit(self, table_path: Path) -> Path:
-        """Fit the model and write ``outputs/models/<target>_beta.pkl`` (+ a coefficient CSV).
+        """Fit the model and write outputs/models/<target>_beta.pkl (+ a coefficient CSV).
 
         Args:
             table_path: Merged scores-x-features parquet.

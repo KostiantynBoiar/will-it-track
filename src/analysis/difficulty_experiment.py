@@ -1,22 +1,22 @@
 """Difficulty experiment (POC, MVP-1) — does intrinsic label-free difficulty predict pDetA out of sample?
 
-The "difficulty, not novelty" pivot: the size confound that dissolved ``visual_distance`` hints that SAM 3's
+The "difficulty, not novelty" pivot: the size confound that dissolved visual_distance hints that SAM 3's
 transfer is governed by the intrinsic DIFFICULTY of the target imagery, not by distance-from-training. The four
-before-running distances were all *novelty* axes and all came up H0. Here we promote the EXISTING label-free
-difficulty signals — low-light/IR (``achromatic_fraction``) and ``clutter``, already in ``features.parquet``,
+before-running distances were all novelty axes and all came up H0. Here we promote the EXISTING label-free
+difficulty signals — low-light/IR (achromatic_fraction) and clutter, already in features.parquet,
 computed per location from the frames with no SAM 3 run and no target label — from nuisance covariates to
-**predictors of interest**, and validate them at the exact bar the distances failed.
+predictors of interest, and validate them at the exact bar the distances failed.
 
-Honesty: these are **before-running** (image statistics, no SAM 3 tracking run), **label-free** (per-location
-frame properties; no species/place annotation), and **non-circular** (an image property, NOT a function of SAM
+Honesty: these are before-running (image statistics, no SAM 3 tracking run), label-free (per-location
+frame properties; no species/place annotation), and non-circular (an image property, NOT a function of SAM
 3's output — categorically unlike the excluded ATC confidence estimator). Motivation: the low-light↔pDetA
-correlate is the strongest yet seen (location-level r≈-0.377). ``log_area`` and ``log(n_frames)`` are forced
-into every fit (the size/support confounds). Detection (``pDetA``) only; no association claim.
+correlate is the strongest yet seen (location-level r≈-0.377). log_area and log(n_frames) are forced
+into every fit (the size/support confounds). Detection (pDetA) only; no association claim.
 
-This is MVP-1 (zero new features, zero inference). If it validates, the per-cell FG–BG *conspicuity* embedding
+This is MVP-1 (zero new features, zero inference). If it validates, the per-cell FG–BG conspicuity embedding
 is a stronger follow-up; if it nulls, it hardens H0. Pre-registered family below; report whatever comes out.
 
-Run: ``PYTHONPATH=. python -m src.analysis.difficulty_experiment [--config configs/default.yaml]``
+Run: PYTHONPATH=. python -m src.analysis.difficulty_experiment [--config configs/default.yaml]
 """
 
 from __future__ import annotations
@@ -54,7 +54,7 @@ _DECOMP = [
 
 
 def augment(config: Config) -> pd.DataFrame:
-    """Add ``log_area`` (torch-free) to ``features.parquet`` → ``features_diff.parquet``."""
+    """Add log_area (torch-free) to features.parquet → features_diff.parquet."""
     outputs = config.paths.outputs_root
     features = read_parquet(outputs / "features.parquet")
     partition = build_location_partition(config)
@@ -74,10 +74,10 @@ def _cv_for_model(
     df: pd.DataFrame, config: Config, cont: tuple[str, ...], binary: tuple[str, ...],
     target: str = "pDetA", control_size: bool = True
 ) -> pd.DataFrame:
-    """OOS summary (per scheme) for the isolated model ``cont + binary [+ log_area] + log(support)``.
+    """OOS summary (per scheme) for the isolated model cont + binary [+ log_area] + log(support).
 
-    Pins the estimation core's predictor tuples so exactly these features enter the design; ``control_size``
-    toggles whether ``log_area`` is in the design (used by the nested size-decomposition). Restores globals.
+    Pins the estimation core's predictor tuples so exactly these features enter the design; control_size
+    toggles whether log_area is in the design (used by the nested size-decomposition). Restores globals.
     """
     saved = (R.DISTANCE_COLS, R.CONFIDENCE_COLS, R._CONT_COVARIATES, R._BINARY_COVARIATES,
              config.model.control_size)

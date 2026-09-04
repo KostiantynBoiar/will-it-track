@@ -1,8 +1,8 @@
 """Frozen SAM 3 promptable video tracking — the only model/torch-touching module.
 
-The heavy backend (``transformers`` SAM 3 + torch) is imported *lazily* inside ``load()``, so this
-module imports on the CPU analysis env (no GPU deps) and the tests can run. A :class:`FakeTracker` with
-the same interface drives those tests; the real :class:`Sam3Tracker` runs on the GPU box (Colab).
+The heavy backend (transformers SAM 3 + torch) is imported lazily inside load(), so this
+module imports on the CPU analysis env (no GPU deps) and the tests can run. A FakeTracker with
+the same interface drives those tests; the real Sam3Tracker runs on the GPU box (Colab).
 """
 
 from __future__ import annotations
@@ -18,14 +18,14 @@ from src.config import Config
 
 
 def encode_rle(mask: np.ndarray) -> dict:
-    """COCO-RLE encode a boolean mask into a JSON-serialisable ``{size, counts}`` dict."""
+    """COCO-RLE encode a boolean mask into a JSON-serialisable {size, counts} dict."""
     rle = coco_mask.encode(np.asfortranarray(mask.astype(np.uint8)))
     rle["counts"] = rle["counts"].decode("ascii")
     return rle
 
 
 class Masklet(BaseModel):
-    """One tracked object: a per-frame RLE mask (``None`` where absent) + a confidence score."""
+    """One tracked object: a per-frame RLE mask (None where absent) + a confidence score."""
 
     segmentations: list[dict | None]
     score: float
@@ -38,10 +38,10 @@ class Tracker(Protocol):
 
 
 class Sam3Tracker:
-    """Frozen SAM 3 video tracker via ``transformers`` ``Sam3VideoModel`` (loads on first ``track``)."""
+    """Frozen SAM 3 video tracker via transformers Sam3VideoModel (loads on first track)."""
 
     def __init__(self, config: Config | None = None) -> None:
-        """Initialize (the model is not loaded until the first ``track``)."""
+        """Initialize (the model is not loaded until the first track)."""
         self.config = config or Config()
         self._model = None
         self._processor = None
@@ -69,10 +69,10 @@ class Sam3Tracker:
         self._dtype = dtype
 
     def track(self, frames: list[Image.Image], prompt: str) -> list[Masklet]:
-        """Run promptable tracking and return one :class:`Masklet` per kept object.
+        """Run promptable tracking and return one Masklet per kept object.
 
         Runs the model on the GPU (fast); only the raw video is stored on the CPU
-        (``video_storage_device="cpu"``) so the whole clip is never resident on the GPU. If a
+        (video_storage_device="cpu") so the whole clip is never resident on the GPU. If a
         long/high-res clip still OOMs a modest card, it retries that one clip with preprocessing on the
         CPU (slow but safe) rather than crashing the run.
         """
@@ -86,7 +86,7 @@ class Sam3Tracker:
             return self._run(frames, prompt, "cpu")  # rare oversized clip: CPU fallback
 
     def _run(self, frames: list[Image.Image], prompt: str, processing_device: str) -> list[Masklet]:
-        """One promptable-tracking pass with the frame preprocessing on ``processing_device``."""
+        """One promptable-tracking pass with the frame preprocessing on processing_device."""
         session = self._processor.init_video_session(
             video=frames,
             inference_device=self.config.inference.device,
@@ -120,12 +120,12 @@ class Sam3Tracker:
 
 
 def _objects(processed):  # noqa: ANN001 - transformers SAM 3 postprocess dict
-    """Yield ``(obj_id, bool_mask, score)`` from one frame's postprocessed SAM 3 output.
+    """Yield (obj_id, bool_mask, score) from one frame's postprocessed SAM 3 output.
 
-    ``Sam3VideoProcessor.postprocess_outputs`` returns a dict of parallel tensors --- ``object_ids``
-    ``(N,)``, ``scores`` ``(N,)`` and ``masks`` ``(N, H, W)`` (binary at original resolution) --- not an
-    iterable of per-object dicts. Comparing ``> 0.5`` is a no-op on an already-binary mask and a safe
-    threshold should a build return float probabilities instead.
+    Sam3VideoProcessor.postprocess_outputs returns a dict of parallel tensors — object_ids (N,),
+    scores (N,) and masks (N, H, W) (binary at original resolution) — not an iterable of per-object
+    dicts. Comparing > 0.5 is a no-op on an already-binary mask and a safe threshold should a build
+    return float probabilities instead.
     """
     obj_ids = processed["object_ids"].tolist()
     scores = processed["scores"].tolist()
@@ -138,7 +138,7 @@ def _objects(processed):  # noqa: ANN001 - transformers SAM 3 postprocess dict
 class FakeTracker:
     """Deterministic stand-in for the harness tests — no model, no GPU.
 
-    Returns ``masklets_per_call`` synthetic objects (a small mask on the first frame); set it to ``0`` to
+    Returns masklets_per_call synthetic objects (a small mask on the first frame); set it to 0 to
     simulate a hard negative (nothing found).
     """
 
@@ -148,7 +148,7 @@ class FakeTracker:
         self.masklets_per_call = masklets_per_call
 
     def track(self, frames: list[Image.Image], prompt: str) -> list[Masklet]:
-        """Return synthetic masklets aligned to ``frames``."""
+        """Return synthetic masklets aligned to frames."""
         if not frames or self.masklets_per_call <= 0:
             return []
         width, height = frames[0].size

@@ -27,7 +27,7 @@ def _rec(video_id: str, category_id: str) -> VideoRecord:
 
 
 class _FakeSafari:
-    """mask_at returns a square mask whose pixel count is the annotation's planted ``_area``."""
+    """mask_at returns a square mask whose pixel count is the annotation's planted _area."""
 
     def mask_at(self, annotation: dict, frame_index: int) -> np.ndarray:
         side = int(round(annotation["_area"] ** 0.5))

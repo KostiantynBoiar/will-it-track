@@ -1,30 +1,30 @@
 """After-running confidence features — an ATC-style detection-reliability estimator.
 
 The four label-free *distances* are *before-running* signals (decide trust before spending any compute).
-These features are the complementary *after-running, before-labelling* signal: they read SAM 3's **own
-outputs** on the target cell (masklet confidence scores + per-frame presence) — you have paid the inference
+These features are the complementary *after-running, before-labelling* signal: they read SAM 3's own
+outputs on the target cell (masklet confidence scores + per-frame presence) — you have paid the inference
 cost but not the annotation cost. This is a weaker claim than the before-running predictor, but the realistic
 conservation operating point (inference is cheap; annotation is the bottleneck), and a confirmatory
 application of the average-thresholded-confidence family (ATC; Garg et al. 2022 / DoC; Guillory et al. 2021)
-to a promptable video *tracker*. It targets **detection** (``pDetA``) only — the association half leaves
-almost no distinct variance to predict (see ``CLAUDE.md`` §12), so no ``pAssA`` claim is made from it.
+to a promptable video *tracker*. It targets detection (pDetA) only — the association half leaves
+almost no distinct variance to predict (see CLAUDE.md §12), so no pAssA claim is made from it.
 
-Per positive cell we read the harness prediction JSONs (one per ``(video, species)`` probe, keyed by origin)
+Per positive cell we read the harness prediction JSONs (one per (video, species) probe, keyed by origin)
 and aggregate:
 
-- ``conf_mean_score`` / ``conf_median_score`` — over the cell's kept masklets. **Honest caveat:** the stored
-  per-masklet ``score`` is the *max over frames* of the per-frame object score (``sam3_tracker.py`` collapses
+- conf_mean_score / conf_median_score — over the cell's kept masklets. Honest caveat: the stored
+  per-masklet score is the *max over frames* of the per-frame object score (sam3_tracker.py collapses
   the trajectory at write time), so this is a *masklet-level* ATC, not the canonical per-frame ATC.
-- ``conf_frame_coverage`` — fraction of the cell's frames on which at least one masklet is present (from the
-  ``segmentations`` ``None``-pattern).
-- ``conf_atc_coverage`` — fraction of the cell's masklets scoring ``>= t``, where the single threshold ``t``
-  is calibrated **once** on the frozen reference (seen) split so its mean coverage matches the reference mean
-  ``pDetA``, then frozen before any probe cell is scored (:func:`calibrate_atc_threshold`). This is the
+- conf_frame_coverage — fraction of the cell's frames on which at least one masklet is present (from the
+  segmentations None-pattern).
+- conf_atc_coverage — fraction of the cell's masklets scoring >= t, where the single threshold t
+  is calibrated once on the frozen reference (seen) split so its mean coverage matches the reference mean
+  pDetA, then frozen before any probe cell is scored (calibrate_atc_threshold). This is the
   canonical ATC construction, ported to masklet confidences.
 
-Keyed by ``(category_id, species, location_id, time)`` like :class:`~src.features.temporal.TemporalGap`, so it
-merges onto the cell grid identically. Deliberately torch/PIL-free (reads JSON + parquet only), so it runs in
-a bare analysis environment without the SAM 3 / embedding stack.
+Keyed by (category_id, species, location_id, time) like TemporalGap, so it merges onto the cell grid
+identically. Deliberately torch/PIL-free (reads JSON + parquet only), so it runs in a bare analysis
+environment without the SAM 3 / embedding stack.
 """
 
 from __future__ import annotations
@@ -52,10 +52,10 @@ CONF_COLS = ["conf_atc_coverage", "conf_mean_score", "conf_median_score", "conf_
 
 
 def _probe_prediction_path(record: VideoRecord, config: Config) -> Path:
-    """On-disk prediction JSON for a probe, keyed by ``(video, species)`` under the record's origin.
+    """On-disk prediction JSON for a probe, keyed by (video, species) under the record's origin.
 
-    ``pooled_records`` namespaces ``video_id`` as ``"<origin>:<raw>"``; the harness wrote the file under the
-    raw id, so strip the namespace. Mirrors ``harness.probe_filename`` / ``harness._out_dir`` without
+    pooled_records namespaces video_id as "<origin>:<raw>"; the harness wrote the file under the
+    raw id, so strip the namespace. Mirrors harness.probe_filename / harness._out_dir without
     importing the (torch-bound) harness module.
     """
     raw_id = record.video_id.split(":", 1)[-1]
@@ -71,8 +71,8 @@ def _probe_prediction_path(record: VideoRecord, config: Config) -> Path:
 def _masklet_scores_and_frames(path: Path) -> tuple[list[float], int, int]:
     """Read one probe JSON → (masklet max-scores, frames with ≥1 present masklet, total frames).
 
-    A hard negative / total miss writes ``[]`` → ``([], 0, 0)``. ``segmentations`` is a per-frame list with
-    ``None`` on absent frames; a frame is *covered* if any masklet is present on it.
+    A hard negative / total miss writes [] → ([], 0, 0). segmentations is a per-frame list with
+    None on absent frames; a frame is *covered* if any masklet is present on it.
     """
     entries = json.loads(path.read_text())
     scores = [float(entry.get("score", 0.0)) for entry in entries]
@@ -95,11 +95,11 @@ def _reference_scores(config: Config, partition: Partition) -> list[float]:
 
 
 def calibrate_atc_threshold(reference_scores: list[float], reference_pdeta: float) -> float:
-    """The single ATC threshold ``t``: frozen so the reference thresholded-coverage matches its mean ``pDetA``.
+    """The single ATC threshold t: frozen so the reference thresholded-coverage matches its mean pDetA.
 
-    Chooses ``t`` such that the fraction of reference masklets scoring ``>= t`` equals ``reference_pdeta``
-    (Average Thresholded Confidence; Garg et al. 2022). With ``p = reference_pdeta`` this is the
-    ``(1 - p)`` quantile of the pooled reference scores. Calibrated on the seen set only and returned once,
+    Chooses t such that the fraction of reference masklets scoring >= t equals reference_pdeta
+    (Average Thresholded Confidence; Garg et al. 2022). With p = reference_pdeta this is the
+    (1 - p) quantile of the pooled reference scores. Calibrated on the seen set only and returned once,
     so no probe/held-out label ever informs it.
     """
     if not reference_scores:
@@ -115,7 +115,7 @@ class ConfidenceFeature:
         """Initialize.
 
         Args:
-            config: Project config (``paths.outputs_root``, ``inference.predictions_subdir`` / ``prompt_mode``).
+            config: Project config (paths.outputs_root, inference.predictions_subdir / prompt_mode).
         """
         self.config = config or Config()
 
@@ -129,15 +129,15 @@ class ConfidenceFeature:
         """Return the confidence-feature block per probe cell.
 
         Args:
-            partition: The active split (its probe side supplies the cells; its reference side calibrates ``t``).
-            threshold: A pre-frozen ATC threshold ``t``. When ``None`` it is calibrated on the reference
-                (needs ``reference_pdeta``).
-            reference_pdeta: Mean ``pDetA`` over the reference cells — the ATC calibration target. Required
-                when ``threshold`` is ``None``.
+            partition: The active split (its probe side supplies the cells; its reference side calibrates t).
+            threshold: A pre-frozen ATC threshold t. When None it is calibrated on the reference
+                (needs reference_pdeta).
+            reference_pdeta: Mean pDetA over the reference cells — the ATC calibration target. Required
+                when threshold is None.
 
         Returns:
-            A frame with a ``(category_id, species, location_id, time)`` MultiIndex and the columns
-            ``conf_atc_coverage``, ``conf_mean_score``, ``conf_median_score``, ``conf_frame_coverage``.
+            A frame with a (category_id, species, location_id, time) MultiIndex and the columns
+            conf_atc_coverage, conf_mean_score, conf_median_score, conf_frame_coverage.
         """
         if threshold is None:
             if reference_pdeta is None:

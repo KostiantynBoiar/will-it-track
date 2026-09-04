@@ -1,10 +1,10 @@
 """Reliability estimator — the practical "will it work here?" tool.
 
-The deployment output: takes four distances (+ proxy) for a new ``(species, place)`` and returns
-predicted ``pDetA``/``pAssA`` with confidence intervals, by wrapping the fitted models with the
+The deployment output: takes four distances (+ proxy) for a new (species, place) and returns
+predicted pDetA/pAssA with confidence intervals, by wrapping the fitted models with the
 feature pipeline and a bootstrap interval. Exposes a minimal CLI/notebook demo.
 
-Run: ``PYTHONPATH=. .venv/bin/python -m src.analysis.reliability --species ... --location ...``
+Run: PYTHONPATH=. .venv/bin/python -m src.analysis.reliability --species ... --location ...
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ class ReliabilityEstimator:
         """Initialize (loads the fitted models).
 
         Args:
-            config: Project config (``paths.outputs_root`` for the fitted models).
+            config: Project config (paths.outputs_root for the fitted models).
         """
         self.config = config or Config()
 
@@ -32,7 +32,7 @@ class ReliabilityEstimator:
             distances: The four distances (+ proxy) for the query cell.
 
         Returns:
-            ``{"pDetA": (point, lo, hi), "pAssA": (point, lo, hi)}``.
+            {"pDetA": (point, lo, hi), "pAssA": (point, lo, hi)}.
         """
         raise NotImplementedError("features -> fitted models -> prediction + bootstrap CI")
 

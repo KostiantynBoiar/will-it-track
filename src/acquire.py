@@ -1,15 +1,11 @@
 """Acquire SA-FARI: gated annotations from Hugging Face + public 6 fps frames from GCS.
 
-Annotations (``facebook/SA-FARI``) are **gated** — accept the license and ``huggingface-cli login``
-first (see the README "Data access" section). Frames (``gs://cxl-public-camera-trap``) are **public**
-— anonymous ``gcsfs``, no auth. Only a minimal slice is pulled (the annotation JSONs + a few clips'
-frames); the full 6 fps set is a later background job.
+Annotations (facebook/SA-FARI) are gated — accept the license and huggingface-cli login first (see
+the README "Data access" section). Frames (gs://cxl-public-camera-trap) are public — anonymous
+gcsfs, no auth. Only a minimal slice is pulled (the annotation JSONs + a few clips' frames); the
+full 6 fps set is a later background job.
 
-Usage::
-
-    PYTHONPATH=. .venv/bin/python -m src.acquire --list             # probe the public GCS layout
-    PYTHONPATH=. .venv/bin/python -m src.acquire --annotations      # HF snapshot (needs login)
-    PYTHONPATH=. .venv/bin/python -m src.acquire --frames --n-clips 3
+Run: PYTHONPATH=. python -m src.acquire [--list] [--annotations] [--frames --n-clips N]
 """
 
 from __future__ import annotations
@@ -17,7 +13,7 @@ from __future__ import annotations
 import os
 
 # Fine-grained HF tokens 403 on the Xet transfer backend (both the gated annotations and the SAM 3
-# weights). Force plain HTTPS by disabling Xet *before* huggingface_hub is first imported anywhere —
+# weights). Force plain HTTPS by disabling Xet before huggingface_hub is first imported anywhere —
 # this module is imported (via src.features.frames) ahead of transformers' weight download.
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
@@ -40,15 +36,15 @@ class AnnotationFetcher:
         """Initialize.
 
         Args:
-            config: Project config (``data.hf_repo``, ``paths.data_root``, ``data.annotations_subdir``).
+            config: Project config (data.hf_repo, paths.data_root, data.annotations_subdir).
         """
         self.config = config or Config()
 
     def fetch(self) -> Path:
-        """Download the two ``_ext`` annotation JSONs into ``data/annotations/`` (flat).
+        """Download the two _ext annotation JSONs into data/annotations/ (flat).
 
-        The repo stores them under an ``annotation/`` prefix; we place them flat, where the loader
-        (:class:`src.dataset.SAFARI`) expects ``data_root/annotations_subdir/<name>``.
+        The repo stores them under an annotation/ prefix; we place them flat, where the loader
+        (src.dataset.SAFARI) expects data_root/annotations_subdir/<name>.
 
         Returns:
             The annotations directory.
@@ -76,7 +72,7 @@ class FrameFetcher:
         """Initialize the anonymous GCS filesystem.
 
         Args:
-            config: Project config (``data.gcs_bucket``, ``paths.data_root``, ``data.frames_subdir``).
+            config: Project config (data.gcs_bucket, paths.data_root, data.frames_subdir).
         """
         self.config = config or Config()
         self.bucket = self.config.data.gcs_bucket
@@ -90,7 +86,7 @@ class FrameFetcher:
             per_level: Entries to show per level.
 
         Returns:
-            Indented ``gs://`` paths.
+            Indented gs:// paths.
         """
         lines: list[str] = []
 
@@ -109,16 +105,16 @@ class FrameFetcher:
         return lines
 
     def _frame_uri(self, split: str, file_name: str) -> str:
-        """Full bucket URI for one ``file_names`` entry under the split's frame root."""
+        """Full bucket URI for one file_names entry under the split's frame root."""
         base = self.config.data.frames_gcs_dir.format(split=split)
         return f"{self.bucket}/{base}/{file_name}"
 
     def fetch(self, file_names: list[str], split: str) -> int:
-        """Download the given frame paths into ``data/frames/`` (skipping ones already present).
+        """Download the given frame paths into data/frames/ (skipping ones already present).
 
         Args:
-            file_names: Annotation ``file_names`` (``<video_name>/<frame>.jpg``).
-            split: The source split (``"train"`` / ``"test"``) — selects the bucket frame root.
+            file_names: Annotation file_names (<video_name>/<frame>.jpg).
+            split: The source split ("train" / "test") — selects the bucket frame root.
 
         Returns:
             The number of files newly downloaded.
@@ -153,7 +149,7 @@ class FrameFetcher:
 
 
 def main() -> None:
-    """CLI: ``--list`` / ``--annotations`` / ``--frames --n-clips N``."""
+    """CLI: --list / --annotations / --frames --n-clips N."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default=None, help="optional YAML config")
     ap.add_argument("--list", action="store_true", help="probe the public GCS layout")

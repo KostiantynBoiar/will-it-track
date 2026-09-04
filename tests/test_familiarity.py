@@ -1,6 +1,6 @@
 """SAM 3 familiarity proxy — hermetic tests (synthetic embeddings; no transformers, no GPU, no frames).
 
-The metric maths and the ``_scores`` dispatch are exercised directly on planted, L2-normalised embedding sets
+The metric maths and the _scores dispatch are exercised directly on planted, L2-normalised embedding sets
 with analytically-known answers, so the feature is pinned independently of the (GPU-only) SAM 3 embedding pass.
 """
 

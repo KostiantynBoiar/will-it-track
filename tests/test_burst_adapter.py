@@ -1,8 +1,8 @@
-"""BURST → SA-Co adapter — hermetic (synthetic ``all_classes.json``, no download/GPU).
+"""BURST → SA-Co adapter — hermetic (synthetic all_classes.json, no download/GPU).
 
 Verifies the mask-native converter emits a schema the SA-FARI loader + RLE decoding accept: BURST COCO-RLE
-masks round-trip, only animal categories are kept (``person`` dropped), species map to a taxonomy, sequences
-are capped per category, and the per-video ``seq_name`` becomes the location key.
+masks round-trip, only animal categories are kept (person dropped), species map to a taxonomy, sequences
+are capped per category, and the per-video seq_name becomes the location key.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from src.dataset import SAFARI
 
 
 def _rle(h: int, w: int, box) -> str:
-    """A real COCO-RLE counts string for a filled rectangle in an ``h×w`` mask."""
+    """A real COCO-RLE counts string for a filled rectangle in an h×w mask."""
     x0, y0, x1, y1 = box
     m = np.zeros((h, w), dtype=np.uint8)
     m[y0:y1, x0:x1] = 1
@@ -26,7 +26,7 @@ def _rle(h: int, w: int, box) -> str:
 
 
 def _seq(seq_id: int, name: str, dataset: str, cat_id: int, h: int, w: int, box, n: int = 4) -> dict:
-    """A synthetic BURST sequence: one track of ``cat_id`` masked on every annotated frame."""
+    """A synthetic BURST sequence: one track of cat_id masked on every annotated frame."""
     frames = [f"frame{i:04d}.jpg" for i in range(n)]
     segs = [{"1": {"rle": _rle(h, w, box)}} for _ in range(n)]
     return {

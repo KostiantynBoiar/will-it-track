@@ -1,9 +1,9 @@
-"""Animal size (ground-truth mask area) per species --- a control for the visual-distance confound.
+"""Animal size (ground-truth mask area) per species — a control for the visual-distance confound.
 
 Visually-distinctive species tend to be large, high-contrast animals that are *easy* to segment, so
-``visual_distance`` can pick up ease rather than novelty. This feature gives the mean ground-truth mask
+visual_distance can pick up ease rather than novelty. This feature gives the mean ground-truth mask
 area per species (log pixels), to add as a nuisance covariate and test whether the (wrong-signed) visual
-effect is really a size artefact. Keyed by ``category_id`` (probe species), mirroring the distances; the
+effect is really a size artefact. Keyed by category_id (probe species), mirroring the distances; the
 same per-species sampling caps as the visual/environment features bound its cost.
 """
 
@@ -24,26 +24,26 @@ if TYPE_CHECKING:
 
 
 class SizeFeature:
-    """Mean log ground-truth mask-area per probe species (``log_area``)."""
+    """Mean log ground-truth mask-area per probe species (log_area)."""
 
     def __init__(self, config: Config | None = None) -> None:
         """Initialize.
 
         Args:
-            config: Project config (``features.max_masklets_per_species`` / ``n_frames_per_masklet``
+            config: Project config (features.max_masklets_per_species / n_frames_per_masklet
                 cap the sampling, exactly as the visual feature does).
         """
         self.config = config or Config()
 
     def compute(self, partition: Partition) -> pd.Series:
-        """Return ``log_area`` per probe species (``category_id``).
+        """Return log_area per probe species (category_id).
 
         Args:
             partition: The active split (its probe side supplies the species to size).
 
         Returns:
-            A Series indexed by probe ``category_id`` (``log1p`` of the mean GT mask pixel-count);
-            ``NaN`` for species with no usable ground-truth mask.
+            A Series indexed by probe category_id (log1p of the mean GT mask pixel-count);
+            NaN for species with no usable ground-truth mask.
         """
         safari = safari_by_origin(self.config)
         masklet_cap = self.config.features.max_masklets_per_species

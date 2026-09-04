@@ -1,9 +1,9 @@
 """Taxonomic distance.
 
 How far a probe's species sits from the nearest *reference* species on the tree of life, measured
-as LCA tree steps (shares Genus = 1, Family = 2, Order = 3, …). On Split A (``loso=True``) each probe
-species excludes itself from the reference; species without a full 7-level taxonomy get ``NaN`` (they
-carry only visual/environment novelty). Keyed by ``category_id`` (probe species).
+as LCA tree steps (shares Genus = 1, Family = 2, Order = 3, …). On Split A (loso=True) each probe
+species excludes itself from the reference; species without a full 7-level taxonomy get NaN (they
+carry only visual/environment novelty). Keyed by category_id (probe species).
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ _N_LEVELS = len(_TAXONOMY_FIELDS)
 def tree_distance(a: list[str], b: list[str]) -> int:
     """Lowest-common-ancestor tree-step distance between two taxonomy paths.
 
-    The distance is ``len(path) - shared`` where ``shared`` is the number of leading levels that are
+    The distance is len(path) - shared where shared is the number of leading levels that are
     equal and non-empty (the shared root-to-LCA prefix); the walk stops at the first mismatch or empty
     level. For 7-level paths: same genus -> 1, same family -> 2, same order -> 3, fully disjoint -> 7.
 
@@ -51,12 +51,12 @@ class TaxonomicDistance:
         """Initialize.
 
         Args:
-            config: Project config (``features.taxonomic_levels`` order is fixed by the schema).
+            config: Project config (features.taxonomic_levels order is fixed by the schema).
         """
         self.config = config or Config()
 
     def _full_paths(self) -> dict[str, list[str]]:
-        """``category_id`` → kingdom→species path, for full-7-level-taxonomy categories only."""
+        """category_id → kingdom→species path, for full-7-level-taxonomy categories only."""
         taxonomy = SAFARI("test", self.config).taxonomy()  # identical vocab across splits
         return {
             cid: [tax[field.lower()] for field in _TAXONOMY_FIELDS]
@@ -65,13 +65,13 @@ class TaxonomicDistance:
         }
 
     def compute(self, partition: Partition) -> pd.Series:
-        """Return ``taxonomic_distance`` per probe species (``category_id``).
+        """Return taxonomic_distance per probe species (category_id).
 
         Args:
-            partition: The active split (its ``loso`` flag drives self-exclusion).
+            partition: The active split (its loso flag drives self-exclusion).
 
         Returns:
-            A Series indexed by probe ``category_id``; ``NaN`` for species without full taxonomy.
+            A Series indexed by probe category_id; NaN for species without full taxonomy.
         """
         paths = self._full_paths()
         reference = [cid for cid in partition.reference_species if cid in paths]

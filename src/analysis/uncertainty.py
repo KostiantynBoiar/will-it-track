@@ -2,7 +2,7 @@
 
 Produces bootstrap confidence intervals (for scores, coefficients, and out-of-sample error) by
 resampling over cells/groups, and plots the held-out predicted-vs-actual predictive-line figures
-to ``outputs/figures/predictive_line_{det,assoc}.png``.
+to outputs/figures/predictive_line_{det,assoc}.png.
 """
 
 from __future__ import annotations
@@ -32,14 +32,14 @@ class Uncertainty:
         """Initialize.
 
         Args:
-            config: Project config (``cv.n_bootstrap``, ``paths.outputs_root``).
+            config: Project config (cv.n_bootstrap, paths.outputs_root).
         """
         self.config = config or Config()
 
     def _bootstrap_band(
         self, predicted: np.ndarray, actual: np.ndarray, grid: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
-        """5–95% band of the OLS calibration line (predicted→actual) over ``grid``, by resampling cells."""
+        """5–95% band of the OLS calibration line (predicted→actual) over grid, by resampling cells."""
         rng = np.random.default_rng(self.config.seed)
         n = len(predicted)
         draws = min(self.config.cv.n_bootstrap, 500)  # cap: the band is smooth well before 500
@@ -51,10 +51,10 @@ class Uncertainty:
         return np.percentile(lines, 5, axis=0), np.percentile(lines, 95, axis=0)
 
     def predictive_line(self, target: str) -> Path:
-        """Write ``outputs/figures/predictive_line_<target>.png`` with bootstrap error bars.
+        """Write outputs/figures/predictive_line_<target>.png with bootstrap error bars.
 
         Args:
-            target: ``"det"`` or ``"assoc"`` (also accepts ``"pDetA"``/``"pAssA"``).
+            target: "det" or "assoc" (also accepts "pDetA"/"pAssA").
 
         Returns:
             Path to the written figure.

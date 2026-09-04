@@ -1,6 +1,6 @@
 """SA-FARI loader tests — records parse and RLE masks decode via pycocotools.
 
-Skips until the minimal slice is fetched (`python -m src.acquire --annotations`).
+Skips until the minimal slice is fetched (python -m src.acquire --annotations).
 """
 
 from __future__ import annotations

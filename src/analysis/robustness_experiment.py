@@ -2,18 +2,18 @@
 
 Re-runs the SAME leave-species-out + leave-location-out bar the primary distances faced, but with each
 design knob swapped: the visual encoder (DINOv2 -> CLIP), the crop (mask -> whole-frame bounding box), the
-prompt (species -> generic ``"animal"``), and the distance itself (nearest-prototype -> distributional
+prompt (species -> generic "animal"), and the distance itself (nearest-prototype -> distributional
 Frechet / MMD). Each variant's feature table is built on the GPU pod under its own config
-(``scripts/run_robustness.sh``) and dropped here as ``outputs/features_<key>.parquet``; this driver only fits
-the standing **4-distance GLM** through the unchanged ``cross_val`` core and reports, per variant x scheme,
+(scripts/run_robustness.sh) and dropped here as outputs/features_<key>.parquet; this driver only fits
+the standing 4-distance GLM through the unchanged cross_val core and reports, per variant x scheme,
 the out-of-sample gain over the mean baseline.
 
-Pre-registration (fixed before running): the null "survives" a variant when its 4-distance model does **not**
-beat the mean on both schemes (``delta <= 0`` or not significant after Bonferroni over the variant family). A
+Pre-registration (fixed before running): the null "survives" a variant when its 4-distance model does not
+beat the mean on both schemes (delta <= 0 or not significant after Bonferroni over the variant family). A
 variant that DOES clear the bar is a genuine positive, reported as such — nothing is swapped in post hoc. The
-distance model matches the primary analysis exactly (``CONFIDENCE_COLS`` pinned empty, size not controlled).
+distance model matches the primary analysis exactly (CONFIDENCE_COLS pinned empty, size not controlled).
 
-Run: ``PYTHONPATH=. python -m src.analysis.robustness_experiment [--config configs/default.yaml]``
+Run: PYTHONPATH=. python -m src.analysis.robustness_experiment [--config configs/default.yaml]
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ _TARGET = "pDetA"  # detection; pAssA tracks it (near-degenerate) — CLAUDE.md 
 def _cv_summary(df: pd.DataFrame, config: Config, target: str = _TARGET) -> pd.DataFrame:
     """Standard 4-distance GLM OOS summary (both schemes) for one variant's feature table.
 
-    Pins ``CONFIDENCE_COLS`` empty so the model is exactly the primary label-free distances (a variant
+    Pins CONFIDENCE_COLS empty so the model is exactly the primary label-free distances (a variant
     table may or may not carry other columns); restores the module globals afterwards.
     """
     saved = (R.DISTANCE_COLS, R.CONFIDENCE_COLS)
@@ -65,7 +65,7 @@ def _cv_summary(df: pd.DataFrame, config: Config, target: str = _TARGET) -> pd.D
 
 
 def _schemes_dict(summ: pd.DataFrame, target: str) -> dict:
-    """Per-scheme ``{n, mae, baseline_mae, delta, delta_lo, delta_hi, p_value}`` for one variant."""
+    """Per-scheme {n, mae, baseline_mae, delta, delta_lo, delta_hi, p_value} for one variant."""
     det = summ[summ["target"] == target] if not summ.empty else summ
     by_scheme = {r.group_scheme: r for r in det.itertuples()} if not det.empty else {}
     return {

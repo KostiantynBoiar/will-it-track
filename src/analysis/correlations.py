@@ -1,12 +1,12 @@
-"""Raw correlations --- a leakage-free sanity check that complements the fitted GLM.
+"""Raw correlations — a leakage-free sanity check that complements the fitted GLM.
 
 Computes the plain Pearson correlation of each label-free feature with each target (no standardisation, no
-modelling), plus the ``visual_distance`` <-> ``log_area`` correlation that motivates the size-confound
-check. If the raw associations are tiny, that corroborates the null; if ``visual_distance`` correlates
-positively with both the score *and* animal size, that corroborates the confound. Writes
-``outputs/correlations.csv``.
+modelling), plus the visual_distance <-> log_area correlation that motivates the size-confound
+check. If the raw associations are tiny, that corroborates the null; if visual_distance correlates
+positively with both the score and animal size, that corroborates the confound. Writes
+outputs/correlations.csv.
 
-Run: ``PYTHONPATH=. python -m src.analysis.correlations [--config configs/default.yaml]``
+Run: PYTHONPATH=. python -m src.analysis.correlations [--config configs/default.yaml]
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ _FEATURES = (*DISTANCE_COLS, "clutter", "log_area")
 
 
 def _pearson(x: pd.Series, y: pd.Series) -> tuple[float, int]:
-    """Pearson r over rows where both are present (``NaN`` if too few / degenerate)."""
+    """Pearson r over rows where both are present (NaN if too few / degenerate)."""
     a, b = pd.to_numeric(x, errors="coerce"), pd.to_numeric(y, errors="coerce")
     mask = a.notna() & b.notna()
     if int(mask.sum()) < 3 or a[mask].std() == 0 or b[mask].std() == 0:
@@ -34,7 +34,7 @@ def _pearson(x: pd.Series, y: pd.Series) -> tuple[float, int]:
 
 
 def correlations(config: Config | None = None) -> Path:
-    """Write ``outputs/correlations.csv`` of raw feature<->target (+ visual<->size) correlations."""
+    """Write outputs/correlations.csv of raw feature<->target (+ visual<->size) correlations."""
     cfg = config or Config()
     df = read_parquet(cfg.paths.outputs_root / "features.parquet")
 

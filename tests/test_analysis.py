@@ -1,7 +1,7 @@
 """Modelling-stack tests on a synthetic merged table — no gated data, no SAM 3, no DINOv2.
 
-The synthetic law is deliberate: ``pAssA`` falls with ``environment_distance`` and ``pDetA`` falls with
-``visual_distance``. The tests assert the pipeline recovers that structure (negative coefficients, the
+The synthetic law is deliberate: pAssA falls with environment_distance and pDetA falls with
+visual_distance. The tests assert the pipeline recovers that structure (negative coefficients, the
 right dominant factor, out-of-sample error that beats a mean predictor) and writes its artefacts.
 """
 

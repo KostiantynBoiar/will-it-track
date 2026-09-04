@@ -1,26 +1,26 @@
 """SAM 3 familiarity proxy (T2.5).
 
 Hedges against the unknown true pretraining set by measuring representational familiarity directly: how
-separable/typical each test species is in **SAM 3's own feature space**. Mask-cropped animals are embedded with
-SAM 3's vision encoder (:class:`~src.features.sam3_embed.Sam3Embedder`) exactly as the visual distance embeds
-them with DINOv2; the per-species vectors are then reduced to one ``familiarity_proxy`` value per species by one
-of three metrics (``features.familiarity_metric``), keyed by ``category_id`` and NaN where a species yields no
+separable/typical each test species is in SAM 3's own feature space. Mask-cropped animals are embedded with
+SAM 3's vision encoder (Sam3Embedder) exactly as the visual distance embeds
+them with DINOv2; the per-species vectors are then reduced to one familiarity_proxy value per species by one
+of three metrics (features.familiarity_metric), keyed by category_id and NaN where a species yields no
 usable crops.
 
-Sign convention: **higher = more separable / more familiar** (SAM 3 represents the species as a distinct,
+Sign convention: higher = more separable / more familiar (SAM 3 represents the species as a distinct,
 well-formed cluster). Metrics:
 
-* ``silhouette`` --- ``(inter - intra) / max(inter, intra)``: a tight own cluster (small ``intra``) that is far
-  from the nearest other species (large ``inter``) scores high. The genuine separability signal; least
-  reference-dependent (``intra`` needs no reference).
-* ``nearest_prototype`` --- the cosine gap to the nearest *other* species' prototype (i.e. the visual distance
-  computed with SAM 3's encoder instead of DINOv2); most directly comparable to ``visual_distance``.
-* ``mahalanobis`` --- typicality of the species' prototype under the reference feature Gaussian.
+- silhouette — (inter - intra) / max(inter, intra): a tight own cluster (small intra) that is far
+  from the nearest other species (large inter) scores high. The genuine separability signal; least
+  reference-dependent (intra needs no reference).
+- nearest_prototype — the cosine gap to the nearest *other* species' prototype (i.e. the visual distance
+  computed with SAM 3's encoder instead of DINOv2); most directly comparable to visual_distance.
+- mahalanobis — typicality of the species' prototype under the reference feature Gaussian.
 
-This is **before-running** (an image property, no SAM 3 tracking output --- non-circular, unlike the ATC
-confidence) and **label-free**. It is expected to *harden* H0: separability confounds with the animal-size
-effect that already dissolved ``visual_distance``. The experiment (:mod:`src.analysis.familiarity_experiment`)
-controls for size and runs a head-to-head against ``visual_distance`` at the same leave-species-out bar.
+This is before-running (an image property, no SAM 3 tracking output — non-circular, unlike the ATC
+confidence) and label-free. It is expected to *harden* H0: separability confounds with the animal-size
+effect that already dissolved visual_distance. The experiment (src.analysis.familiarity_experiment)
+controls for size and runs a head-to-head against visual_distance at the same leave-species-out bar.
 """
 
 from __future__ import annotations
@@ -50,11 +50,11 @@ if TYPE_CHECKING:
 
 def silhouette(target_vecs: list[np.ndarray], prototypes: dict[str, np.ndarray],
                self_cid: str, exclude: str | None, eps: float = 1e-12) -> float:
-    """``(inter - intra) / max(inter, intra)`` separability of a species in embedding space.
+    """(inter - intra) / max(inter, intra) separability of a species in embedding space.
 
-    ``inter`` is the cosine distance from the species' prototype to the nearest *other* species' prototype
-    (``1 - max cosine``); ``intra`` is the mean cosine distance of the species' vectors to their own prototype.
-    High = tight, well-isolated cluster = "SAM 3 represents this species distinctly". ``NaN`` if the species has
+    inter is the cosine distance from the species' prototype to the nearest *other* species' prototype
+    (1 - max cosine); intra is the mean cosine distance of the species' vectors to their own prototype.
+    High = tight, well-isolated cluster = "SAM 3 represents this species distinctly". NaN if the species has
     fewer than two vectors or has no other species to compare against.
     """
     proto = prototypes.get(self_cid)
@@ -68,9 +68,9 @@ def silhouette(target_vecs: list[np.ndarray], prototypes: dict[str, np.ndarray],
 
 
 def mahalanobis(proto: np.ndarray | None, pool: list[np.ndarray], eps: float = 1e-6) -> float:
-    """Mahalanobis distance of a species' prototype to the reference feature Gaussian (``NaN`` if degenerate).
+    """Mahalanobis distance of a species' prototype to the reference feature Gaussian (NaN if degenerate).
 
-    Low = typical of the reference distribution = familiar. A pseudo-inverse with ``eps*I`` regularises the
+    Low = typical of the reference distribution = familiar. A pseudo-inverse with eps*I regularises the
     high-dimensional, rank-deficient covariance.
     """
     if proto is None or len(pool) < 2:
@@ -82,10 +82,10 @@ def mahalanobis(proto: np.ndarray | None, pool: list[np.ndarray], eps: float = 1
 
 
 class FamiliarityProxy:
-    """Separability of each test species in SAM 3's own feature space (``familiarity_proxy``)."""
+    """Separability of each test species in SAM 3's own feature space (familiarity_proxy)."""
 
     def __init__(self, config: Config | None = None) -> None:
-        """Initialize (SAFARI loaders are opened lazily on first ``compute``)."""
+        """Initialize (SAFARI loaders are opened lazily on first compute)."""
         self.config = config or Config()
         self._safari: dict[str, SAFARI] | None = None
 
@@ -99,7 +99,7 @@ class FamiliarityProxy:
     def _vectors_by_species(
         self, records: list[VideoRecord], embedder: Sam3Embedder, cache: EmbeddingCache
     ) -> dict[str, list[np.ndarray]]:
-        """Per-species (``category_id``) list of mask-cropped SAM 3 embeddings (mirrors ``VisualDistance``)."""
+        """Per-species (category_id) list of mask-cropped SAM 3 embeddings (mirrors VisualDistance)."""
         from collections import defaultdict
 
         from src.features.frames import sample_frame_indices
@@ -132,7 +132,7 @@ class FamiliarityProxy:
         probe_species: list[str],
         loso: bool,
     ) -> pd.Series:
-        """Reduce per-species embeddings to ``familiarity_proxy`` per probe species (metric-agnostic core)."""
+        """Reduce per-species embeddings to familiarity_proxy per probe species (metric-agnostic core)."""
         metric = self.config.features.familiarity_metric
         ref_protos = {cid: p for cid, vecs in ref_vecs.items() if (p := prototype(vecs)) is not None}
         rows: dict[str, float] = {}
@@ -160,7 +160,7 @@ class FamiliarityProxy:
         return pd.Series(rows, name="familiarity_proxy", dtype="float64")
 
     def compute(self, partition: Partition) -> pd.Series:
-        """Return ``familiarity_proxy`` per probe species (``category_id``); ``NaN`` where no crops exist."""
+        """Return familiarity_proxy per probe species (category_id); NaN where no crops exist."""
         from src.splits import probe_records, reference_records
 
         embedder = Sam3Embedder(self.config)

@@ -1,7 +1,7 @@
 """Model-dependent smokes for the embedding pipeline.
 
-Gated behind ``RUN_MODEL_TESTS=1`` so a routine ``pytest`` never triggers a weight download or a frame
-pull; run ``RUN_MODEL_TESTS=1 pytest`` once the DINOv2 weights are cached.
+Gated behind RUN_MODEL_TESTS=1 so a routine pytest never triggers a weight download or a frame
+pull; run RUN_MODEL_TESTS=1 pytest once the DINOv2 weights are cached.
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ def _solids(*values: int) -> list[Image.Image]:
 
 @_needs_model
 def test_embedder_smoke() -> None:
-    """DINOv2 embeddings are ``(N, D)`` float32, L2-normalised, and deterministic."""
+    """DINOv2 embeddings are (N, D) float32, L2-normalised, and deterministic."""
     vecs = Embedder("dinov2", _CFG).embed(_solids(30, 200))
     assert vecs.shape[0] == 2 and vecs.shape[1] > 0
     assert vecs.dtype == np.float32

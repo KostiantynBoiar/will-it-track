@@ -1,24 +1,23 @@
 """After-running confidence experiment (T4.1c) — the pre-registered ATC detection estimator.
 
-Augments the standing ``features.parquet`` with the ATC-style confidence block (``features/confidence.py``)
-plus ``log_area`` (the mandatory size covariate, computed here torch-free), then validates — at the **exact**
-bar the label-free distances had to clear — whether SAM 3's own detection confidence predicts ``pDetA`` out
-of sample. Detection only; no ``pAssA`` claim (the association target barely varies — ``CLAUDE.md`` §12).
+Augments the standing features.parquet with the ATC-style confidence block (features/confidence.py)
+plus log_area (the mandatory size covariate, computed here torch-free), then validates — at the exact
+bar the label-free distances had to clear — whether SAM 3's own detection confidence predicts pDetA out
+of sample. Detection only; no pAssA claim (the association target barely varies — CLAUDE.md §12).
 
-Pre-registration (fixed before fitting):
-  * PRIMARY: ``conf_atc_coverage -> pDetA``, controlling ``log(n_frames)`` + ``log_area``. Claim a result
-    only if **both** leave-species-out and leave-location-out give a positive OOS gain over the mean baseline
-    with ``p < 0.05`` after Bonferroni over the ``{atc_coverage, mean_score, frame_coverage}`` family.
-  * SECONDARY (Bonferroni): ``conf_mean_score``, ``conf_frame_coverage``.
-  * The reframe (stated everywhere): this is *after running, before labelling* — a weaker, but realistic,
-    claim than the before-running distances.
+Pre-registration (fixed before fitting): the primary model is conf_atc_coverage -> pDetA, controlling
+log(n_frames) + log_area; a result is claimed only if both leave-species-out and leave-location-out give a
+positive OOS gain over the mean baseline with p < 0.05 after Bonferroni over the {atc_coverage, mean_score,
+frame_coverage} family. Secondary (Bonferroni): conf_mean_score, conf_frame_coverage. The reframe (stated
+everywhere): this is after running, before labelling — a weaker, but realistic, claim than the
+before-running distances.
 
-Each model is fit through the **unchanged** estimation core (``regression.DesignBuilder`` + ``cross_val``):
-we scope it to a single confidence predictor by temporarily setting ``regression.DISTANCE_COLS`` /
-``CONFIDENCE_COLS`` to the pre-registered set, so ``conf_atc_coverage + log_area + log(support)`` is the
+Each model is fit through the unchanged estimation core (regression.DesignBuilder + cross_val):
+we scope it to a single confidence predictor by temporarily setting regression.DISTANCE_COLS /
+CONFIDENCE_COLS to the pre-registered set, so conf_atc_coverage + log_area + log(support) is the
 isolated ATC model. Reports whatever comes out (positive or null); no feature is swapped in post hoc.
 
-Run: ``PYTHONPATH=. python -m src.analysis.confidence_experiment [--config configs/default.yaml]``
+Run: PYTHONPATH=. python -m src.analysis.confidence_experiment [--config configs/default.yaml]
 """
 
 from __future__ import annotations
@@ -50,7 +49,7 @@ _BONFERRONI_M = len(_PREREG)  # 3-feature family
 
 
 def _reference_pdeta(config: Config) -> float:
-    """Mean ``pDetA`` over the reference (train) scoring — the ATC calibration anchor."""
+    """Mean pDetA over the reference (train) scoring — the ATC calibration anchor."""
     for name in ("scores_train.parquet", "scores.parquet"):
         path = config.paths.outputs_root / name
         if path.exists():
@@ -61,9 +60,9 @@ def _reference_pdeta(config: Config) -> float:
 
 
 def _log_area(config: Config, partition: Partition) -> pd.Series:
-    """``log_area`` per probe ``category_id`` (log1p mean GT mask pixels) — a torch-free SizeFeature.
+    """log_area per probe category_id (log1p mean GT mask pixels) — a torch-free SizeFeature.
 
-    Replicates ``features.size.SizeFeature`` without importing the embedding stack (PIL / open_clip / torch),
+    Replicates features.size.SizeFeature without importing the embedding stack (PIL / open_clip / torch),
     so it runs in a bare analysis environment. Ground-truth areas only; no prediction leaks in.
     """
     safari = {"train": SAFARI("train", config), "test": SAFARI("test", config)}
@@ -93,7 +92,7 @@ def _log_area(config: Config, partition: Partition) -> pd.Series:
 
 
 def augment(config: Config) -> pd.DataFrame:
-    """Add the ``conf_*`` block + ``log_area`` to ``features.parquet`` → ``features_conf.parquet``."""
+    """Add the conf_* block + log_area to features.parquet → features_conf.parquet."""
     outputs = config.paths.outputs_root
     features = read_parquet(outputs / "features.parquet")
     partition = build_location_partition(config)
@@ -121,11 +120,11 @@ def augment(config: Config) -> pd.DataFrame:
 def _cv_for_model(
     df: pd.DataFrame, config: Config, confidence_cols: tuple[str, ...], target: str = "pDetA"
 ) -> pd.DataFrame:
-    """OOS summary (per scheme) for the isolated model ``confidence_cols + log_area + log(support)``.
+    """OOS summary (per scheme) for the isolated model confidence_cols + log_area + log(support).
 
-    Scopes the design to exactly ``confidence_cols`` by pinning ``regression.DISTANCE_COLS = ()`` and
-    ``CONFIDENCE_COLS = confidence_cols`` (the estimation core reads these module globals), with the
-    ``log_area`` covariate forced on. Restores the globals afterwards.
+    Scopes the design to exactly confidence_cols by pinning regression.DISTANCE_COLS = () and
+    CONFIDENCE_COLS = confidence_cols (the estimation core reads these module globals), with the
+    log_area covariate forced on. Restores the globals afterwards.
     """
     saved = (R.DISTANCE_COLS, R.CONFIDENCE_COLS, config.model.control_size)
     R.DISTANCE_COLS, R.CONFIDENCE_COLS, config.model.control_size = (), confidence_cols, True

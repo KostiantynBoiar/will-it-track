@@ -1,6 +1,6 @@
 """Scaffold sanity — the package imports cleanly and the config parses.
 
-Passes at scaffold time (stubs raise ``NotImplementedError`` only when *called*, not on import).
+Passes at scaffold time (stubs raise NotImplementedError only when called, not on import).
 """
 
 from __future__ import annotations

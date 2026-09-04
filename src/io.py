@@ -15,10 +15,10 @@ def write_parquet(df: pd.DataFrame, path: Path) -> Path:
 
     Args:
         df: The table.
-        path: Destination ``.parquet`` path.
+        path: Destination .parquet path.
 
     Returns:
-        ``path``.
+        The destination path.
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -30,7 +30,7 @@ def read_parquet(path: Path) -> pd.DataFrame:
     """Read a parquet table.
 
     Args:
-        path: A ``.parquet`` path.
+        path: A .parquet path.
 
     Returns:
         The table.

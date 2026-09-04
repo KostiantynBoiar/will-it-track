@@ -1,7 +1,7 @@
 """Label-free distance feature tests: taxonomic and temporal distances.
 
-The pure LCA-distance logic is tested unconditionally; the end-to-end ``compute(partition)`` tests skip
-until the annotations are fetched (`python -m src.acquire --annotations`).
+The pure LCA-distance logic is tested unconditionally; the end-to-end compute(partition) tests skip
+until the annotations are fetched (python -m src.acquire --annotations).
 """
 
 from __future__ import annotations

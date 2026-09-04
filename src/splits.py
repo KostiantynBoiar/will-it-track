@@ -1,12 +1,12 @@
 """Analysis splits — the two experiments over the pooled SA-FARI probes.
 
-A :class:`Partition` is a frozen reference/probe assignment on one *held axis*. Species identity is the
-``category_id`` throughout.
+A Partition is a frozen reference/probe assignment on one held axis. Species identity is the
+category_id throughout.
 
-- **Split A — species hold-out (primary, H1):** ``held_axis="species"``, ``loso=True``. Reference and
+- Split A — species hold-out (primary, H1): held_axis="species", loso=True. Reference and
   probe are both the pooled present set; each probe species' distance excludes itself (leave-one-species
   -out). Environment stays ~familiar.
-- **Split B — location hold-out (secondary, H2):** ``held_axis="location"``, ``loso=False``. Reference =
+- Split B — location hold-out (secondary, H2): held_axis="location", loso=False. Reference =
   the official train split, probe = test; species distance ≈ 0, environment/temporal vary.
 
 Because SAM 3 is frozen and zero-shot on all of SA-FARI, a partition is only our reference anchor for
@@ -34,23 +34,23 @@ def _full_taxonomy(taxonomy: dict[str, str] | None) -> bool:
 
 
 def taxonomy_path(taxonomy: dict[str, str]) -> list[str]:
-    """Order a (lowercased-key) taxonomy dict into a kingdom→species path for :func:`tree_distance`."""
+    """Order a (lowercased-key) taxonomy dict into a kingdom→species path for tree_distance."""
     return [taxonomy.get(field.lower(), "") for field in _TAXONOMY_FIELDS]
 
 
 class Partition(BaseModel):
-    """A frozen reference/probe assignment for one experiment (species identity = ``category_id``).
+    """A frozen reference/probe assignment for one experiment (species identity = category_id).
 
     Attributes:
-        name: File-stem identifier (e.g. ``"species_holdout"``).
-        held_axis: The disjoint axis — ``"species"`` (Split A) or ``"location"`` (Split B).
+        name: File-stem identifier (e.g. "species_holdout").
+        held_axis: The disjoint axis — "species" (Split A) or "location" (Split B).
         loso: Leave-one-species-out — each probe species excludes itself from the reference (Split A).
-        reference_species: Reference ``category_id``s.
-        probe_species: Probe ``category_id``s.
-        reference_locations: Reference ``location_id``s.
-        probe_locations: Probe ``location_id``s.
+        reference_species: Reference category_ids.
+        probe_species: Probe category_ids.
+        reference_locations: Reference location_ids.
+        probe_locations: Probe location_ids.
         reference_years: Distinct reference footage years (for the temporal gap).
-        probe_origins: Which source files the probe records come from (``["test"]`` / both).
+        probe_origins: Which source files the probe records come from (["test"] / both).
     """
 
     name: str
@@ -75,19 +75,19 @@ def _years(records: list[VideoRecord]) -> list[str]:
 
 
 def _locations(records: list[VideoRecord]) -> list[str]:
-    """Sorted distinct real ``location_id``s (drops missing/``nan``)."""
+    """Sorted distinct real location_ids (drops missing/nan)."""
     return sorted({r.location_id for r in records if _is_real(r.location_id)})
 
 
 def build_species_partition(
     config: Config | None = None, origins: tuple[str, ...] = ("train", "test")
 ) -> Partition:
-    """Split A — leave-one-species-out over the present set drawn from ``origins``.
+    """Split A — leave-one-species-out over the present set drawn from origins.
 
-    ``origins`` restricts the species pool and hence the reference prototypes. The default pools train and
-    test (the full novelty axis, which needs both splits scored). ``("test",)`` gives a self-contained
-    test-only hold-out whose distances reuse the already-embedded test crops --- no train inference or new
-    embedding --- so it is the cheap first look at H1 before the (capped) train run lands.
+    origins restricts the species pool and hence the reference prototypes. The default pools train and
+    test (the full novelty axis, which needs both splits scored). ("test",) gives a self-contained
+    test-only hold-out whose distances reuse the already-embedded test crops — no train inference or new
+    embedding — so it is the cheap first look at H1 before the (capped) train run lands.
     """
     cfg = config or Config()
     records = _present([r for r in pooled_records(cfg) if r.origin in set(origins)])
@@ -125,7 +125,7 @@ def build_location_partition(config: Config | None = None) -> Partition:
 
 
 def save(partition: Partition, config: Config | None = None) -> Path:
-    """Persist a partition to ``paths.splits_root/<name>.json``."""
+    """Persist a partition to paths.splits_root/<name>.json."""
     cfg = config or Config()
     cfg.paths.splits_root.mkdir(parents=True, exist_ok=True)
     path = cfg.paths.splits_root / f"{partition.name}.json"
@@ -154,10 +154,10 @@ def probe_records(partition: Partition, config: Config | None = None) -> list[Vi
 def reference_records(partition: Partition, config: Config | None = None) -> list[VideoRecord]:
     """Pooled records on the partition's reference side (present species only).
 
-    Split A (``held_axis="species"``) draws from the partition's own ``probe_origins`` — all present
+    Split A (held_axis="species") draws from the partition's own probe_origins — all present
     species of those origins (leave-one-species-out is applied later at prototype selection, not here), so
     a test-only species hold-out keeps its reference on the already-embedded test crops. Split B
-    (``held_axis="location"``) draws only from ``train`` (the seen locations).
+    (held_axis="location") draws only from train (the seen locations).
     """
     cfg = config or Config()
     ref_species = set(partition.reference_species)
