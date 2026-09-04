@@ -6,16 +6,16 @@ dataset can answer. It begins with the research design, the terms that design de
 which a predictor counts as validated. It then describes the data and the two splits, how the tracker's
 performance is measured, and how the label-free features are computed against a frozen reference. The
 remaining sections cover the statistical model and the tests applied to it, the replication on a second
-dataset and a second tracker, and the constraints that make the work reproducible.
+dataset and two further trackers, and the constraints that make the work reproducible.
 
 \section{Research design and evaluation criteria}
 \label{sec:meth-design}
 This is a predictive-modelling study. On one side is a set of predictors $X$: four distances,
-each measuring how far a target species or place sits from a frozen reference, none of them requiring the
+each measuring how far a target species or place sits from a frozen reference. None of them requires the
 tracker to be run or the target to be labelled. On the other is a target $Y$: the tracker's per-cell detection
 and association scores. The question is whether $X$ predicts $Y$, and which parts of it do the work, asked
-separately for the two halves of the task. Nothing here attempts to make the tracker score higher --- it is the
-fixed object of study. Three things need pinning down first: what running it zero-shot means, what the two
+separately for the two halves of the task. Nothing here attempts to make the tracker score higher. It is the
+fixed object of study. Three terms require definition first: what running it zero-shot means, what the two
 scores are, and what would count as having predicted them.
 
 \subsection{What ``zero-shot'' means here}
@@ -23,18 +23,18 @@ scores are, and what would count as having predicted them.
 A model is run zero-shot on a category when it is asked to find that category without having been trained on
 labelled examples of it, and without any change to its weights at the time of asking. The only thing telling it
 what to look for is the prompt. A conventional detector, by contrast, is trained on a fixed list and can be
-asked about nothing else; a fine-tuned model has had its weights updated on target-domain data; a few-shot
-model is handed a small number of labelled examples. A zero-shot model gets the word \texttt{"impala"} and
-nothing more.
+asked about nothing else. A fine-tuned model has had its weights updated on target-domain data; a few-shot
+model is handed a small number of labelled examples. A zero-shot model receives only the term
+\texttt{``impala''}.
 
 Three commitments follow and hold throughout. The tracker is the public released checkpoint, and its weights
 are never updated --- not fine-tuned, not adapted, not calibrated on any part of this data. The only input
 identifying the target is the text prompt. And no labelled example of the target species ever reaches the
-tracker: the ground-truth masks are read afterwards, to score what it produced and to crop images when building
+tracker. The ground-truth masks are read afterwards, to score what it produced and to crop images when building
 the distance features (Section~\ref{sec:meth-features}), never to tell it what to look for. The only thing
-fitted anywhere in this study is the small regression mapping distances onto scores. Note that zero-shot is
-meant relative to the dataset and to the reference frozen inside it, not as a claim about SAM\,3's undisclosed
-pretraining corpus --- a scope limit taken up in Section~\ref{sec:limitations}.
+fitted anywhere in this study is the small regression mapping distances onto scores. Zero-shot is meant
+relative to the dataset and to the reference frozen inside it, not as a claim about SAM\,3's undisclosed
+pretraining corpus (a scope limit taken up in Section~\ref{sec:limitations}).
 
 \subsection{What is being predicted: finding and following}
 \label{sec:meth-targets}
@@ -44,7 +44,7 @@ counts as matching an annotated one when their intersection over union reaches a
 matching, \texttt{pDetA} (detection accuracy) asks whether the right animals were found, rewarding annotated
 animals that were located and penalising both animals missed and masks invented where no animal was.
 \texttt{pAssA} (association accuracy) asks whether identities were kept, measuring across the matched
-detections how consistently one predicted identity corresponds to one annotated identity over time; it falls
+detections how consistently one predicted identity corresponds to one annotated identity over time. It falls
 when one animal's track is split among several predicted identities, when two identities are swapped, and when
 two animals are merged into a single track.
 
@@ -54,11 +54,11 @@ variants are used throughout, SA-FARI being mask-annotated, and neither metric i
 \texttt{VEval} evaluator is run as supplied and its output read.
 
 The two are not symmetric, and the asymmetry matters. Association is conditional on detection, since an
-identity can only be assessed for an animal that was found in the first place. A second consequence is worth
-flagging at the outset. Where a clip holds a single animal there is only one identity to keep, so
+identity can only be assessed for an animal that was found in the first place. A second consequence follows.
+Where a clip holds a single animal there is only one identity to keep, so
 \texttt{pAssA} is then largely determined by \texttt{pDetA} and carries little variance of its own. How often
-that happens is a property of the data rather than of the design, and Chapter~\ref{ch:discussion} reports it;
-where it dominates, association is reported as the weak target it is rather than as an independently powered
+that happens is a property of the data rather than of the design, and Chapter~\ref{ch:discussion} reports it.
+Where it dominates, association is reported as the weak target it is rather than as an independently powered
 test. The external replication of Section~\ref{sec:meth-replication} was chosen partly because it does not have
 this problem.
 
@@ -66,7 +66,7 @@ this problem.
 \label{sec:meth-success}
 The intended deliverable is a validated, out-of-sample predictor of \texttt{pDetA}/\texttt{pAssA} from
 label-free distances, with confidence intervals that respect the group structure
-(Section~\ref{sec:meth-inference}). A distance is taken to predict transfer only if it clears both bars:
+(Section~\ref{sec:meth-inference}). A distance is taken to predict transfer only if it satisfies both criteria:
 \begin{enumerate}[label=(\roman*),leftmargin=2.4em]
   \item its coefficient's group-cluster-bootstrap 95\% confidence interval (CI) excludes zero; and
   \item the grouped cross-validated model beats a mean-predictor baseline by a margin that is significant under
@@ -74,16 +74,15 @@ label-free distances, with confidence intervals that respect the group structure
 \end{enumerate}
 The bars are not redundant. Criterion~(i) says a relationship is visible in the data the model was fitted on;
 it does not say that relationship holds for a species or place never seen, which is the entire practical claim.
-Criterion~(ii) is that test, and its baseline is deliberately humble --- predicting each held-out cell with the
+Criterion~(ii) is that test, and its baseline is deliberately minimal: predicting each held-out cell with the
 training mean, which is what a practitioner with no predictor would effectively assume. A feature clearing (i)
 but not (ii) has been fitted, not validated.
 
 H1 (detection $\leftarrow$ species novelty) and H2 (association $\leftarrow$ environment difficulty) are
 supported only when their respective distances meet this bar on the split that isolates them. If neither does
-under tests built deliberately to be powerful, the conclusion is H0 --- distance explains little variance ---
-which is a substantive result rather than a failure to find one, and motivates the representational-probing
-direction of Chapter~\ref{ch:discussion}.
-
+under tests built deliberately to be powerful, the conclusion is H0: distance explains little variance. That is
+a substantive result rather than a failure to find one, and it motivates the representational-probing direction
+of Section~\ref{sec:concl-future}.
 
 \section{Data, splits, and the analysis unit}
 \label{sec:meth-data}
@@ -105,22 +104,22 @@ instead (Section~\ref{sec:meth-fp}).
 SA-FARI's shipped split separates locations but not species (Section~\ref{sec:bg-safari}). Species-distance is
 therefore $\approx\!0$ for nearly every cell, so that split cannot test species novelty on its own. Because the
 tracker is frozen (Section~\ref{sec:meth-zeroshot}), the shipped split plays no training role and serves only
-to define our reference distribution, which leaves us free to repartition the same videos. Inference is run
-once --- scoring is per-video and split-agnostic --- and two splits are overlaid on the result:
+to define our reference distribution, which permits the same videos to be repartitioned. Inference is run
+once (scoring is per-video and split-agnostic) and two splits are overlaid on the result:
 \begin{description}[leftmargin=1.6em,style=nextline]
-  \item[Split A --- species hold-out (primary).] Species from both official splits are pooled and held out one
+  \item[Split~A --- species hold-out (primary).] Species from both official splits are pooled and held out one
     at a time, so a held-out species' distance is measured to the nearest remaining species. Species-distance
     varies while the environment stays familiar, which isolates H1.
-  \item[Split B --- location hold-out (secondary).] The official split, whose unseen locations isolate H2, and
+  \item[Split~B --- location hold-out (secondary).] The official split, whose unseen locations isolate H2, and
     whose comparability with the published benchmark carries the initial score-sanity check.
 \end{description}
-Split A is a constructed hold-out rather than a shipped one. That is legitimate precisely because the model is
+Split~A is a constructed hold-out rather than a shipped one. That is legitimate precisely because the model is
 frozen, and it is reported as constructed throughout.
 
-Split B yields $1{,}447$ scored cells, spanning $113$ taxonomy-bearing categories and $92$ unseen test
+Split~B yields $1{,}447$ scored cells, spanning $113$ taxonomy-bearing categories and $92$ unseen test
 locations. Of those cells $346$ are positive, meaning the queried species is present so that \texttt{pDetA} and
 \texttt{pAssA} are defined; the remaining $1{,}101$ are hard negatives, drawn from $1{,}486$ hard-negative
-probes. Split A pools the species present in both official splits into $1{,}025$ scored cells.
+probes. Split~A pools the species present in both official splits into $1{,}025$ scored cells.
 
 \section{Measuring transfer}
 \label{sec:meth-measure}
@@ -160,8 +159,8 @@ by holding out whole species and locations. Only the GLM is fitted; the tracker 
 \end{figure}
 
 The primary case is SAM\,3 on SA-FARI, and the rest of this section gives its concrete choices and numbers.
-The replication and the model swap (Sections~\ref{sec:meth-replication}--\ref{sec:meth-swap}) later re-run the
-same pipeline on other datasets and trackers.
+The replication and the model swap (Sections~\ref{sec:meth-replication} and~\ref{sec:meth-swap}) later re-run
+the same pipeline on other datasets and trackers.
 
 SAM\,3~\cite{sam3} is run frozen over the probe videos and scored with the official \texttt{VEval} evaluator,
 which yields a per-cell \texttt{pDetA}, \texttt{pAssA} and \texttt{pHOTA}~\cite{hota} together with its
@@ -178,8 +177,8 @@ a positives-only per-cell average, the macro mean sits lower, at $\approx\!0.53$
 identified as the micro score, every measurement number quoted in this dissertation is the macro value.
 
 \paragraph{Validity of the frozen protocol.} Because the tracker is frozen throughout
-(Section~\ref{sec:meth-zeroshot}), reusing that single inference pass across both splits is sound rather than a
-leak: a cell's score cannot depend on which reference partition is later overlaid to compute its distances.
+(Section~\ref{sec:meth-zeroshot}), reusing that single inference pass across both splits is sound rather than
+a leak. A cell's score cannot depend on which reference partition is later overlaid to compute its distances.
 
 Freezing also settles the benchmark's status. SA-FARI is a held-out, zero-shot benchmark for the released
 SAM\,3. The SAM\,3 report~\cite{sam3} does not list SA-FARI among its training sources, and the SA-FARI
@@ -187,7 +186,7 @@ paper~\cite{safari} reports the released checkpoint zero-shot, alongside separat
 we deliberately forgo. Non-membership can therefore be verified at the dataset level. It cannot be verified
 frame by frame, because SAM\,3's full pretraining corpus is undisclosed. That is why every distance is measured
 against the SA-FARI reference rather than against whatever SAM\,3 actually saw, and why the familiarity proxy
-of Section~\ref{sec:meth-familiarity} is included as a hedge.
+of Section~\ref{sec:meth-familiarity} is included as a check against that gap.
 
 \section{Label-free distance features}
 \label{sec:meth-features}
@@ -197,21 +196,22 @@ H1 resting on the first two and H2 on the third. The second group holds a single
 size. The third holds the familiarity proxy.
 
 For each split, the reference (``seen'') species, locations and taxonomy are frozen once, and every distance is
-then computed against that reference alone. This is the leakage firewall: no information about a probe can
+then computed against that reference alone. This is the leakage safeguard: no information about a probe can
 enter a feature. A unit test verifies it, swapping the reference and checking that the distances move as
-expected. We assert the axis that is genuinely disjoint --- location for Split~B, the held-out species for
-Split~A --- and report any residual species overlap rather than asserting it away.
+expected. The axis that is strictly disjoint is asserted --- location for Split~B, the held-out species for
+Split~A --- and any residual species overlap is reported rather than assumed absent.
 
 Because the distances are computed against that reference, they require no measurement of the tracker's
 performance on the target: no \texttt{pDetA}, no \texttt{pAssA}, no annotation of how well SAM\,3 did. That is
 the sense in which they are label-free, and it is the sense the research question needs, since it makes them
 available before the model is run.
 
-One qualification belongs here rather than in a footnote. As implemented on an annotated benchmark, the visual,
+One qualification applies. As implemented on an annotated benchmark, the visual,
 environment and size features read the dataset's ground-truth masks to separate animal from scene. That is a
 convenience of working on SA-FARI, not a requirement of the method: in deployment the same species prototype
-would be built from the handful of exemplar images a practitioner already has for a named species. It does
-bound the claim, and Section~\ref{sec:limitations} returns to it.
+would be built from the small number of exemplar images a practitioner already holds for a named species. It
+does bound the claim, and Section~\ref{sec:limitations} returns to it.
+
 \subsection{Taxonomic distance}
 This distance measures how far apart two species sit on the tree of life.
 
@@ -230,6 +230,7 @@ So a species sharing a genus with its nearest reference neighbour scores $1$, a 
 order $3$. A species sharing no level at all would score $7$. The exclusion $s'\neq s$ is the leave-species-out
 rule, which keeps the measure non-trivial for species present on both sides of a split. Species whose taxonomy
 is incomplete are left undefined rather than imputed.
+
 \subsection{Visual distance}
 This distance measures how different one species looks from another.
 
@@ -246,6 +247,7 @@ one minus the largest cosine similarity,
 where $e$ indexes the query's own species, excluded again under the leave-species-out rule. A
 CLIP~\cite{clip} encoder replaces DINOv2 as a robustness check. The masks come from the annotations
 (Figure~\ref{fig:features}b).
+
 \subsection{Environment distance}
 This distance measures how different one scene looks from another.
 
@@ -270,10 +272,10 @@ greyscale background, which measures local edge and texture density rather than 
 \begin{minipage}[b]{0.32\textwidth}\centering
   \includegraphics[width=\linewidth]{figures/feat_background.png}\\[2pt]{\footnotesize (c) environment: animal erased}
 \end{minipage}
-\caption[The image-based distances in action]{The two image-based distances on a camera-trap frame (a collared
-peccary). \textbf{(a)} ground-truth mask (orange); \textbf{(b)} the mask-cropped animal the visual
-distance fingerprints; \textbf{(c)} the animal mean-inpainted, which the environment distance
-fingerprints. None of these features runs SAM\,3.}
+\caption[The image-based distances]{The two image-based distances on a camera-trap frame (a collared
+peccary). \textbf{(a)} ground-truth mask (orange); \textbf{(b)} the mask-cropped animal that the visual
+distance embeds; \textbf{(c)} the animal mean-inpainted, which the environment distance embeds. None of these
+features runs SAM\,3.}
 \label{fig:features}
 \end{figure}
 
@@ -290,19 +292,22 @@ smallest absolute difference to any reference year in $\mathcal{Y}$:
 
 The feature depends on timestamps being both present and varied across cells. How far the available metadata
 actually supports it is reported in Chapter~\ref{ch:results}.
+
 \subsection{Animal size (confound control)}
 This covariate measures how large the animal appears in frame.
 
 Let $a$ be a species' mean ground-truth mask area in pixels, averaged over sampled masklets. The covariate is
-$\ln(1+a)$. Larger animals are easier to segment, so this is what separates genuine visual novelty from mere
+$\ln(1+a)$. Larger animals are easier to segment, so it distinguishes visual novelty from apparent
 conspicuousness. Section~\ref{sec:meth-model} describes how it is used to test whether an apparent novelty
 effect is really a size effect.
+
 \subsection{SAM\,3 familiarity proxy}
 \label{sec:meth-familiarity}
 This feature measures how familiar a species looks to SAM\,3 itself.
 
 Every distance above is measured against the SA-FARI reference rather than against what SAM\,3 actually saw
-(Section~\ref{sec:meth-measure}). The proxy hedges that gap by reading familiarity from the model. The same
+(Section~\ref{sec:meth-measure}). The proxy addresses that gap by deriving familiarity from the model itself.
+The same
 mask-cropped animals used for the visual distance are pushed through SAM\,3's image encoder, and the
 patch-token features are mean-pooled into a $1024$-dimensional vector. Each species is then scored three ways:
 by silhouette, comparing own-cluster compactness against the nearest other species; by nearest prototype, which
@@ -341,8 +346,8 @@ fractional-logit, regression:
   \label{eq:glm}
 \end{equation}
 where $y$ is the cell's score and $x$ the standardised design. That design carries the four distances, the
-scene covariates, and a $\log(n_\text{frames})$ term. The last of these is what keeps ``rare'' from being
-mistaken for ``far''.
+scene covariates, and a $\log(n_\text{frames})$ term. The last of these prevents low support from being
+mistaken for high distance.
 
 \subsection{Group-aware confidence intervals}
 \label{sec:meth-inference}
@@ -363,8 +368,9 @@ It returns both a confidence interval and a one-sided $p$-value on the gain.
 A null is only informative if the test could have detected an effect had one been present, so the design
 carries a positive control. The animal-size covariate is put through the identical procedure --- the same
 clustered interval, the same whole-group hold-out --- and the estimation and cross-validation machinery is
-unit-tested to recover planted effects on synthetic data. If the procedure clears the bar for size while
-staying flat for the distances, a flat result is evidence of absence of signal rather than absence of power.
+unit-tested to recover planted effects on synthetic data. If the procedure validates the size covariate while
+returning no gain for the distances, a null result is evidence of absence of signal rather than absence of
+power.
 Chapter~\ref{ch:results} reports whether it does.
 
 \subsection{Variance attribution and confound control}
@@ -384,7 +390,8 @@ predictors of interest, and tested against the same out-of-sample bar.
 
 Difficulty and size are easily confused, so they are separated by a nested sequence of models: support only,
 size only, difficulty without size, and difficulty plus size. Comparing their out-of-sample gains exposes any
-apparent difficulty effect that is really size (Table~\ref{tab:difficulty}). Each scene property's cell-level
+apparent difficulty effect that is in fact attributable to size (Table~\ref{tab:difficulty},
+Appendix~\ref{app:supplementary}). Each scene property's cell-level
 correlation is also reported beside its location-level value, because aggregating inflates correlations. That
 is the ecological-correlation fallacy.
 
@@ -406,7 +413,8 @@ changes from the mask-cropped animal to a whole-frame box that keeps the backgro
 species-specific to a generic ``animal''. And the visual-distance functional changes from a nearest-prototype
 cosine to a distributional Fr\'echet or MMD distance between the target and reference embedding sets, after
 AutoEval~\cite{autoeval}. Each variant is fitted and validated at the identical whole-group bar, with
-significance judged after a Bonferroni correction over the variant family (Table~\ref{tab:robustness}).
+significance judged after a Bonferroni correction over the variant family (Table~\ref{tab:robustness},
+Appendix~\ref{app:supplementary}).
 
 \section{Independent replication on an external dataset}
 \label{sec:meth-replication}
@@ -414,9 +422,10 @@ Every SA-FARI result reuses one frozen inference pass on one dataset. The two sp
 near-orthogonal, but not statistically independent. To test whether the outcome is a property of the transfer
 problem rather than of SA-FARI, the whole pipeline is re-run on a second dataset. Nothing changes but the data:
 the same frozen SAM\,3, the same official scorer, the same distances, and the same leave-species-out
-cross-validation and paired group bootstrap.
+cross-validation and paired group-bootstrap.
 
-This is cheap because the pipeline is bound to an annotation schema rather than to a loader. An offline adapter
+This requires little additional work because the pipeline is bound to an annotation schema rather than to a
+loader. An offline adapter
 converts the new dataset into the SA-Co JSON that the loader and evaluator already read, so nothing downstream
 changes.
 
@@ -432,9 +441,8 @@ positive control (Section~\ref{sec:meth-cv}).
 \subsection{The controlled model swap}
 \label{sec:meth-swap}
 The replication varies the data and holds the tracker fixed. The swap does the reverse. Everything else stays
-constant --- the same cells, the same ground truth, the same four distances, the same GLM under
-leave-species-out cross-validation --- and SAM\,3 is replaced by another open-vocabulary, text-promptable
-tracker. Only \texttt{pDetA} changes, because the distances are functions of the data and its ground truth
+constant: the same cells, the same ground truth, the same four distances, the same GLM under
+leave-species-out cross-validation. SAM\,3 is replaced by another open-vocabulary, text-promptable tracker. Only \texttt{pDetA} changes, because the distances are functions of the data and its ground truth
 rather than of the tracker. That is what isolates the tracker as the sole varying factor, and it is also why
 this is a swap rather than a replication.
 
@@ -450,22 +458,18 @@ dropped there rather than modelled.
 The second concerns scoring fairness. Open-vocabulary detectors calibrate their confidence to their own
 training domain, so a near-zero score may reflect the evaluator's confidence gate rather than a real detection
 failure. Every such score is therefore re-checked under a box-based metric, and again under a threshold-free
-average-precision metric with no gate at all. This gate is also what decides which dataset can host a fair
-swap, and it is why the swap runs on BURST rather than SA-FARI; Chapter~\ref{ch:results} gives the measurements
-behind that choice. Each challenger configuration is fixed in advance from the model's own defaults, run once,
-and reported as-is (Section~\ref{sec:model_swap}).
+average-precision metric with no gate at all. This gate also decides which dataset can host a fair swap, and
+is why the swap runs on BURST rather than SA-FARI (Chapter~\ref{ch:results} gives the measurements). Each
+challenger configuration is fixed in advance from the model's own defaults, run once, and reported as-is
+(Section~\ref{sec:model_swap}).
 
 \section{Reproducibility and implementation}
 \label{sec:meth-repro}
 The constraints that protect validity are stated where they apply: the frozen tracker
 (Section~\ref{sec:meth-zeroshot}), the official evaluator (Section~\ref{sec:meth-targets}), the frozen
 reference (Section~\ref{sec:meth-features}), and the retained hard negatives (Section~\ref{sec:meth-data}).
-What remains is how they are enforced.
-
-Each is a configuration toggle rather than a branch in the code, so an ablation changes a config file and
-nothing else. The pipeline is covered by hermetic tests, among them the leakage check of
-Section~\ref{sec:meth-features} and the recovery of planted effects on synthetic data. Split definitions,
-random seeds and reference sets are all persisted. Every number reported in this dissertation comes from that
-pipeline, and both experiments reproduce end to end.
-
-All inference is single-GPU and inference-only, since no weights are ever updated.
+Each is enforced as a configuration toggle, so an ablation changes a config file and nothing else. The
+pipeline is covered by hermetic tests, including the leakage check of Section~\ref{sec:meth-features} and
+the recovery of planted effects on synthetic data. Split definitions,
+random seeds and reference sets are persisted; every reported number comes from the pipeline, and both
+experiments reproduce end to end on a single GPU.

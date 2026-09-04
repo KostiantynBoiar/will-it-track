@@ -1,12 +1,12 @@
 % ============================================================================================
-% Appendices. App.~A holds the definitions omitted from Chapter 3; App.~B holds supplementary
+% Appendices. App.~A holds definitions omitted from Chapters 2 and 3; App.~B holds supplementary
 % tables. Numbers are transcribed from src/features/* and src/analysis/*.
 % ============================================================================================
 
-\chapter{Mathematical definitions}
+\chapter{Mathematical Definitions}
 \label{app:formulas}
-Chapter~\ref{ch:methodology} defines the tracking metric, the four distances and the regression in the body.
-This appendix supplies only what was left out of it: the scene covariates, the design matrix, and the two
+Chapters~\ref{ch:background} and~\ref{ch:methodology} define the tracking metric, the four distances and
+the regression in the body. This appendix supplies only what was left out of them: the scene covariates, the design matrix, and the two
 statistics used to report fit and out-of-sample gain.
 
 \section{Scene covariates}
@@ -38,7 +38,7 @@ Fit quality is the McFadden pseudo-$R^2$. The per-cell out-of-sample gain over a
   \delta_i=\underbrace{|y_i-\bar y|}_{\text{baseline error}}-\underbrace{|y_i-\hat y_i|}_{\text{model error}},
 \end{equation}
 with $D$ and $D_0$ the model and null (intercept-only) deviances. A positive $\delta_i$ means the distance
-model beats guessing the mean on cell $i$.
+model has lower absolute error than the mean predictor on cell $i$.
 
 For the species-level false-positive analysis (Section~\ref{sec:meth-fp}), correlations are weighted by the
 per-species probe counts $w$:
@@ -48,7 +48,7 @@ per-species probe counts $w$:
   \qquad \bar x_w=\frac{\sum_i w_i x_i}{\sum_i w_i}.
 \end{equation}
 
-\chapter{Supplementary tables}
+\chapter{Supplementary Tables}
 \label{app:supplementary}
 These tables support claims made in Chapter~\ref{ch:results}. Each is referenced from the section that
 discusses it.
@@ -64,9 +64,3 @@ discusses it.
 \IfFileExists{tables/model_swap_cv.tex}{\input{tables/model_swap_cv}}{}
 \IfFileExists{tables/replication_burst.tex}{\input{tables/replication_burst}}{}
 
-% NOTE: drop extended tables here as they are generated (report.py can emit tagged fragments). The
-% primary tables live in Chapter~\ref{ch:results}: Split~B in Table~\ref{tab:coefficients}, Split~A in
-% Table~\ref{tab:coefficients_species}.
-\IfFileExists{tables/coefficients_naive_vs_clustered.tex}{\input{tables/coefficients_naive_vs_clustered}}{}
-\IfFileExists{tables/correlations.tex}{\input{tables/correlations}}{}
-% The false-positive/hallucination table (Table~\ref{tab:fp}) now lives in Chapter~\ref{ch:results}, §4.6.

@@ -2,9 +2,9 @@
 % per-dataset tables/docs and the BURST replication analysis. See docs/{label_free_prediction_null,
 % burst_replication}.md.
 \begin{table}[htbp]\centering
-  \caption{Cross-dataset synthesis: every feature tested, per dataset. BURST entries are out-of-sample
+  \caption[Cross-dataset synthesis]{Cross-dataset synthesis: every feature tested, per dataset. BURST entries are out-of-sample
   $\Delta$MAE\,($p$); SA-FARI entries are GLM coefficients [95\% CI], except the $\dagger$ rows, which are
-  $\Delta$MAE\,($p$). Only animal size clears the bar, and only on SA-FARI.}
+  $\Delta$MAE\,($p$) from the species hold-out; the temporal and hallucination rows report the quantities stated in place. Only animal size satisfies the criteria, and only on SA-FARI.}
   \label{tab:cross_dataset}
   \footnotesize
   \setlength{\tabcolsep}{5pt}
@@ -23,7 +23,7 @@
     Animal size ($\log$-area)$^\dagger$ & $+0.015$ ($0.01$) & $+0.005$ ($0.14$) & \textbf{validates} (SA-FARI) \\
     \midrule
     \multicolumn{4}{l}{\emph{Detection precision (hard negatives)}} \\
-    Hallucination vs.\ visual & $r{=}-0.33$; $+0.008$ ($0.053$) & --- & marginal correlate \\
+    Hallucination vs visual & $r{=}-0.33$; $+0.008$ ($0.053$) & --- & marginal correlate \\
     \bottomrule
   \end{tabular}
 \end{table}

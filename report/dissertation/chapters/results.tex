@@ -5,11 +5,13 @@
 % The \IfFileExists guards let the dissertation build whether or not they have been generated yet.
 
 This chapter reports what the measurements show. It opens by checking that the frozen tracker reproduces the
-published benchmark, then works through the model in the order the decision rule of
-Section~\ref{sec:meth-success} demands: the fitted coefficients, how much variance the distances explain, and
-the out-of-sample test that settles the research question. Further sections cover the species hold-out, false
-positives on hard negatives, the robustness variants and the familiarity proxy. The last three take the
-analysis outside SA-FARI, to a second dataset and to two other trackers, and draw the comparison together.
+published benchmark. It then works through the model in the order the decision rule of
+Section~\ref{sec:meth-success} demands: the fitted coefficients, how much variance the distances explain
+together with the intrinsic-difficulty pivot, and the out-of-sample test that settles the research question.
+Further sections cover the species hold-out, false positives on hard negatives, the robustness variants and
+the familiarity proxy. The last three take the analysis to a second dataset, draw the cross-dataset synthesis,
+and substitute two other trackers. Supporting tables numbered B.* are collected in
+Appendix~\ref{app:supplementary}.
 
 \section{Measurement}
 \label{sec:measurement}
@@ -33,11 +35,11 @@ split, Split~B, over the same $346$ positive cells as Table~\ref{tab:gate1}. The
 separately in Section~\ref{sec:species-holdout}.
 
 Each row of the table is one factor, and the two columns give its coefficient and confidence interval for
-detection and for association. Three things make it readable.
+detection and for association. Three features of its construction should be noted.
 
 The coefficients are standardised. Each is the change in the logit of the score for a one-standard-deviation
 rise in that factor. Magnitudes can therefore be compared down a column, even though the raw factors are in
-quite different units --- tree steps, cosine gaps, a binary flag. A negative coefficient means the score falls
+quite different units: tree steps, cosine gaps, a binary flag. A negative coefficient means the score falls
 as the factor rises, which is the direction H1 and H2 predict.
 
 The intervals are not the model's own. A distance is constant within a species or a location, so the $346$
@@ -49,84 +51,85 @@ Only three of the four distances appear. Temporal gap is absent because it carri
 from and the model drops it (Section~\ref{sec:meth-temporal}). The last two rows are a scene covariate and the
 support control rather than distances.
 
-Read that way, the table says one thing: no factor clears the bar. Every interval spans zero, for detection and
+On this reading, no factor satisfies criterion~(i). Every interval spans zero, for detection and
 association alike. Criterion~(i) already fails, before the out-of-sample test of Section~\ref{sec:headline} is
 reached.
 
-Two details deserve reading rather than skipping. First, the point estimates for taxonomic and visual distance
-are negative here, nominally the direction H1 predicts. But the intervals are far too wide for that sign to
-carry information. And on the species hold-out, where species novelty actually varies, both coefficients come
-back positive (Section~\ref{sec:species-holdout}) --- the opposite of what H1 says.
+Two further details are relevant. First, the point estimates for taxonomic and visual distance are negative
+here, nominally the direction H1 predicts. The intervals are, however, far too wide for that sign to carry
+information, and on the species hold-out, where species novelty actually varies, both coefficients are
+positive (Section~\ref{sec:species-holdout}), the opposite of what H1 predicts.
 
 Second, taxonomic distance carries by far the widest interval, $[-3.87,+0.09]$ for detection. That is a
 property of this split rather than a finding about taxonomy. The official split shares species across train and
 test, so taxonomic distance is $\approx\!0$ for almost every cell here, and the coefficient is estimated from
-almost no variation. It is measured imprecisely, not measured and refuted, and we count it as neither. Testing
-species novelty properly is what the constructed species hold-out exists for.
+almost no variation. It is measured imprecisely rather than measured and refuted, and is counted as neither.
+The constructed species hold-out is designed to test species novelty properly.
 \IfFileExists{tables/coefficients.tex}{\input{tables/coefficients}}{}
 
 \section{How much the distances explain, and the difficulty pivot}
 \label{sec:variance-difficulty}
-The first question is how much of the variation in detection the four distances account for. The answer is
-almost none. A dominance analysis puts the four together at only $\approx 3\%$ of the variation, and no single
+The first question is how much of the variation in detection the four distances account for. They account
+for almost none of it. A dominance analysis puts the four together at only $\approx 3\%$ of the variation, and no single
 distance stands out (Table~\ref{tab:variance}). The method is LMG/Shapley, which splits shared explanatory
 power fairly between correlated predictors rather than double-counting it.
 
-A natural worry is that the distances are so correlated with one another that a real effect cancels out
+One possible explanation is that the distances are so correlated with one another that a real effect cancels out
 between them. The VIF column rules that out. The variance inflation factor measures how entangled each
 predictor is with the others, and a value near $1$ means essentially independent. Every VIF here is
-$\approx 1$, so the $3\%$ is genuinely all there is, not a masked signal.
+$\approx 1$, so the $3\%$ is the total explanatory contribution rather than a signal masked by collinearity.
 
 
-The one distance that looked predictive was visual distance, and it turned out to be animal size in disguise.
-Visually distinctive species tend to be larger, and larger animals are easier to detect. What looked like
-novelty was a confound.
+The only distance with an apparent predictive relationship was visual distance, and that relationship is
+attributable to animal size. Visually distinctive species tend to be larger, and larger animals are easier to
+detect. The apparent novelty effect is therefore confounded with size.
 
-That prompts a different question. Rather than how novel the animal is, does how hard the scene is predict
-detection? Three label-free scene properties are tested against the same bar: low light, visual clutter, and a
-night/infrared flag (Table~\ref{tab:difficulty}). Each is measured directly from the frames, with no SAM\,3
-run and no target label.
+A complementary question follows: whether the intrinsic difficulty of the scene, rather than the novelty of
+the animal, predicts detection. Three label-free scene properties are tested against the same criteria: low
+light, visual clutter, and a night/IR flag (Table~\ref{tab:difficulty}, Appendix~\ref{app:supplementary}).
+Each is measured directly from the frames, with no SAM\,3 run and no target label.
 
-Bundled together with animal size, these difficulty signals appear to work, beating the baseline by
-$\approx+0.017$ on both hold-outs. Separating the contributions shows that the entire gain comes from size.
-Size \emph{on its own} carries it. Low light \emph{on its own} does not beat the baseline, and adds almost
-nothing once size is accounted for.
+Combined with animal size, these difficulty signals improve on the baseline by $+0.017$ and $+0.020$ on the
+two hold-outs. Separating the contributions shows that the entire gain comes from size. Size \emph{on its
+own} accounts for it. Low light \emph{on its own} does not improve on the baseline, and adds almost nothing
+once size is accounted for.
 
 The apparent night/IR effect is inflated by being measured at the wrong level. Per location, its correlation
 with detection looks moderate, at $r=-0.377$. That is an averaging artefact. Measured at the level of the
-individual cell, where the model actually operates, it shrinks to $-0.13$, and clutter's is $0.00$. So the
-difficulty idea is \textbf{also null}: the only label-free property that predicts detection is animal size.
+individual cell, where the model actually operates, it shrinks to $-0.13$, and clutter's is $0.00$. The
+intrinsic-difficulty hypothesis is therefore \textbf{also null}: the only label-free property that predicts
+detection is animal size.
 
 
-\section{The headline test: predicting unseen species and locations}
+\section{The primary out-of-sample test: predicting unseen species and locations}
 \label{sec:headline}
-This is the decisive test. The model is fitted on some species and locations, then asked to predict detection
-for held-out ones it never saw. Its error is compared against the simplest possible guess: always predicting
-the average score.
+This is the primary test. The model is fitted on a subset of species and locations, then used to predict
+detection for held-out species and locations excluded from fitting. Its error is compared against the
+simplest baseline: predicting the mean score in every case.
 
 Table~\ref{tab:cv} reports that comparison. Each row is one combination of hold-out scheme and target, so the
 four rows cover leave-species-out and leave-location-out for both detection and association, all within the
 same $346$ positive cells. The MAE column is the model's mean absolute error, and Baseline is the mean
-predictor's. $\Delta$ is the gain of one over the other, so a positive value means the model beats guessing the
-mean. The interval comes from the paired group-bootstrap, and the $p$-value is one-sided
+predictor's. $\Delta$ is the gain of one over the other, so a positive value indicates lower error than the
+mean predictor. The interval comes from the paired group-bootstrap, and the $p$-value is one-sided
 (Section~\ref{sec:meth-cv}).
 
 The result is a \textbf{null}. Every gain falls between $+0.004$ and $+0.007$, every interval spans zero, and
-no $p$-value drops below $0.13$. On both hold-out schemes, and for both targets, the distance model does no
-better than the trivial average.
+no $p$-value drops below $0.13$. On both hold-out schemes, and for both targets, the distance model does not
+improve on the mean predictor.
 
-Figure~\ref{fig:predvsactual} shows what that looks like. Each point is one held-out cell, with its true
+Figure~\ref{fig:predvsactual} presents this graphically. Each point is one held-out cell, with its true
 detection score on the horizontal axis and the model's out-of-sample prediction on the vertical. A model that
 predicted well would place its points along the dashed diagonal. A model that ignored its inputs and returned
 the average every time would place them along the horizontal line. The points follow the horizontal line:
-whatever the truth, the prediction barely moves.
+the prediction varies negligibly with the true score.
 
-The null holds up because the test demonstrably works. Run unchanged on the same cells, it \emph{does} recover
-a real effect. Animal size beats the baseline out of sample at the identical bar, significantly so on both
-schemes ($\Delta\mathrm{MAE}=+0.015$ leave-species-out, $+0.017$ leave-location-out;
-Table~\ref{tab:difficulty}). A test that fires for size while staying flat for the distances tells us the
-distances genuinely carry \emph{no} predictive signal. The flat result is an absence of signal, and the size
-result is what confirms it.
+The null is credible because the procedure demonstrably has power. Run unchanged on the same cells, it
+\emph{does} recover a real effect. Animal size improves on the baseline out of sample at the identical
+criteria, significantly on both schemes ($\Delta\mathrm{MAE}=+0.015$ leave-species-out, $+0.017$
+leave-location-out; Table~\ref{tab:difficulty}). A procedure that detects the size effect while returning no
+gain for the distances indicates that the distances carry \emph{no} predictive signal: the null result
+reflects an absence of signal, and the size result confirms the power to detect one.
 \IfFileExists{tables/cv_validation.tex}{\input{tables/cv_validation}}{}
 \begin{figure}[htbp]
 \centering
@@ -140,30 +143,30 @@ the orange line, so the distances carry no predictive power.}
 
 \section{Species hold-out (H1): novelty and the size confound}
 \label{sec:species-holdout}
-The primary novelty test is a leave-one-species-out analysis over the pooled train and test species: $99$
-species and $1025$ scored cells. Three tables report it, each the Split~A counterpart of one already seen for
-Split~B. Table~\ref{tab:gate1_species} gives the measurement, and confirms the tracker scores in the same range
-on the pooled set as on the test split alone. Table~\ref{tab:coefficients_species} gives the fitted
-coefficients, and Table~\ref{tab:cv_species} the out-of-sample test.
+The primary novelty test is a leave-species-out analysis over the pooled train and test species: $99$
+species and $1{,}025$ scored cells. Three tables report it, each the Split~A counterpart of one already seen
+for Split~B. Table~\ref{tab:gate1_species} (Appendix~\ref{app:supplementary}) gives the measurement, and
+confirms the tracker scores in the same range on the pooled set as on the test split alone.
+Table~\ref{tab:coefficients_species}, in this chapter, gives the fitted coefficients, and
+Table~\ref{tab:cv_species}, also in the appendix, the out-of-sample test.
 
-Out-of-sample prediction fails again. Every gain in Table~\ref{tab:cv_species} is zero or negative, so the
-distance model is no better than guessing the mean, and on the species scheme slightly worse.
+Out-of-sample prediction again fails. Every gain in Table~\ref{tab:cv_species} is zero or negative, so the
+distance model is no better than the mean predictor, and on the species scheme slightly worse.
 
-Table~\ref{tab:coefficients_species} is where this split differs from Split~B, and it repays careful reading.
-One coefficient does have an interval excluding zero: visual distance, at $+0.37$ for detection. Its sign,
-though, is \emph{positive}. Read literally, that says more-novel species are detected better, which is the
-reverse of what H1 predicts.
+Table~\ref{tab:coefficients_species} is where this split differs from Split~B. One coefficient does have an interval excluding zero: visual distance, at $+0.37$ for detection. Its sign,
+though, is \emph{positive}. Taken at face value, this indicates that more-novel species are detected better,
+which is the reverse of what H1 predicts.
 
 It is a \textbf{confound} rather than a reversal. Visually distinctive species tend to be larger
 (visual~$\leftrightarrow$~$\log$-area $r=0.22$), and larger animals score higher
 ($\log$-area~$\leftrightarrow$~\texttt{pDetA} $r=0.30$, the strongest raw correlate of the score). Adding an
 animal-size covariate shrinks the visual coefficient from $+0.37$ to $+0.22$, and its interval now spans zero,
-while size itself becomes the significant driver. ``Visual novelty helps'' was really ``bigger animals are
-easier''. Taxonomic novelty, meanwhile, is flat ($r\approx0.00$).
+while size itself becomes the significant driver. The apparent visual-novelty effect is therefore a size
+effect. Taxonomic novelty shows no relationship ($r\approx0.00$).
 
-Figure~\ref{fig:size} shows that underlying relationship directly. Each point is one cell, with animal size on
-the horizontal axis and its detection score on the vertical, and the fitted trend rises at $r=+0.31$. Novelty
-does not predict transfer. Size does, a little.
+Figure~\ref{fig:size} shows the same relationship on the location split, where its cell-level correlation is
+$r=+0.31$. Each point is one cell, with animal size on the horizontal axis and its detection score on the
+vertical. Novelty does not predict transfer; animal size does, weakly.
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.44\textwidth]{figures/res_size_confound.pdf}
@@ -179,26 +182,27 @@ at $r=+0.31$. This is the confound behind the apparent visual-distance effect.}
 \section{False positives / hallucination}
 \label{sec:fp}
 Everything so far has concerned misses: whether the tracker finds the animals that are there. The detection
-score conditions on the animal being present, so it measures recall and says nothing about hallucination. The
-opposite failure --- reporting an animal that is not there --- is measured on the $1486$ hard negatives, the
-queries naming a species absent from the clip. A correct run returns nothing. SAM\,3 returns a masklet anyway
-about $9.8\%$ of the time.
+score conditions on the animal being present, so it measures recall and is uninformative about hallucination.
+The opposite failure (reporting an animal that is not there) is measured on the $1{,}486$ hard negatives, the
+queries naming a species absent from the clip. A correct run returns nothing. SAM\,3 nonetheless returns a
+masklet in approximately $9.8\%$ of cases.
 
 Table~\ref{tab:fp} asks whether that rate is predictable from the same label-free distances. Each row is one
 species-level test, giving the statistic, its $95\%$ confidence interval, and the verdict. The first four rows
 are correlations between a species' hallucination rate and one property. The last row is the out-of-sample
 test, where the statistic is an MAE gain over a mean predictor rather than a correlation.
 
-This is the closest the study comes to a validated before-running signal. Taxonomic novelty does nothing
-($r\approx+0.06$, not significant). Visual distinctiveness does: the more distinctive a species looks, the
-\emph{less} the model hallucinates it ($r\approx-0.33$). That survives an animal-size control, strengthening to
-a partial $-0.37$, and size on its own is not significant. Unlike every earlier effect, this one is not size in
-disguise.
+This is the closest the study comes to a validated before-running signal. Taxonomic novelty shows no
+relationship ($r\approx+0.06$, not significant). Visual distinctiveness does: the more distinctive a species
+looks, the \emph{less} the model hallucinates it ($r\approx-0.33$). The relationship remains under an
+animal-size control, strengthening to a partial $-0.37$, and size on its own is not significant. Unlike every
+earlier effect, this one is not attributable to animal size.
 
 It remains a correlate rather than a predictor. Predicting a held-out species' hallucination rate from visual
-distance beats a mean baseline by only $+0.008$ MAE, and just misses out-of-sample significance at $p=0.053$.
-Even the study's best signal does not clear the bar. Its direction is the opposite of the hypothesis too:
-distinctive means safer, rather than novel meaning worse.
+distance improves on a mean predictor by only $+0.008$ MAE and does not reach out-of-sample significance
+($p=0.053$). Even the strongest signal in the study fails the criterion. Its direction is also the opposite of
+the hypothesis: greater distinctiveness is associated with fewer false positives, rather than greater novelty
+with worse performance.
 
 \IfFileExists{tables/false_positives.tex}{\input{tables/false_positives}}{}
 
@@ -209,60 +213,61 @@ choices. This section asks whether either could be responsible for it. The first
 factors enter the model. The second holds the factors fixed and varies how they are computed.
 
 \subsection{Factor ablation}
-Table~\ref{tab:ablation} refits detection with one change to the design per row. The pseudo-$R^2$ column is
-McFadden's, a measure of in-sample fit. The last two columns give the out-of-sample MAE gain over a mean
-baseline under the two hold-out schemes, leave-species-out and leave-location-out, each with its $p$-value.
+Table~\ref{tab:ablation} (Appendix~\ref{app:supplementary}) refits detection with one change to the design
+per row. The pseudo-$R^2$ column is McFadden's, a measure of in-sample fit. The last two columns give the
+out-of-sample MAE gain over a mean predictor under the two hold-out schemes, leave-species-out and leave-location-out, each with its $p$-value.
 
-Dropping any distance in turn barely moves either quantity, so no single distance is carrying signal that the
-others obscure. Dropping temporal gap changes nothing at all, which is expected: it has no variance and the
+Removing any single distance changes either quantity only marginally, so no single distance carries signal
+that the others obscure. Dropping temporal gap changes nothing at all, which is expected: it has no variance and the
 model already discards it (Section~\ref{sec:meth-temporal}). Removing the support covariate leaves the model
 slightly worse than the baseline ($-0.002$ and $-0.003$), so the null is not that control suppressing a real
 effect.
 
-One row does move. Adding the animal-size covariate more than doubles the fit, from $0.055$ to $0.119$, and
-lifts the out-of-sample gain to significance on both schemes ($+0.018$ at $p=0.02$, $+0.020$ at $p=0.00$).
-That is the conclusion the variance partition reached from the other direction
-(Table~\ref{tab:variance}): size is the only real correlate.
+One row does change substantially. Adding the animal-size covariate more than doubles the fit, from $0.055$
+to $0.119$, and lifts the out-of-sample gain to significance on both schemes, at $+0.018$ ($p=0.02$) and
+$+0.020$ ($p=0.00$) for the full model with the distances included. This is consistent with the variance
+partition (Table~\ref{tab:variance}), in which the distances together explain almost nothing.
 
 \subsection{Design robustness}
-Table~\ref{tab:robustness} keeps the factor set fixed and swaps a single design choice per row. Each entry is
-the out-of-sample gain with its confidence interval and $p$-value, under both hold-out schemes, judged after a
+Table~\ref{tab:robustness} (Appendix~\ref{app:supplementary}) keeps the factor set fixed and swaps a single
+design choice per row. Each entry is the out-of-sample gain with its confidence interval and $p$-value, under both hold-out schemes, judged after a
 Bonferroni correction over the five variants.
 
-Three swaps test the distances themselves: changing the encoder from DINOv2 to CLIP, taking a whole-frame
-embedding that keeps the background instead of a mask crop, and replacing the nearest-prototype distance with a
+Three swaps test the distances themselves. They change the encoder from DINOv2 to CLIP, take a whole-frame
+embedding that keeps the background instead of a mask crop, and replace the nearest-prototype distance with a
 distributional Fr\'echet or MMD distance. All leave the gain indistinguishable from the baseline. Every
 $\Delta\mathrm{MAE}$ is at most $0.007$, every $p$-value at least $0.10$, and every interval spans zero.
 
-The generic ``animal'' prompt is included for completeness, and behaves differently. Prompting
+The generic ``animal'' prompt is included for completeness, and produces a different outcome. Prompting
 non-specifically collapses per-species detection to a near-constant, mostly-zero target: mean
 \texttt{pDetA}$\approx0.14$, with $73\%$ of cells exactly zero. Fitting a target that degenerate, the model
-does not merely fail to beat the mean but falls far below it ($\Delta\mathrm{MAE}\approx-0.35$).
+does not merely fail to improve on the mean predictor but falls far below it ($\Delta\mathrm{MAE}\approx-0.35$).
 
 Across every variant the label-free distances fail identically. The null is a property of the transfer
 problem, not of one modelling choice.
 
 \section{SAM\,3 familiarity proxy}
 \label{sec:familiarity}
-Every distance so far has measured novelty against the SA-FARI reference. That invites an objection: SA-FARI is
-not what SAM\,3 was trained on, and its real pretraining set is undisclosed. Perhaps the distances fail only
-because they measure novelty from the wrong anchor.
+Every distance so far has measured novelty against the SA-FARI reference. One objection follows: SA-FARI is
+not SAM\,3's training set, and the actual pretraining data is undisclosed, so the distances may fail only
+because novelty is measured from the wrong anchor.
 
 The familiarity proxy (Section~\ref{sec:meth-familiarity}) tests that objection by reading familiarity from
 SAM\,3 itself, from how separable each species is in its own vision-encoder feature space.
-Table~\ref{tab:familiarity} reports the three separability metrics over the $346$ positive cells. The first two
+Table~\ref{tab:familiarity} (Appendix~\ref{app:supplementary}) reports the three separability metrics over
+the $346$ positive cells. The first two
 columns give each metric's out-of-sample gain and $p$-value, on SA-FARI and on BURST. The next two give its
 correlation with the DINOv2 visual distance and with animal size, which together show what the metric is really
 measuring. The last column is the verdict against a Bonferroni threshold of $\alpha=0.017$ for three metrics.
 
-The answer is another null. None of the three clears the bar on the leave-species-out novelty test. The
-strongest, silhouette, reaches only $p=0.034$ for a gain of $+0.012$, and nearest-prototype and Mahalanobis do
-not come close, at $p=0.068$ and $0.085$. The null replicates on BURST, where the same three give $p=0.020$,
+The result is a further null. None of the three satisfies the criterion on the leave-species-out novelty
+test. The strongest, silhouette, reaches only $p=0.034$ for a gain of $+0.012$, and nearest-prototype and
+Mahalanobis are further from the threshold, at $p=0.068$ and $0.085$. The null replicates on BURST, where the same three give $p=0.020$,
 $0.136$ and $0.148$.
 
 The $r_\text{vis}$ column explains why. All three correlate with the DINOv2 visual distance they re-encode, at
-$0.63$ to $0.85$. They largely restate a feature already shown to be null, and in a head-to-head none adds
-out-of-sample gain over the visual distance plus size. One row is a genuine curiosity: silhouette, unlike the
+$0.63$ to $0.85$. They largely restate a feature already shown to be null, and in direct comparison none adds
+out-of-sample gain over the visual distance plus size. One row differs: silhouette, unlike the
 visual distance, is \emph{not} a size artefact ($r_\text{size}=-0.16$). It isolates the size-independent half of
 visual distinctness, and still fails to predict transfer.
 
@@ -271,11 +276,11 @@ familiarity value is constant within a species, with zero within-species varianc
 held-out locations' species also appear in training, so a species-constant feature is never tested on an unseen
 species at all.
 
-Nor is the null a power failure. On these same $346$ cells the animal-size control does validate out of sample
-(Table~\ref{tab:ablation}), so a test that stays flat here is finding nothing rather than lacking the
-sensitivity to find it. Reading familiarity from SAM\,3's own representations therefore does not rescue
-before-running prediction. It recovers the same size-entangled visual distinctness that was already null, and
-it closes the ``but you do not know SAM\,3's true training set'' objection to that null.
+Nor is the null a power failure. On these same $346$ cells the animal-size control does validate out of
+sample (Table~\ref{tab:ablation}), so a test returning no gain here reflects an absence of signal rather than
+insufficient sensitivity. Reading familiarity from SAM\,3's own representations therefore does not recover
+before-running prediction. It restates the same size-entangled visual distinctness that was already null, and
+it closes the objection that SAM\,3's true training set is unknown.
 
 \section{Independent replication on a second dataset}
 \label{sec:burst}
@@ -284,29 +289,30 @@ rather than independent (Section~\ref{sec:meth-replication}). BURST~\cite{burst}
 $132$ cells across $41$ species, mask-native, in a quite different regime of internet, driving and film video
 rather than camera traps.
 
-Two preconditions hold there. Zero-shot SAM\,3 is non-degenerate, at pHOTA $0.635$
-(Table~\ref{tab:gate1_burst}), so there is real variance to model. And the association target is genuine rather
-than near-degenerate as it is on SA-FARI: \texttt{pDetA} and \texttt{pAssA} correlate at $0.76$, and of the
-$71$ multi-object cells not one has them exactly equal. Both components are therefore testable.
+Two preconditions hold there. Zero-shot SAM\,3 is non-degenerate, at \texttt{pHOTA} $0.635$
+(Table~\ref{tab:gate1_burst}, Appendix~\ref{app:supplementary}), so there is real variance to model. And the
+association target is genuine rather than near-degenerate as it is on SA-FARI: \texttt{pDetA} and
+\texttt{pAssA} correlate at $0.76$, and none of the $71$ multi-object cells has them exactly equal. Both components are therefore testable.
 
-Table~\ref{tab:replication_burst} reports the outcome under leave-species-out cross-validation. Each row is one
+Table~\ref{tab:replication_burst} (Appendix~\ref{app:supplementary}) reports the outcome under
+leave-species-out cross-validation. Each row is one
 predictor, with its out-of-sample MAE gain, confidence interval and $p$-value. The last row is the animal-size
 control rather than a distance.
 
-The distances fail again. Combined, they improve out-of-sample error by only $+0.002$ ($p=0.374$), and
+The distances are again null. Combined, they improve out-of-sample error by only $+0.002$ ($p=0.374$), and
 individually visual ($+0.003$), taxonomic ($-0.006$) and environment ($-0.001$) are all null. So are the
 association specifications. The result survives dropping the $19$ single-cell species, and survives a size
 control.
 
-The one near-signal is the familiar artefact. Visual distance correlates with detection at $+0.17$ per cell,
-and at $+0.37$ between species --- the same aggregation inflation seen for night/IR in
+The only near-signal is the same artefact identified above. Visual distance correlates with detection at
+$+0.17$ per cell, and at $+0.37$ between species, the same aggregation inflation seen for night/IR in
 Section~\ref{sec:variance-difficulty}. Both are \emph{positive}, meaning more-novel animals are detected
-better, which is the opposite of the novelty hypothesis. And the correlation dissolves under a size control
+better, which is the opposite of the novelty hypothesis. The correlation is also not robust to a size control
 (partial $+0.08$, $p=0.35$).
 
 This is a second convergent null rather than positive proof. No before-running quantity reaches significance
-here, not even the animal-size control that does validate on SA-FARI. Without a control that fires, the test
-cannot certify that it would have caught a small species-level effect. What BURST establishes is that no
+here, not even the animal-size control that does validate on SA-FARI. Without a positive control that
+reaches significance, the test cannot establish that it would have detected a small species-level effect. What BURST establishes is that no
 moderate-or-large before-running distance signal exists in an independent mask-native regime with a genuine
 association target. A small species-constant effect cannot be excluded.
 
@@ -314,20 +320,22 @@ association target. A small species-constant effect cannot be excluded.
 \label{sec:cross_dataset}
 Table~\ref{tab:cross_dataset} collects every feature tested, its result on each dataset, and the verdict. The
 two dataset columns are not in the same metric, and each header says which it is. BURST entries are
-out-of-sample $\Delta$MAE with a $p$-value. SA-FARI entries are standardised GLM coefficients with confidence
-intervals, except the two rows marked $\dagger$, which are $\Delta$MAE like BURST. A feature predicts transfer
-only if it is positive \emph{and} significant.
+out-of-sample $\Delta$MAE with a $p$-value. SA-FARI entries are standardised GLM coefficients with
+confidence intervals, except the rows marked $\dagger$, which are $\Delta$MAE like BURST; the temporal and
+hallucination rows report the quantities stated in place. A feature predicts transfer only if it is positive
+\emph{and} significant.
 
 The pattern is consistent. No before-running label-free distance, alone or combined, predicts detection or
 association transfer out of sample on either dataset, and every gain over a mean predictor sits within
 bootstrap noise of zero.
 
-The only near-signal is visual distance, and it points the wrong way: more-novel animals are detected better,
-not worse. It dissolves under an animal-size control wherever it is examined.
+The only near-signal is visual distance, and its direction is the reverse of that predicted: more-novel
+animals are detected better, not worse. It does not remain significant under an animal-size control wherever
+it is examined.
 
 One row does clear the bar, and it is the confound rather than a hypothesis variable. Animal size validates out
-of sample on SA-FARI, modestly. That row doubles as the positive control: the same test that stays flat for
-every distance does detect size, so the null is an absence of signal rather than an absence of power.
+of sample on SA-FARI, modestly. That row doubles as the positive control: the same test that returns no gain
+for every distance does detect size, so the null is an absence of signal rather than an absence of power.
 
 The contribution is that null, with its bounds stated. It is consistent across a camera-trap dataset and an
 internet-video one, and powered on SA-FARI to exclude a moderate effect, though not a small one.
@@ -335,28 +343,28 @@ internet-video one, and powered on SA-FARI to exclude a moderate effect, though 
 
 \section{Cross-model replication}
 \label{sec:model_swap}
-Both datasets above vary the data while holding the tracker fixed, which leaves one threat open: the null could
-be a quirk of SAM\,3 rather than a property of the prediction problem. The controlled swap of
+Both datasets above vary the data while holding the tracker fixed, which leaves one threat open: the null
+could be an idiosyncrasy of SAM\,3 rather than a property of the prediction problem. The controlled swap of
 Section~\ref{sec:meth-swap} closes it by changing only the tracker, using two challengers of deliberately
-different architecture, GLEE and Florence-2 paired with SAM\,2.
+different architecture: GLEE, and Florence-2 paired with SAM\,2 (hereafter Florence-2).
 
-\paragraph{Why the swap runs on BURST.} On SA-FARI both challengers score $\text{pDetA}\approx 0$, leaving no
+\paragraph{Why the swap runs on BURST.} On SA-FARI both challengers score \texttt{pDetA} $\approx 0$, leaving no
 variance for a regression to explain. That is a genuine detection failure rather than an artefact of the
 evaluator. The zeros survive box-HOTA, which scores the box models on boxes (GLEE $0.033$), and they survive a
 threshold-free average-precision metric with no confidence gate at all (GLEE $0.000$, Florence-2
 $0.017$--$0.022$). Florence-2 emits no confidence score in the first place, so no gate can be blamed, and it
 still scores near zero.
 
-The cause is the domain rather than the species. Run GLEE on SA-FARI's everyday animals --- jaguar, cow, fox
---- and it localises them well, at oracle IoU up to $0.90$. Its confidence still collapses below any usable
-operating point on the dark, cluttered camera-trap footage. SA-FARI is also SAM\,3's own co-released benchmark.
-Neither condition holds on BURST, where SAM\,3 in fact scores higher ($\text{pDetA}\,0.607$) than on SA-FARI
-($0.537$), so there is no home-turf advantage to correct for.
+The cause is the domain rather than the species. When GLEE is run on SA-FARI's common species --- jaguar,
+cow, fox --- it localises them well, at oracle IoU up to $0.90$. Its confidence nevertheless falls below any
+usable operating point on the dark, cluttered camera-trap footage. SA-FARI is also SAM\,3's own co-released
+benchmark. Neither condition holds on BURST, where SAM\,3 in fact scores higher (\texttt{pDetA} $0.607$) than
+on SA-FARI ($0.527$), so there is no benchmark-familiarity advantage to correct for.
 
 \paragraph{Both challengers track.} Table~\ref{tab:model_swap} gives each tracker's mean detection score over
 BURST's $132$ cells. GLEE reaches $0.340$ and Florence-2\,+\,SAM\,2 reaches $0.394$, against SAM\,3's $0.607$.
-Both sit well clear of zero, and more importantly both show real per-cell spread: medians of $0.31$ and $0.33$,
-with $67$ and $72$ of the $132$ cells above $0.3$. That is the variance the measurement gate requires.
+Both are substantially above zero, and both exhibit substantive per-cell spread: medians of $0.31$ and
+$0.33$, with $67$ and $72$ of the $132$ cells above $0.3$. That is the variance the measurement gate requires.
 \IfFileExists{tables/model_swap.tex}{\input{tables/model_swap}}{}
 
 \paragraph{The null replicates.} Table~\ref{tab:model_swap_cv} applies the same leave-species-out,
@@ -364,19 +372,19 @@ size-controlled procedure to each challenger. The combined four-distance model p
 GLEE ($95\%$ CI $[-0.004,+0.027]$, $p=0.088$) and $+0.034$ for Florence-2 ($[-0.001,+0.068]$, $p=0.030$). Both
 intervals span zero, and neither clears the Bonferroni bar of $\alpha=0.0125$.
 
-Individual distances flicker, as they did on SA-FARI --- environment reaches $p=0.006$ for Florence-2 --- but
-the same discounts apply. BURST has no locations, so leave-species-out is the only valid partition, and an
-apparent pass on two schemes is one partition counted twice. The flickers route through the animal-size
-confound that the driver controls for. And the combined model, which is what a deployment gate would actually
-use, is null for both.
+Individual distances reach nominal significance intermittently, as on SA-FARI (environment reaches $p=0.006$
+for Florence-2), but the same discounts apply. BURST has no locations, so leave-species-out is the only valid
+partition, and an apparent pass on two schemes is one partition counted twice. These intermittent effects are
+attributable to the animal-size confound, for which the combined specification controls. The combined model,
+which is what a deployment gate would actually use, is null for both.
 
 Two architecturally distinct trackers therefore both track BURST's animals and both show the before-running
-distance null. \textbf{The null is task-general across trackers, not a SAM-3 artefact.}
+distance null. \textbf{The null is task-general across trackers, not a SAM\,3 artefact.}
 
 \paragraph{Convergent, but bounded.} This is a controlled swap rather than an independent replication: it
 reuses BURST's cells, ground truth, distances and GLM, changing only the tracker. Its scope is two models on
 one dataset of $132$ cells, underpowered for a small species-level effect exactly as the SAM\,3 run there was,
-and Florence-2's interval sits closer to excluding zero than GLEE's. We therefore read it as a convergent,
+and Florence-2's interval is closer to excluding zero than GLEE's. We therefore interpret it as a convergent,
 confound-free cross-model replication that removes the single-backbone threat, not as an independently powered
 certification. Combined with the two datasets, the null now holds across both axes that could have confounded
 it: the dataset and the model.

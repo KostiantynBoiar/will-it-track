@@ -74,7 +74,7 @@ Master of Science at The University of Glasgow
 \chapter*{Education Use Consent}
 I hereby give my permission for this project to be shown to other
 University of Glasgow students and to be distributed in an electronic
-format.  \textbf{Please note that you are under no obligation to sign
+format. \textbf{Please note that you are under no obligation to sign
 this declaration, but doing so would help future students.}
 
 \begin{tabular}{@{}llll}
@@ -91,35 +91,50 @@ I declare that this dissertation is my own work, except where explicitly stated 
 that it has not been submitted for any other degree at the University of Glasgow or any other
 institution.
 
+\section*{Declaration of AI Use}
+Generative AI tools (Anthropic's Claude, used through the Claude Code assistant) were employed in the
+preparation of this dissertation, in line with the University of Glasgow's guidance on the use of AI. Their
+use comprised: assistance in drafting, editing and restructuring the dissertation's prose from the author's
+results, notes and instructions; assistance in writing and testing the analysis and evaluation code, all of
+which was reviewed by the author and is covered by automated tests; literature-search support, including
+verification of bibliographic details against publisher records; and \LaTeX{} formatting, figure and table
+layout, and proofreading.
+
+The research questions, hypotheses, experimental design decisions, interpretation of results, and
+conclusions are the author's own. AI has been used in line with University of Glasgow policy: it has not
+been used in the critical evaluation of sources, nor as a substitute for the author's understanding or
+analysis, and the arguments and conclusions presented here were formed by the author.
+
 % -------------------------------------------------------------- abstract
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-Conservation teams increasingly monitor wildlife with camera traps, which record far more footage than
-anyone can watch. Locating each animal in a video and following it from frame to frame is the bottleneck,
-and a new generation of promptable trackers promises to remove it: name an animal in ordinary words and the
-model finds and follows every one that appears, without ever having been trained on that species. SAM\,3 is
-the current example. The difficulty is that this ability is uneven in ways nobody can anticipate --- strong
-on one animal or location, poor on the next --- so a team pointing such a model at a new species has no way
-of judging beforehand whether to trust its output or fall back on manual annotation.
+Conservation teams increasingly monitor wildlife with camera traps, which record more footage than can be
+reviewed manually. Locating each animal in a video and following it from frame to frame is the bottleneck,
+and a new generation of promptable trackers is intended to remove it. Given a natural-language name for an
+animal, the model finds and follows every instance that appears, without ever having been trained on that
+species. SAM\,3 is the current example. The difficulty is that this ability varies in ways that cannot
+currently be anticipated: high on one animal or location, low on the next. A team pointing such a model at a
+new species therefore has no way of judging beforehand whether to trust its output or fall back on manual
+annotation.
 
 This dissertation asks whether that judgement can be made in advance. It tests a natural intuition: that a
-model should struggle most on the animals and places least like those it has seen before. Were that true,
-one could measure how unfamiliar a species or a setting is --- cheaply, without labelling anything and
-without running the model at all --- and use the measurement to forecast reliability. Four such measures of
-unfamiliarity are tested, and the question is put separately to two distinct abilities: finding the animal
-at all, and keeping the identities straight once it has been found.
+model should perform worst on the animals and places least like those it has seen before. Were that true,
+one could measure how unfamiliar a species or a setting is, at low cost, without annotating the target data
+and without running the model at all, and use the measurement to forecast reliability. Four such measures of
+unfamiliarity are tested, and the question is put separately to two distinct abilities: finding the animal,
+and maintaining consistent identities once it has been found.
 
-The answer is that it does not work. On a large camera-trap benchmark of wild animals, no measure of
-unfamiliarity predicts performance on species or places the model has not seen. The only property that
-predicts anything is how large the animal appears in frame --- a nuisance rather than a discovery --- and a
-second attempt based on how difficult the footage looks, such as darkness and visual clutter, collapses into
-that same size effect. The finding is not an accident of one dataset or one model: it survives on a second,
-independent dataset and on two further trackers of quite different design. Nor is it a failure of method,
-since the same test reliably detects the size effect whenever it is present.
+The answer is negative. On a large camera-trap benchmark of wild animals, no measure of unfamiliarity
+predicts performance on species or places the model has not seen. The only property with predictive value is
+how large the animal appears in frame, a nuisance covariate rather than a discovery. A second attempt based
+on how difficult the footage looks, such as darkness and visual clutter, reduces to that same size effect.
+The finding is not specific to one dataset or one model: it replicates on a second, independent dataset and
+on two further trackers of quite different design. Nor is it a failure of method, since the same test
+reliably detects the size effect whenever it is present.
 
-The contribution is therefore a carefully bounded negative result, the first for this class of model, and
-with it a practical caution: resemblance to familiar training data is no guarantee that such a tracker will
-work, and reliability has to be checked rather than assumed.
+The contribution is therefore a carefully bounded negative result, the first for this class of model. With
+it comes a practical caution: resemblance to familiar training data is no guarantee that such a tracker will
+perform adequately, and reliability has to be checked rather than assumed.
 
 % -------------------------------------------------------------- acknowledgements
 \chapter*{Acknowledgements}
@@ -136,15 +151,15 @@ I thank my supervisor, Dr Marwa Mahmoud, for guidance throughout this project.
 \addcontentsline{toc}{chapter}{List of Abbreviations}
 \begin{tabular}{@{}p{2.7cm}p{12.2cm}@{}}
 \texttt{pHOTA}   & Promptable Higher Order Tracking Accuracy --- the benchmark's tracking score \\
-\texttt{pDetA}   & Its \emph{detection} half: were the right animals found? (our primary target) \\
-\texttt{pAssA}   & Its \emph{association} half: was each identity kept over time? \\
+\texttt{pDetA}   & Its \emph{detection} half: whether the correct animals were located (our primary target) \\
+\texttt{pAssA}   & Its \emph{association} half: whether each identity was maintained over time \\
 HOTA             & Higher Order Tracking Accuracy, the metric \texttt{pHOTA} derives from \\
 IoU              & Intersection over Union, the mask/box overlap measure \\
 \addlinespace
 GLM              & Generalised Linear Model (here a support-weighted logit-link regression) \\
 CI               & Confidence Interval (throughout, a $95\%$ group-cluster-bootstrap interval) \\
 MAE              & Mean Absolute Error \\
-$\Delta$MAE      & Out-of-sample MAE gain over a mean predictor; positive $=$ better than guessing the mean \\
+$\Delta$MAE      & Out-of-sample MAE gain over a mean predictor; positive $=$ lower error than the mean predictor \\
 LSO / LLO        & Leave-Species-Out / Leave-Location-Out cross-validation \\
 VIF              & Variance Inflation Factor, a collinearity diagnostic \\
 LMG              & Lindeman--Merenda--Gold, the dominance-analysis variance split \\
@@ -152,9 +167,7 @@ MMD              & Maximum Mean Discrepancy, a distributional distance \\
 \addlinespace
 OOD              & Out-Of-Distribution \\
 ATC              & Average Thresholded Confidence, an after-running accuracy estimator \\
-GT               & Ground Truth \\
 IR               & Infrared (night-time camera-trap imagery) \\
-RLE              & Run-Length Encoding, the COCO mask format \\
 LVIS             & Large Vocabulary Instance Segmentation, the class vocabulary BURST uses \\
 \end{tabular}
 

@@ -2,10 +2,10 @@
 \label{ch:background}
 
 This chapter reviews the work this dissertation builds on. It covers the class of model under study, the
-difficulties that make animal detection and tracking hard in the first place, how tracking is scored, the
-literature on estimating a model's performance without labels, what is known about distribution shift in
-camera-trap vision, the representations that make a distance between species meaningful, and the datasets
-involved. It closes by stating the gap that remains.
+difficulties that make animal detection and tracking hard in the first place, and how tracking is scored. It
+then turns to the literature on estimating a model's performance without labels, what is known about
+distribution shift in camera-trap vision, the representations that make a distance between species
+meaningful, and the datasets involved. It closes by stating the gap that remains.
 
 \section{Promptable and open-vocabulary segmentation and tracking}
 \label{sec:bg-promptable}
@@ -32,18 +32,18 @@ the main alternative designs in the same space.
 
 \section{What makes animals hard to detect and track}
 \label{sec:bg-challenges}
-Wild footage is an unusually hostile input, and the difficulties are worth setting out because they are what
-any tracker deployed on it must survive.
+Wild footage is unusually difficult input, and the difficulties are set out here because they are the
+conditions any deployed tracker must handle.
 
-The first is that animals are often hard to see at all. Many are camouflaged against the habitat they live
+The first is that animals are frequently difficult to see. Many are camouflaged against the habitat they live
 in, and the resulting low contrast between object and background defeats methods that assume a visually
 salient foreground. This is a recognised problem in its own right: camouflaged object detection is studied as
 a separate task with dedicated benchmarks, precisely because standard detectors underperform on
 it~\cite{cod}.
 
-The second is variability of appearance. A camera trap is triggered by whatever passes, so an animal may fill
-the frame in one clip and occupy a few dozen pixels in the next. It may face the lens or present only a
-flank, and vegetation frequently occludes part of it. A bounding box is a poor description of an animal in
+The second is variability of appearance. A camera trap is triggered by any passing animal, so an animal may
+occupy most of the frame in one clip and a few dozen pixels in the next, may be viewed frontally or only in
+profile, and is frequently partially occluded by vegetation. A bounding box is a poor description of an animal in
 such conditions, which is one reason segmentation --- labelling the pixels belonging to the animal --- is the
 more informative output.
 
@@ -62,7 +62,7 @@ distinct problem from finding it. Animals leave the frame and re-enter it, pass 
 groups may be near-indistinguishable from one another. Identity errors are treated as a first-class failure
 mode in multi-object tracking benchmarks, which annotate visibility explicitly and report identity switches
 separately from misses~\cite{motchallenge}. Recovering the identity of a specific individual across sightings
-is hard enough in wildlife imagery to constitute its own research area~\cite{animalreid}.
+is sufficiently difficult in wildlife imagery to constitute a research area in its own right~\cite{animalreid}.
 
 \section{Evaluating multi-object tracking}
 \label{sec:bg-hota}
@@ -71,8 +71,8 @@ two very different failures --- missing the object, and swapping its identity --
 accuracy figure, and earlier metrics combined them in ways that were hard to interpret.
 
 Higher Order Tracking Accuracy (HOTA)~\cite{hota} was introduced to separate them. At each localisation
-threshold $\alpha$ it forms a detection term (\texttt{DetA}: were the right objects found?) and an
-association term (\texttt{AssA}: were identities kept consistent over time?), then combines them as a
+threshold $\alpha$ it forms a detection term (\texttt{DetA}: whether the correct objects were found) and an
+association term (\texttt{AssA}: whether identities were kept consistent over time), then combines them as a
 geometric mean:
 \begin{equation}
   \mathrm{HOTA}_\alpha=\sqrt{\mathrm{DetA}_\alpha\cdot\mathrm{AssA}_\alpha},
@@ -95,8 +95,8 @@ labelling the target data.
 in-distribution accuracy, across many models and many shifts. \citet{agl} show that the agreement between a
 pair of models tracks OOD accuracy closely enough to estimate it from unlabelled data alone. A parallel
 strand reads the model's own statistics on the unlabelled target. Average thresholded confidence~\cite{atc}
-calibrates a confidence threshold on source data and reads off target accuracy as the mass above it, while
-\citet{autoeval} regress classifier accuracy directly on a distribution-shift feature --- the Fr\'echet
+calibrates a confidence threshold on source data and reads off target accuracy as the mass above it.
+\citet{autoeval} instead regress classifier accuracy directly on a distribution-shift feature, the Fr\'echet
 distance between train and test feature sets.
 
 The idea has only recently reached structured outputs. \citet{pcr} estimate object-detection performance
@@ -107,7 +107,7 @@ against a labelled reference.
 Two properties characterise essentially all of this work. First, the target is an image classifier scored by
 a single scalar, or at most a detector or segmenter operating on a static image. None of it concerns identity
 maintained over time, and none decomposes the estimate into separate components. Second, every one of these
-methods runs the model on the target and inspects what comes out --- its predictions, its confidences, or its
+methods runs the model on the target and inspects what comes out: its predictions, its confidences, or its
 agreement with another model. Each estimates the score of a model that has already been executed.
 
 \section{Distribution shift in camera-trap and wildlife vision}
@@ -121,14 +121,14 @@ The claim that scene context, rather than the object, drives such failures has a
 vision. \citet{xiao} isolate foreground from background on ImageNet, in the ImageNet-9 ``Background
 Challenge'', and show that a classifier scores well above chance from the background \emph{alone}. An
 adversarially chosen background flips a correctly classified foreground up to $87.5\%$ of the time.
-Background is genuine signal, not noise. \citet{elephant} make the parallel point for detectors:
-transplanting an object into an unfamiliar scene suppresses its detection, flips its predicted identity as it
-moves, and disturbs other detections in the image, exposing a reliance on context and co-occurrence.
+Background therefore constitutes signal rather than noise. \citet{elephant} make the parallel point for detectors. Transplanting an object into an unfamiliar scene
+suppresses its detection, flips its predicted identity as it moves, and disturbs other detections in the
+image, exposing a reliance on context and co-occurrence.
 
 \citet{xiao} also report that more accurate and more robust models rely on background \emph{less}, which
-suggests the effect is not fixed but a property of how strong the model is.
+suggests the effect is not fixed but a property of the model's overall accuracy and robustness.
 
-What this literature shares is its direction of travel. It measures degradation after the fact, or intervenes
+The literature shares a common orientation. It measures degradation after the fact, or intervenes
 on the input to mitigate it. It does not forecast per-site or per-species reliability in advance. It also
 studies classifiers and behaviour recognisers rather than promptable trackers, scored by a single accuracy
 with no detection/association split.
@@ -138,7 +138,7 @@ with no detection/association split.
 Measuring how far one species sits from another, or one scene from another, requires a representation in
 which such a distance means something.
 
-Vision foundation models turn out to carry that structure. BioCLIP~\cite{bioclip} shows that a model trained
+Vision foundation models encode that structure. BioCLIP~\cite{bioclip} shows that a model trained
 on a large biological image corpus encodes taxonomic structure across the tree of life, its feature space
 reflecting the hierarchy that runs from kingdom down to species. Appearance and phylogeny are correlated, so
 a representation that separates species visually will tend also to order them taxonomically.
@@ -182,9 +182,9 @@ SA-FARI, which makes it a useful independent point of comparison.
 \label{sec:bg-gap}
 Predictable OOD generalisation is established for classifiers scored by a scalar~\cite{aotl,agl,atc,autoeval}
 and, very recently, for static detectors and segmenters~\cite{pcr,rca}. Camera-trap vision has thoroughly
-documented, but not forecast, location-driven degradation~\cite{terra,wilds,panaf}. Most tellingly, a recent
-unified study of camera-trap recognition over time~\cite{jeon} explicitly names ``predicting when zero-shot
-models will succeed at a new site'' as an open question, and stops at naming it.
+documented, but not forecast, location-driven degradation~\cite{terra,wilds,panaf}. A recent unified study
+of camera-trap recognition over time~\cite{jeon} explicitly identifies ``predicting when zero-shot models
+will succeed at a new site'' as an open question, but does not address it.
 
 No prior work predicts, \emph{before running the model} and from label-free distances, the zero-shot transfer
 of a promptable video tracker. None separates that prediction into detection and association. That is the gap

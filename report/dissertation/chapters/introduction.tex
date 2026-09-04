@@ -1,71 +1,70 @@
 \chapter{Introduction}
 \label{ch:introduction}
 
-Wildlife video is recorded far faster than anyone can annotate it, and a new class of promptable tracker
-promises to close that gap by finding and following animals it was never trained on --- but whether such a
-model can be trusted on a particular animal in a particular place is not something anyone can currently say in
-advance. This chapter sets out that problem, turns it into a research question and testable hypotheses, states
-the contributions, and maps the dissertation.
+Wildlife video is recorded far faster than it can be annotated, and a new class of promptable tracker is
+intended to close that gap by finding and following animals it was never trained on. Whether such a model
+can be trusted on a particular animal in a particular place cannot currently be determined in advance. This
+chapter sets out that problem, turns it into a research question and testable hypotheses, states the
+contributions, and outlines the structure of the dissertation.
 
 \section{Motivation}
 \label{sec:motivation}
 Finding an animal in a video and following it over time is a need shared by several fields. Ecologists use it
 to survey wild populations from camera-trap footage. Neuroscientists and behavioural biologists use it to
 quantify what an animal does frame by frame in the laboratory, where the tracked trajectory is often the
-measurement the science rests on, and where a whole tool-chain now exists to recover pose and turn it into
+primary measurement. An established tool-chain now exists there to recover pose and turn it into
 behavioural labels~\cite{deeplabcut,sleap,poser}. The bottleneck is the same in both cases: video is cheap to
 record and expensive to annotate.
 
-This dissertation works on the wild side of that divide, where the problem is hardest. Camera traps have
-become a standard tool in wildlife monitoring, and a single survey leaves a team with far more footage than
-anyone can watch. Somebody still has to work out which animal is in each clip, how many there are, and what
-they do; done by hand, that is the step that limits how much ecology gets done at all.
+This dissertation addresses the field setting, where the problem is hardest. Camera traps have become a
+standard tool in wildlife monitoring, and a single survey leaves a team with far more footage than it can
+review. The species in each clip, the number of individuals, and their behaviour must still be determined;
+performed manually, this is the step that limits the volume of ecological analysis that can be undertaken.
 
 Automating it means solving two problems, not one. The first is \emph{finding} the animal in a frame; the
 second is \emph{following} it, so the same individual keeps the same identity for as long as it is
 visible. Only the second yields the counts and behavioural sequences both communities want: in a
-study of social behaviour, losing an identity means losing the very animal whose behaviour was being
-measured; it is also the harder of the two.
+study of social behaviour, losing an identity means losing the animal whose behaviour was being
+measured. It is also the harder of the two.
 
 Neither is easy on real footage. Animals are camouflaged against the background they live in, appear at any
-distance and viewpoint, are cut in half by vegetation, and much of the footage is recorded at night in
-infrared. And because a camera trap is fixed, the same scene repeats in every clip from a site, which gives a
-model an easy shortcut: learn the background rather than the animal~\cite{panaf,xiao}.
+distance and viewpoint, are partially occluded by vegetation, and much of the footage is recorded at night in
+infrared. And because a camera trap is fixed, the same scene repeats in every clip from a site, which allows
+a model to rely on the background rather than on the animal~\cite{panaf,xiao}.
 Section~\ref{sec:bg-challenges} sets these difficulties out in full.
 
 For years the standard answer was to train a detector on a fixed list of species and deploy it. It works
 where it was trained and degrades sharply at sites and regions it has not seen~\cite{terra,wilds}. And adding
-a species that was not on the list means collecting and labelling more data --- precisely the cost a team
-opening a new site is trying to avoid.
+a species that was not on the list means collecting and labelling more data, precisely the cost that a team
+opening a new site seeks to avoid.
 
-Promptable models change that arrangement, because the prompt can now be a phrase. Give
-SAM\,3~\cite{sam3} \texttt{"impala"} and it finds, segments and follows every impala in the clip, having never
-been trained on that species. A team can point a tracker at an animal it has never seen and get an answer
-straight away.
+Promptable models change that arrangement, because the prompt can now be a phrase. Prompted with
+\texttt{``impala''}, SAM\,3~\cite{sam3} finds, segments and follows every impala in the clip, having never
+been trained on that species. A team can therefore apply a tracker to an unseen animal and obtain output
+immediately.
 
-That is the appeal. The liability is that zero-shot performance varies sharply from one animal to the next,
-and from one place to the next. No rule tells a practitioner,
-before running the model, whether its output can be trusted for a given animal in a given place. The choice
-left is an unattractive one: trust the output blindly, or fall back on the manual annotation the model was
-meant to replace.
+Against that capability, zero-shot performance varies substantially from one animal to the next, and from
+one place to the next. No rule tells a practitioner, before running the model, whether its output can be
+trusted for a given animal in a given place. The remaining options are unsatisfactory: accept the output
+without verification, or fall back on the manual annotation the model was meant to replace.
 
-This dissertation studies that gap: does such a rule exist --- first for SAM\,3, and then is whatever we
-find specific to it?
+This dissertation studies that gap, asking first whether such a rule exists for SAM\,3, and then whether any
+result obtained is specific to that model.
 
 \section{Problem statement and research question}
 \label{sec:problem}
 The appeal of a zero-shot model is that it skips the labelling step. That is also what makes it hard to trust.
-The normal way to check whether a model works on your data is to label some of it and measure --- but a team
-that could afford that would have less need for a zero-shot model. So these tools get deployed precisely
-where nobody has checked that they work.
+The standard means of checking whether a model works on a given dataset is to label part of it and measure,
+but a team able to afford that would have less need for a zero-shot model. These tools are therefore
+deployed precisely where no such check has been performed.
 
 The problem is a general one. Any foundation model applied to a case nobody validated sits in the same
 position. The capability is broad, the guarantees are absent, and the user has no principled basis for
-deciding how far to trust the output. What would settle it is a rule that can be checked \emph{in advance}:
-some property of the target, cheap to measure, that says whether the model will cope.
+deciding how far to trust the output. What is required is a rule that can be checked \emph{in advance}: some
+property of the target, inexpensive to measure, that indicates whether the model will perform adequately.
 
-There is an obvious candidate, and practitioners already reason with it informally --- distance from the
-familiar. A model ought to do worse on things unlike what it has seen. If that intuition held quantitatively,
+There is one leading candidate, already used informally by practitioners --- distance from the familiar. A
+model should perform worse on inputs unlike those it has seen. If that intuition held quantitatively,
 one could measure how far a new species or place sits from the model's reference and use that number as a
 deployment gate, applied before spending compute and before annotating anything.
 
@@ -75,32 +74,32 @@ scoring its output? And which factors, if any, govern that transfer?
 
 We ask it separately for the two halves of the task, because the two can fail for different reasons: finding
 is about whether the animal is recognisable at all, following about whether the scene lets an identity
-survive. A single accuracy number would average them together and hide the answer, so we keep them apart
-throughout.
+survive. A single accuracy figure would average them together and obscure the result, so the two are
+modelled separately throughout.
 
-Asking the question at all requires a demanding dataset. It needs species labels structured enough to say how
-far apart two species are, plus location metadata, timestamps, and dense per-frame tracking annotation --- all
-in one corpus. SA-FARI~\cite{safari} carries all four, which is why we use it;
+Answering this question requires a demanding dataset. It needs species labels structured enough to say how
+far apart two species are, plus location metadata, timestamps, and dense per-frame tracking annotation, all
+in one corpus. SA-FARI~\cite{safari} carries all four, and is used here for that reason;
 Section~\ref{sec:bg-safari} sets out its contents.
 
-We study SAM\,3 on SA-FARI as the primary case, then ask whether the answer is specific to it: the analysis
-is repeated on a second, independent dataset, and two other promptable trackers are swapped in on the same
-data (Section~\ref{sec:model_swap}).
+We study SAM\,3 on SA-FARI as the primary case, then ask whether the answer is specific to it. The analysis
+is repeated on a second, independent dataset, and two other promptable trackers are swapped in on that
+dataset (Section~\ref{sec:model_swap}).
 
 \section{Hypotheses}
 \label{sec:hypotheses}
 The research question asks two things at once: \emph{whether} transfer can be predicted, and \emph{what
-governs} it. The hypotheses below turn that into something a dataset can answer; each names a factor, commits
-to a direction, and can be rejected by the evidence. Two terms are needed first.
+governs} it. The hypotheses below render that question empirically testable; each names a factor, commits
+to a direction, and is falsifiable against the evidence. Two terms require definition first.
 
 The tracker is scored with a standard tracking metric that splits cleanly into two halves
-(Section~\ref{sec:bg-hota}). \textbf{\texttt{pDetA}}, detection accuracy, scores the finding half: were the
-right animals located? \textbf{\texttt{pAssA}}, association accuracy, scores the following half: did each
-animal keep one consistent identity for as long as it was visible? Both run from $0$ to $1$, and we model them
-separately for the reason given in Section~\ref{sec:problem}.
+(Section~\ref{sec:bg-hota}). \textbf{\texttt{pDetA}}, detection accuracy, scores the finding half: whether
+the correct animals were located. \textbf{\texttt{pAssA}}, association accuracy, scores the following half:
+whether each animal retained one consistent identity for as long as it was visible. Both run from $0$ to
+$1$ and are modelled separately for the reason given in Section~\ref{sec:problem}.
 
 A predictor is \textbf{label-free} if computing it needs no annotation of the target footage and no
-measurement of how the tracker performed on it; only such a predictor can be evaluated \emph{before} the
+measurement of how the tracker performed on it. Only such a predictor can be evaluated \emph{before} the
 model is run, which is what a deployment gate requires. The four tested here are all
 \emph{distances}: how far a target species or place sits from a fixed reference set, measured by taxonomy, by
 appearance, by the surrounding scene, and by time.
@@ -114,36 +113,36 @@ appearance, by the surrounding scene, and by time.
     or infrared capture, visual clutter.
 \end{description}
 
-H1 and H2 divide the research question between the two halves of the task, and each attaches the half to the
-factor most likely to govern it. H1 is the one that matters most in deployment. If it held, a team could look
-up an unfamiliar species and know in advance whether detection is likely to hold up. H2 rests on a different
-intuition. Holding an identity across frames should depend on the scene rather than on which animal it is. If
-so, the difficulties catalogued in Section~\ref{sec:bg-challenges} --- darkness, clutter, an unfamiliar
-background --- ought to bite here rather than on detection.
+H1 and H2 attach each half of the task to the factor most likely to govern it. H1 matters most in
+deployment: if it held, a team could determine in advance, for an unfamiliar species, whether detection
+accuracy is likely to be maintained. H2 rests on a different intuition, that holding an identity across
+frames should depend on the scene rather than on the animal. If so, the difficulties catalogued in
+Section~\ref{sec:bg-challenges} --- darkness, clutter, an unfamiliar background --- should affect
+association rather than detection.
 
-H0 is what remains if both fail --- a substantive answer, not an absence of one: the distance intuition,
-however reasonable it sounds, does not survive contact with the data, and a deployment gate cannot be built
-this way.
+H0 is what remains if both fail, and it is a substantive answer rather than an absence of one. The distance
+intuition, however plausible, is not supported by the data, and a deployment gate cannot be constructed on
+this basis.
 
 \section{Contributions}
-To our knowledge this is the first study to ask whether a promptable video tracker's zero-shot transfer can be
-predicted before the model is run, from properties that require no labelling of the target, and the first to
-put that question to an out-of-sample test. Section~\ref{sec:bg-gap} places that claim against the existing
+To our knowledge this is the first study to ask whether a promptable video tracker's zero-shot transfer can
+be predicted before the model is run, from properties that require no labelling of the target, and the first
+to test that question out of sample. Section~\ref{sec:bg-gap} places that claim against the existing
 literature. The work contributes four things, taken up again in Section~\ref{sec:concl-contributions}.
 
 \begin{enumerate}[label=(\roman*),leftmargin=2.4em]
   \item A testable formulation of the question, and a validation protocol that any future before-running
     estimator can be held to.
-  \item The detection--association split brought to label-free evaluation, so that an answer can be attributed
-    to finding an animal or to following it rather than averaged across both.
+  \item The detection--association split brought to label-free evaluation, so that an answer attaches to
+    finding an animal or to following it rather than averaging across both.
   \item The answer itself, established at scope: label-free distance does not predict transfer, and the
-    finding survives a second dataset and two architecturally different trackers.
-  \item An account of why the obvious candidate fails --- the one apparent effect reduces to how large the
-    animal appears in frame --- and the caution for practice that follows.
+    finding holds on a second dataset and under two architecturally different trackers.
+  \item An account of why the leading candidate predictor fails (the one apparent effect reduces to
+    apparent animal size) and the caution for practice that follows.
 \end{enumerate}
 
 \section{Dissertation outline}
 Chapter~\ref{ch:background} reviews the related work and states the gap; Chapter~\ref{ch:methodology}
-covers the data, measurement, distances, and statistics; Chapter~\ref{ch:results} the results, robustness
-checks, and replications; Chapter~\ref{ch:discussion} the interpretation, limitations, and ethics; and
+covers the data, measurement, distances, and statistics; Chapter~\ref{ch:results} gives the results,
+robustness checks, and replications; Chapter~\ref{ch:discussion} the interpretation and limitations; and
 Chapter~\ref{ch:conclusion} concludes.
