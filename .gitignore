@@ -62,3 +62,13 @@ third_party/
 *.lot
 *.bcf
 *.run.xml
+# --- LaTeX build intermediates (the PDF is kept; the rest regenerates) ---
+report/**/*.aux
+report/**/*.bbl
+report/**/*.blg
+report/**/*.lof
+report/**/*.log
+report/**/*.lot
+report/**/*.out
+report/**/*.toc
+report/**/*.synctex.gz
