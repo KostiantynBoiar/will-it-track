@@ -69,7 +69,7 @@ label-free distances, with confidence intervals that respect the group structure
 (Section~\ref{sec:meth-inference}). A distance is taken to predict transfer only if it satisfies both criteria:
 \begin{enumerate}[label=(\roman*),leftmargin=2.4em]
   \item its coefficient's group-cluster-bootstrap 95\% confidence interval (CI) excludes zero; and
-  \item the grouped cross-validated model beats a mean-predictor baseline by a margin that is significant under
+  \item the grouped cross-validated model improves on a mean-predictor baseline by a margin that is significant under
     a paired group-bootstrap.
 \end{enumerate}
 The bars are not redundant. Criterion~(i) says a relationship is visible in the data the model was fitted on;
