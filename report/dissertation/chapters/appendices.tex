@@ -40,6 +40,20 @@ Fit quality is the McFadden pseudo-$R^2$. The per-cell out-of-sample gain over a
 with $D$ and $D_0$ the model and null (intercept-only) deviances. A positive $\delta_i$ means the distance
 model has lower absolute error than the mean predictor on cell $i$.
 
+\paragraph{Planted-effect power.} For a planted standardised effect of size $\beta$ on a feature $z$, each
+replicate transforms the observed score $y$, clipped to $[\varepsilon, 1-\varepsilon]$ with
+$\varepsilon=10^{-3}$, as
+\begin{equation}
+  y' \;=\; \sigma\big(\operatorname{logit}(y) + \beta z\big),
+  \qquad
+  \operatorname{logit}(y)=\ln\frac{y}{1-y},
+  \quad
+  \sigma(u)=\frac{1}{1+e^{-u}},
+  \label{eq:plant}
+\end{equation}
+and the unchanged out-of-sample procedure of Section~\ref{sec:meth-cv} is asked to detect the plant. Power is
+the detected fraction over replicates (Table~\ref{tab:mde}).
+
 For the species-level false-positive analysis (Section~\ref{sec:meth-fp}), correlations are weighted by the
 per-species probe counts $w$:
 \begin{equation}
@@ -66,8 +80,8 @@ discusses it.
 
 \paragraph{Minimum detectable effect.} Table~\ref{tab:mde} quantifies the power of the primary
 out-of-sample test. An effect of known standardised size $\beta$ is planted onto the real per-cell scores on
-the logit scale ($y' = \sigma(\operatorname{logit}(y) + \beta z)$, with $z$ the standardised visual
-distance), whole groups are subsampled without replacement per replicate, and the unchanged
+the logit scale (Equation~\ref{eq:plant}, with $z$ the standardised visual distance), whole groups are
+subsampled without replacement per replicate, and the unchanged
 leave-whole-group-out procedure of Section~\ref{sec:meth-cv} is asked whether it detects the plant at
 $p<0.05$. The real group structure, support weights and residual noise carry through untouched, and cells at
 \texttt{pDetA}=0 barely respond to the plant, so the estimates are conservative. At $\beta=0$ no replicate
