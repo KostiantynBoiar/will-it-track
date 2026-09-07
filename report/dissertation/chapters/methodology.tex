@@ -370,8 +370,8 @@ carries a positive control. The animal-size covariate is put through the identic
 clustered interval, the same whole-group hold-out --- and the estimation and cross-validation machinery is
 unit-tested to recover planted effects on synthetic data. If the procedure validates the size covariate while
 returning no gain for the distances, a null result is evidence of absence of signal rather than absence of
-power.
-Chapter~\ref{ch:results} reports whether it does.
+power. Chapter~\ref{ch:results} reports whether it does, and a planted-effect analysis quantifies the
+smallest effect this test could have detected (Appendix~\ref{app:supplementary}, Table~\ref{tab:mde}).
 
 \subsection{Variance attribution and confound control}
 \label{sec:meth-variance}
@@ -424,10 +424,8 @@ problem rather than of SA-FARI, the whole pipeline is re-run on a second dataset
 the same frozen SAM\,3, the same official scorer, the same distances, and the same leave-species-out
 cross-validation and paired group-bootstrap.
 
-This requires little additional work because the pipeline is bound to an annotation schema rather than to a
-loader. An offline adapter
-converts the new dataset into the SA-Co JSON that the loader and evaluator already read, so nothing downstream
-changes.
+The pipeline is bound to an annotation schema rather than to a loader, so an offline adapter converting the
+new dataset into the SA-Co JSON the loader and evaluator already read is all that changes.
 
 \paragraph{BURST.} The replication runs on the animal subset of the BURST validation split
 (Section~\ref{sec:bg-burst}): $41$ species across $132$ video\,$\times$\,class cells, scored by mask-HOTA on

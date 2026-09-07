@@ -337,8 +337,13 @@ One row does clear the bar, and it is the confound rather than a hypothesis vari
 of sample on SA-FARI, modestly. That row doubles as the positive control: the same test that returns no gain
 for every distance does detect size, so the null is an absence of signal rather than an absence of power.
 
-The contribution is that null, with its bounds stated. It is consistent across a camera-trap dataset and an
-internet-video one, and powered on SA-FARI to exclude a moderate effect, though not a small one.
+The contribution is that null, with its bounds stated and quantified. It is consistent across a camera-trap
+dataset and an internet-video one. The clustered intervals cap the visual and environment coefficients at
+moderate size, and a planted-effect analysis (Table~\ref{tab:mde}, Appendix~\ref{app:supplementary}) shows
+the out-of-sample test reaches $80\%$ power only for standardised effects of $1.5$ (location scheme) to
+$1.75$ (species scheme), a gain of $\Delta\mathrm{MAE}\approx+0.02$. Criterion~(ii) therefore certifies the
+absence of usable predictive value; effects far smaller than that threshold, including any of the observed
+coefficient magnitudes, are bounded by the intervals rather than by the out-of-sample test.
 \IfFileExists{tables/cross_dataset_comparison.tex}{\input{tables/cross_dataset_comparison}}{}
 
 \section{Cross-model replication}
