@@ -1,6 +1,6 @@
 """GLEE model-swap experiment: do the four before-running distances predict GLEE's pDetA out of sample?
 
-A controlled model-swap (docs/glee_second_model.md): SAME SA-FARI cells, SAME ground truth, SAME four
+A controlled model-swap. SAME SA-FARI cells, SAME ground truth, SAME four
 label-free distances, SAME support-weighted logit GLM + grouped-CV bar — only the frozen tracker changes
 (SAM 3 -> GLEE). Tests whether the label-free null is SAM-3-specific or task-general. Detection (pDetA) is
 primary; pAssA is reported for parity but the association target is near-degenerate on SA-FARI (CLAUDE.md

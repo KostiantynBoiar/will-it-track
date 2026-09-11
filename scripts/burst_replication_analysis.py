@@ -13,8 +13,7 @@ decide the honest framing:
   out-of-sample win — the key caveat. The confidence controls therefore establish pipeline liveness (a real
   contrast with MammAlps, where nothing fired), not power for a small species-level distance effect.
 
-Numbers here were adversarially verified against the raw parquet; see docs/burst_replication.md.
-
+Numbers here were adversarially verified against the raw parquet;
 Run: PYTHONPATH=. python scripts/burst_replication_analysis.py --features outputs_burst/features.parquet
 """
 

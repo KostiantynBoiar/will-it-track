@@ -2,7 +2,7 @@
 
 GLEE (CVPR 2024) has the same contract as SAM 3: a text prompt in -> zero-shot detect, segment and track
 every matching instance across a video, masks out. Running it over the same SA-FARI cells tests whether the
-label-free null is SAM-3-specific or task-general. See docs/glee_second_model.md.
+label-free null is SAM-3-specific or task-general.
 
 Only the GPU-only backend (torch + GLEE + detectron2, absent from the local analysis env) is imported
 lazily in load(); everything else is imported at the top. So this module imports on the CPU analysis env
@@ -109,7 +109,7 @@ class GleeTracker:
         if not inf.glee_config or not inf.glee_weights or not inf.glee_repo:
             raise RuntimeError(
                 "GleeTracker needs inference.glee_repo, glee_config and glee_weights set "
-                "(the GLEE checkout root + model YAML + .pth). See docs/glee_second_model.md for staging."
+                "(the GLEE checkout root + model YAML + .pth)."
             )
         self._model = self._build_glee(inf.glee_config, inf.glee_weights, inf.device)
         self._dtype = {"bf16": torch.bfloat16, "fp16": torch.float16}.get(inf.precision, torch.float32)
@@ -185,7 +185,7 @@ class GleeTracker:
     def _run(self, frames: list[Image.Image], prompt: str, processing_device: str) -> list[Masklet]:
         """One open-vocab video pass: GLEE per-frame forward + MinVIS association -> tracks -> masklets.
 
-        The GLEE call and association are finalised on the GPU box (see docs/glee_second_model.md); the
+        The GLEE call and association are finalised on the GPU box; the
         schema _infer_tracks must produce for _masklets_from_glee is fixed and tested here.
         """
         tracks = self._infer_tracks(frames, prompt, processing_device)

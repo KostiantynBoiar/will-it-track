@@ -104,7 +104,6 @@ src/
   analysis/      regression · variance · grouped CV · bootstrap · hallucination · reliability
   adapters/      burst · mammalps       (cross-dataset replication)
 configs/         default · burst · mammalps
-docs/            label_free_prediction_null.md   ← the consolidated write-up of the result
 report/          dissertation/ (LaTeX)  ·  build.sh
 tests/  notebooks/                       data/ & outputs/ are gitignored
 ```
@@ -126,7 +125,6 @@ to the [dataset](https://huggingface.co/datasets/facebook/SA-FARI) and the
 
 <div align="center">
 
-**The result, in one page:** [`docs/label_free_prediction_null.md`](docs/label_free_prediction_null.md)  ·
 **Full write-up:** the dissertation in [`report/`](report/)
 
 </div>

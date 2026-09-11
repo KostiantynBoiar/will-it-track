@@ -1,7 +1,7 @@
 # GLEE model-swap profile: run a second frozen text-promptable video tracker (GLEE) over the SAME
 # SA-FARI cells, then re-fit the SAME four-distance GLM/CV. Tests whether the label-free null is
 # SAM-3-specific or task-general. A CONTROLLED MODEL-SWAP, not independent replication (same dataset,
-# GT, distances — only the tracker changes). GPU-gated; see docs/glee_second_model.md.
+# GT, distances — only the tracker changes). 
 #
 # Predictions are auto-namespaced under predictions/glee/ (tracker != "sam3"), so SAM 3's artefacts are
 # untouched. Run: python -m src.inference.harness --split test --config configs/glee.yaml
